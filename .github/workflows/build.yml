@@ -4,7 +4,7 @@ name: Build
 on:
   push:
     branches:
-      - chatterino7
+      - technorino
   pull_request:
   workflow_dispatch:
 
@@ -303,7 +303,7 @@ jobs:
   create-release:
     needs: build
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && github.ref == 'refs/heads/chatterino7')
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/technorino')
 
     steps:
       - uses: actions/checkout@v3
