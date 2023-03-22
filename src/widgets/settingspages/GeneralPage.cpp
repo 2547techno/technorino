@@ -305,6 +305,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
     layout.addCheckbox("Alternate background color", s.alternateMessages, false,
                        "Slightly change the background behind every other "
                        "message to help better tell them apart.");
+    layout.addCheckbox("Gray-out recent messages", s.grayOutRecents, false,
+                       "Gray-out recent messages");
     layout.addCheckbox("Hide deleted messages", s.hideModerated, false,
                        "When enabled, messages deleted by moderators will "
                        "be hidden.");
