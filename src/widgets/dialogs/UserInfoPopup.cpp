@@ -349,6 +349,15 @@ UserInfoPopup::UserInfoPopup(bool closeAutomatically, QWidget *parent,
                             });
                         menu->popup(QCursor::pos());
                         menu->raise();
+
+                        // Logs site
+                        menu->addAction(
+                            "Open logs site in browser", [loginName, this] {
+                                QDesktopServices::openUrl(
+                                    QUrl("https://logs.ivr.fi/?channel=" +
+                                         this->underlyingChannel_->getName() +
+                                         "&username=" + loginName));
+                            });
                     }
                     break;
 
