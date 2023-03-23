@@ -174,6 +174,11 @@ public:
     void updateSeventvData(const QString &newUserID,
                            const QString &newEmoteSetID);
 
+    // Update the user's last message and insert the personal emotes if necessary.
+    void upsertPersonalSeventvEmotes(
+        const QString &userLogin,
+        const std::shared_ptr<const EmoteMap> &emoteMap);
+
     // Badges
     boost::optional<EmotePtr> ffzCustomModBadge() const;
     boost::optional<EmotePtr> ffzCustomVipBadge() const;
@@ -229,6 +234,8 @@ private:
     void showLoginMessage();
     /** Joins (subscribes to) a Twitch channel for updates on BTTV. */
     void joinBttvChannel() const;
+    void updateSevenTVActivity();
+    void listenSevenTVCosmetics();
 
     void setLive(bool newLiveStatus);
     void setMod(bool value);
@@ -332,6 +339,12 @@ private:
      * 7TV's user representation.
      */
     size_t seventvUserTwitchConnectionIndex_;
+
+    /**
+     * The next moment in time to signal activity in this channel to 7TV.
+     * Or: Up until this moment we don't need to send activity.
+     */
+    QDateTime nextSeventvActivity_;
 
     /** The platform of the last live emote update ("7TV", "BTTV", "FFZ"). */
     QString lastLiveUpdateEmotePlatform_;

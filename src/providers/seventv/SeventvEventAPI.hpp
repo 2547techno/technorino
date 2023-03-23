@@ -15,7 +15,13 @@ namespace seventv::eventapi {
     struct EmoteUpdateDispatch;
     struct EmoteRemoveDispatch;
     struct UserConnectionUpdateDispatch;
+    struct CosmeticCreateDispatch;
+    struct EntitlementCreateDeleteDispatch;
 }  // namespace seventv::eventapi
+
+class SeventvBadges;
+class SeventvPaints;
+class EmoteMap;
 
 class SeventvEventAPI
     : public BasicPubSubManager<seventv::eventapi::Subscription>
@@ -34,6 +40,8 @@ public:
         Signal<seventv::eventapi::EmoteUpdateDispatch> emoteUpdated;
         Signal<seventv::eventapi::EmoteRemoveDispatch> emoteRemoved;
         Signal<seventv::eventapi::UserConnectionUpdateDispatch> userUpdated;
+        Signal<std::pair<QString, std::shared_ptr<const EmoteMap>>>
+            personalEmoteSetAdded;
     } signals_;  // NOLINT(readability-identifier-naming)
 
     /**
@@ -44,11 +52,20 @@ public:
      * @param emoteSetID 7TV emote-set-id, may be empty.
      */
     void subscribeUser(const QString &userID, const QString &emoteSetID);
+    /**
+     * Subscribes to cosmetics and entitlements in a twitch channel
+     * if not already subscribed.
+     *
+     * @param id Twitch channel id
+     */
+    void subscribeTwitchChannel(const QString &id);
 
     /** Unsubscribes from a user by its 7TV user id */
     void unsubscribeUser(const QString &id);
     /** Unsubscribes from an emote-set by its id */
     void unsubscribeEmoteSet(const QString &id);
+    /** Unsubscribes from cosmetics and entitlements in a Twitch channel */
+    void unsubscribeTwitchChannel(const QString &id);
 
 protected:
     std::shared_ptr<BasicPubSubClient<seventv::eventapi::Subscription>>
@@ -64,11 +81,20 @@ private:
 
     void onEmoteSetUpdate(const seventv::eventapi::Dispatch &dispatch);
     void onUserUpdate(const seventv::eventapi::Dispatch &dispatch);
+    void onCosmeticCreate(
+        const seventv::eventapi::CosmeticCreateDispatch &cosmetic);
+    void onEntitlementCreate(
+        const seventv::eventapi::EntitlementCreateDeleteDispatch &entitlement);
+    void onEntitlementDelete(
+        const seventv::eventapi::EntitlementCreateDeleteDispatch &entitlement);
+    void onEmoteSetCreate(const seventv::eventapi::Dispatch &dispatch);
 
     /** emote-set ids */
     std::unordered_set<QString> subscribedEmoteSets_;
     /** user ids */
     std::unordered_set<QString> subscribedUsers_;
+    /** Twitch channel ids */
+    std::unordered_set<QString> subscribedTwitchChannels_;
     std::chrono::milliseconds heartbeatInterval_;
 };
 

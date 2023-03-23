@@ -77,87 +77,40 @@ bool isZeroWidthRecommended(const QJsonObject &emoteData)
     return flags.has(SeventvEmoteFlag::ZeroWidth);
 }
 
-ImageSet makeImageSet(const QJsonObject &emoteData)
+QString kindToString(SeventvEmoteSetKind kind)
 {
-    auto host = emoteData["host"].toObject();
-    // "//cdn.7tv[...]"
-    auto baseUrl = host["url"].toString();
-    auto files = host["files"].toArray();
-
-    std::array<ImagePtr, 4> sizes;
-    double baseWidth = 0.0;
-    int nextSize = 0;
-
-    for (auto fileItem : files)
+    switch (kind)
     {
-        if (nextSize >= sizes.size())
-        {
-            break;
-        }
-
-        auto file = fileItem.toObject();
-        if (file["format"].toString() != "WEBP")
-        {
-            continue;  // We only use webp
-        }
-
-        double width = file["width"].toDouble();
-        double scale = 1.0;  // in relation to first image
-        if (baseWidth > 0.0)
-        {
-            scale = baseWidth / width;
-        }
-        else
-        {
-            // => this is the first image
-            baseWidth = width;
-        }
-
-        auto image = Image::fromUrl(
-            {QString("https:%1/%2").arg(baseUrl, file["name"].toString())},
-            scale);
-
-        sizes.at(nextSize) = image;
-        nextSize++;
+        case SeventvEmoteSetKind::Global:
+            return QStringLiteral("Global");
+        case SeventvEmoteSetKind::Personal:
+            return QStringLiteral("Personal");
+        case SeventvEmoteSetKind::Channel:
+            return QStringLiteral("Channel");
+        default:
+            return QStringLiteral("");
     }
-
-    if (nextSize < sizes.size())
-    {
-        // this should be really rare
-        // this means we didn't get all sizes of an emote
-        if (nextSize == 0)
-        {
-            qCDebug(chatterinoSeventv)
-                << "Got file list without any eligible files";
-            // When this emote is typed, chatterino will crash.
-            return ImageSet{};
-        }
-        for (; nextSize < sizes.size(); nextSize++)
-        {
-            sizes.at(nextSize) = Image::getEmpty();
-        }
-    }
-
-    return ImageSet{sizes[0], sizes[1], sizes[2], sizes[3]};
 }
 
-Tooltip createTooltip(const QString &name, const QString &author, bool isGlobal)
+Tooltip createTooltip(const QString &name, const QString &author,
+                      SeventvEmoteSetKind kind)
 {
     return Tooltip{QString("%1<br>%2 7TV Emote<br>By: %3")
-                       .arg(name, isGlobal ? "Global" : "Channel",
+                       .arg(name, kindToString(kind),
                             author.isEmpty() ? "<deleted>" : author)};
 }
 
 Tooltip createAliasedTooltip(const QString &name, const QString &baseName,
-                             const QString &author, bool isGlobal)
+                             const QString &author, SeventvEmoteSetKind kind)
 {
     return Tooltip{QString("%1<br>Alias of %2<br>%3 7TV Emote<br>By: %4")
-                       .arg(name, baseName, isGlobal ? "Global" : "Channel",
+                       .arg(name, baseName, kindToString(kind),
                             author.isEmpty() ? "<deleted>" : author)};
 }
 
 CreateEmoteResult createEmote(const QJsonObject &activeEmote,
-                              const QJsonObject &emoteData, bool isGlobal)
+                              const QJsonObject &emoteData,
+                              SeventvEmoteSetKind kind)
 {
     auto emoteId = EmoteId{activeEmote["id"].toString()};
     auto emoteName = EmoteName{activeEmote["name"].toString()};
@@ -169,9 +122,9 @@ CreateEmoteResult createEmote(const QJsonObject &activeEmote,
     auto tooltip =
         aliasedName
             ? createAliasedTooltip(emoteName.string, baseEmoteName.string,
-                                   author.string, isGlobal)
-            : createTooltip(emoteName.string, author.string, isGlobal);
-    auto imageSet = makeImageSet(emoteData);
+                                   author.string, kind)
+            : createTooltip(emoteName.string, author.string, kind);
+    auto imageSet = SeventvEmotes::createImageSet(emoteData);
 
     auto emote =
         Emote({emoteName, imageSet, tooltip,
@@ -181,19 +134,28 @@ CreateEmoteResult createEmote(const QJsonObject &activeEmote,
     return {emote, emoteId, emoteName, !emote.images.getImage1()->isEmpty()};
 }
 
-bool checkEmoteVisibility(const QJsonObject &emoteData)
+bool checkEmoteVisibility(const QJsonObject &emoteData,
+                          SeventvEmoteSetKind kind)
 {
     if (!emoteData["listed"].toBool() &&
         !getSettings()->showUnlistedSevenTVEmotes)
     {
         return false;
     }
+
+    // Only add allowed emotes
+    if (kind == SeventvEmoteSetKind::Personal &&
+        !emoteData["state"].toArray().contains("PERSONAL"))
+    {
+        return false;
+    }
+
     auto flags =
         SeventvEmoteFlags(SeventvEmoteFlag(emoteData["flags"].toInt()));
     return !flags.has(SeventvEmoteFlag::ContentTwitchDisallowed);
 }
 
-EmoteMap parseEmotes(const QJsonArray &emoteSetEmotes, bool isGlobal)
+EmoteMap parseEmotes(const QJsonArray &emoteSetEmotes, SeventvEmoteSetKind kind)
 {
     auto emotes = EmoteMap();
 
@@ -202,12 +164,12 @@ EmoteMap parseEmotes(const QJsonArray &emoteSetEmotes, bool isGlobal)
         auto activeEmote = activeEmoteJson.toObject();
         auto emoteData = activeEmote["data"].toObject();
 
-        if (emoteData.empty() || !checkEmoteVisibility(emoteData))
+        if (emoteData.empty() || !checkEmoteVisibility(emoteData, kind))
         {
             continue;
         }
 
-        auto result = createEmote(activeEmote, emoteData, isGlobal);
+        auto result = createEmote(activeEmote, emoteData, kind);
         if (!result.hasImages)
         {
             // this shouldn't happen but if it does, it will crash,
@@ -224,7 +186,8 @@ EmoteMap parseEmotes(const QJsonArray &emoteSetEmotes, bool isGlobal)
 }
 
 EmotePtr createUpdatedEmote(const EmotePtr &oldEmote,
-                            const EmoteUpdateDispatch &dispatch)
+                            const EmoteUpdateDispatch &dispatch,
+                            SeventvEmoteSetKind kind)
 {
     bool toNonAliased = oldEmote->baseName.has_value() &&
                         dispatch.emoteName == oldEmote->baseName->string;
@@ -233,9 +196,9 @@ EmotePtr createUpdatedEmote(const EmotePtr &oldEmote,
     auto emote = std::make_shared<const Emote>(Emote(
         {EmoteName{dispatch.emoteName}, oldEmote->images,
          toNonAliased
-             ? createTooltip(dispatch.emoteName, oldEmote->author.string, false)
+             ? createTooltip(dispatch.emoteName, oldEmote->author.string, kind)
              : createAliasedTooltip(dispatch.emoteName, baseName.string,
-                                    oldEmote->author.string, false),
+                                    oldEmote->author.string, kind),
          oldEmote->homePage, oldEmote->zeroWidth, oldEmote->id,
          oldEmote->author, boost::make_optional(!toNonAliased, baseName)}));
     return emote;
@@ -285,7 +248,8 @@ void SeventvEmotes::loadGlobalEmotes()
         .onSuccess([this](const NetworkResult &result) -> Outcome {
             QJsonArray parsedEmotes = result.parseJson()["emotes"].toArray();
 
-            auto emoteMap = parseEmotes(parsedEmotes, true);
+            auto emoteMap =
+                parseEmotes(parsedEmotes, SeventvEmoteSetKind::Global);
             qCDebug(chatterinoSeventv)
                 << "Loaded" << emoteMap.size() << "7TV Global Emotes";
             this->global_.set(std::make_shared<EmoteMap>(std::move(emoteMap)));
@@ -314,7 +278,8 @@ void SeventvEmotes::loadChannelEmotes(
             auto emoteSet = json["emote_set"].toObject();
             auto parsedEmotes = emoteSet["emotes"].toArray();
 
-            auto emoteMap = parseEmotes(parsedEmotes, false);
+            auto emoteMap =
+                parseEmotes(parsedEmotes, SeventvEmoteSetKind::Channel);
             bool hasEmotes = !emoteMap.empty();
 
             qCDebug(chatterinoSeventv)
@@ -403,18 +368,18 @@ void SeventvEmotes::loadChannelEmotes(
 
 boost::optional<EmotePtr> SeventvEmotes::addEmote(
     Atomic<std::shared_ptr<const EmoteMap>> &map,
-    const EmoteAddDispatch &dispatch)
+    const EmoteAddDispatch &dispatch, SeventvEmoteSetKind kind)
 {
     // Check for visibility first, so we don't copy the map.
     auto emoteData = dispatch.emoteJson["data"].toObject();
-    if (emoteData.empty() || !checkEmoteVisibility(emoteData))
+    if (emoteData.empty() || !checkEmoteVisibility(emoteData, kind))
     {
         return boost::none;
     }
 
     // This copies the map.
     EmoteMap updatedMap = *map.get();
-    auto result = createEmote(dispatch.emoteJson, emoteData, false);
+    auto result = createEmote(dispatch.emoteJson, emoteData, kind);
     if (!result.hasImages)
     {
         // Incoming emote didn't contain any images, abort
@@ -431,7 +396,7 @@ boost::optional<EmotePtr> SeventvEmotes::addEmote(
 
 boost::optional<EmotePtr> SeventvEmotes::updateEmote(
     Atomic<std::shared_ptr<const EmoteMap>> &map,
-    const EmoteUpdateDispatch &dispatch)
+    const EmoteUpdateDispatch &dispatch, SeventvEmoteSetKind kind)
 {
     auto oldMap = map.get();
     auto oldEmote = oldMap->findEmote(dispatch.emoteName, dispatch.emoteID);
@@ -444,7 +409,7 @@ boost::optional<EmotePtr> SeventvEmotes::updateEmote(
     EmoteMap updatedMap = *map.get();
     updatedMap.erase(oldEmote->second->name);
 
-    auto emote = createUpdatedEmote(oldEmote->second, dispatch);
+    auto emote = createUpdatedEmote(oldEmote->second, dispatch, kind);
     updatedMap[emote->name] = emote;
     map.set(std::make_shared<EmoteMap>(std::move(updatedMap)));
 
@@ -485,7 +450,14 @@ void SeventvEmotes::getEmoteSet(
             auto json = result.parseJson();
             auto parsedEmotes = json["emotes"].toArray();
 
-            auto emoteMap = parseEmotes(parsedEmotes, false);
+            auto kind = SeventvEmoteSetKind::Channel;
+            if (SeventvEmoteSetFlags(SeventvEmoteSetFlag(json["flags"].toInt()))
+                    .has(SeventvEmoteSetFlag::Personal))
+            {
+                kind = SeventvEmoteSetKind::Personal;
+            }
+
+            auto emoteMap = parseEmotes(parsedEmotes, kind);
 
             qCDebug(chatterinoSeventv) << "Loaded" << emoteMap.size()
                                        << "7TV Emotes from" << emoteSetId;
@@ -505,6 +477,70 @@ void SeventvEmotes::getEmoteSet(
             }
         })
         .execute();
+}
+
+ImageSet SeventvEmotes::createImageSet(const QJsonObject &emoteData)
+{
+    auto host = emoteData["host"].toObject();
+    // "//cdn.7tv[...]"
+    auto baseUrl = host["url"].toString();
+    auto files = host["files"].toArray();
+
+    std::array<ImagePtr, 4> sizes;
+    double baseWidth = 0.0;
+    int nextSize = 0;
+
+    for (auto fileItem : files)
+    {
+        if (nextSize >= sizes.size())
+        {
+            break;
+        }
+
+        auto file = fileItem.toObject();
+        if (file["format"].toString() != "WEBP")
+        {
+            continue;  // We only use webp
+        }
+
+        double width = file["width"].toDouble();
+        double scale = 1.0;  // in relation to first image
+        if (baseWidth > 0.0)
+        {
+            scale = baseWidth / width;
+        }
+        else
+        {
+            // => this is the first image
+            baseWidth = width;
+        }
+
+        auto image = Image::fromUrl(
+            {QString("https:%1/%2").arg(baseUrl, file["name"].toString())},
+            scale);
+
+        sizes.at(nextSize) = image;
+        nextSize++;
+    }
+
+    if (nextSize < sizes.size())
+    {
+        // this should be really rare
+        // this means we didn't get all sizes of an emote
+        if (nextSize == 0)
+        {
+            qCDebug(chatterinoSeventv)
+                << "Got file list without any eligible files";
+            // When this emote is typed, chatterino will crash.
+            return ImageSet{};
+        }
+        for (; nextSize < sizes.size(); nextSize++)
+        {
+            sizes.at(nextSize) = Image::getEmpty();
+        }
+    }
+
+    return ImageSet{sizes[0], sizes[1], sizes[2], sizes[3]};
 }
 
 }  // namespace chatterino
