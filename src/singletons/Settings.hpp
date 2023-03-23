@@ -441,6 +441,11 @@ public:
     /// Misc
     BoolSetting useBotLimits = {"/misc/botLimits", false};
     BoolSetting betaUpdates = {"/misc/beta", false};
+    BoolSetting abnormalNonceDetection = {"/misc/abnormalNonceDetection",
+                                          false};
+    BoolSetting normalNonceDetection = {"/misc/normalNonceDetection", false};
+    BoolSetting nonceFuckeryEnabled = {"/misc/nonceFuckeryEnabled", false};
+    QStringSetting webchatColor = {"/misc/webchatColor", "#3FFFA30B"};
 #ifdef Q_OS_LINUX
     BoolSetting useKeyring = {"/misc/useKeyring", true};
 #endif

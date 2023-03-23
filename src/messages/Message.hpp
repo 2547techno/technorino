@@ -51,6 +51,7 @@ enum class MessageFlag : int64_t {
     LiveUpdatesAdd = (1LL << 28),
     LiveUpdatesRemove = (1LL << 29),
     LiveUpdatesUpdate = (1LL << 30),
+    WebchatDetected = (1LL << 40),
 };
 using MessageFlags = FlagsEnum<MessageFlag>;
 
