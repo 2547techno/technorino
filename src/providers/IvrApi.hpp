@@ -33,7 +33,7 @@ struct IvrSubage {
     }
 };
 
-struct IvrResolve { 
+struct IvrResolve {
     const bool isPartner;
     const bool isAffiliate;
     const bool isBot;

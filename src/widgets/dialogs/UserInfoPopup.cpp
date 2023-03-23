@@ -300,6 +300,7 @@ UserInfoPopup::UserInfoPopup(bool closeAutomatically, QWidget *parent,
                         previousMenu = menu;
 
                         auto avatarUrl = this->avatarUrl_;
+                        auto username = this->userName_;
 
                         // add context menu actions
                         menu->addAction("Open avatar in browser", [avatarUrl] {
@@ -309,6 +310,14 @@ UserInfoPopup::UserInfoPopup(bool closeAutomatically, QWidget *parent,
                         menu->addAction("Copy avatar link", [avatarUrl] {
                             crossPlatformCopy(avatarUrl);
                         });
+
+                        //RaccAttack profile
+                        menu->addAction(
+                            "Open RaccAttack profile in browser", [username] {
+                                QDesktopServices::openUrl(
+                                    QUrl("https://emotes.raccatta.cc/twitch/" +
+                                         username));
+                            });
 
                         // we need to assign login name for msvc compilation
                         auto loginName = this->userName_.toLower();
