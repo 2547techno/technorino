@@ -8,6 +8,7 @@
 #include "singletons/Settings.hpp"
 
 #include <QCoreApplication>
+#include <iomanip>
 
 #include <sstream>
 
