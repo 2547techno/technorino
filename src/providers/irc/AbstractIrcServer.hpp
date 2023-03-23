@@ -5,9 +5,9 @@
 #include "util/RatelimitBucket.hpp"
 
 #include <IrcMessage>
-#include <QRandomGenerator>
 #include <pajlada/signals/signal.hpp>
 #include <pajlada/signals/signalholder.hpp>
+#include <QRandomGenerator>
 
 #include <functional>
 #include <mutex>

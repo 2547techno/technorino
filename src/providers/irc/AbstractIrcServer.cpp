@@ -8,6 +8,7 @@
 #include "singletons/Settings.hpp"
 
 #include <QCoreApplication>
+
 #include <sstream>
 
 namespace chatterino {
@@ -193,8 +194,7 @@ void AbstractIrcServer::sendMessage(const QString &channelName,
         for (int i = 0; i < 4; i++)
         {
             qint64 nonce = this->generator.generate();
-            stream << std::setfill('0') << std::setw(sizeof(qint64))
-                   << std::hex
+            stream << std::setfill('0') << std::setw(sizeof(qint64)) << std::hex
                    << nonce;
         }
         QString hex = QString::fromStdString(stream.str());
