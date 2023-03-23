@@ -98,6 +98,8 @@ public:
     QStringSetting lastMessageColor = {"/appearance/messages/lastMessageColor",
                                        "#7f2026"};
     BoolSetting showEmptyInput = {"/appearance/showEmptyInputBox", true};
+    BoolSetting showTextInputPlaceholder = {
+        "/appearance/showTextInputPlaceholder", true};
     BoolSetting showMessageLength = {"/appearance/messages/showMessageLength",
                                      false};
     EnumSetting<MessageOverflow> messageOverflow = {

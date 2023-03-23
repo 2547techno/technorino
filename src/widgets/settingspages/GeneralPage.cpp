@@ -277,6 +277,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
                        s.enableSmoothScrollingNewMessages);
     layout.addCheckbox("Show input when it's empty", s.showEmptyInput, false,
                        "Show the chat box even when there is nothing typed.");
+    layout.addCheckbox("Show placeholder in text input box (requires restart)",
+                       s.showTextInputPlaceholder);
     layout.addCheckbox(
         "Show message length while typing", s.showMessageLength, false,
         "Show how many characters are currently in your input box.\n"
