@@ -119,6 +119,15 @@ namespace {
                                 });
         };
 
+        if (creatorFlags.has(MessageElementFlag::TwitchEmote))
+        {
+            addPageLink("RaccAttack");
+        }
+        else if (creatorFlags.has(MessageElementFlag::SevenTVEmote))
+        {
+            addPageLink("7TV");
+        }
+
         if (creatorFlags.has(MessageElementFlag::BttvEmote))
         {
             addPageLink("BTTV");
@@ -126,10 +135,6 @@ namespace {
         else if (creatorFlags.has(MessageElementFlag::FfzEmote))
         {
             addPageLink("FFZ");
-        }
-        else if (creatorFlags.has(MessageElementFlag::SevenTVEmote))
-        {
-            addPageLink("7TV");
         }
     }
 

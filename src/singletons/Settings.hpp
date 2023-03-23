@@ -98,6 +98,8 @@ public:
     QStringSetting lastMessageColor = {"/appearance/messages/lastMessageColor",
                                        "#7f2026"};
     BoolSetting showEmptyInput = {"/appearance/showEmptyInputBox", true};
+    BoolSetting showTextInputPlaceholder = {
+        "/appearance/showTextInputPlaceholder", true};
     BoolSetting showMessageLength = {"/appearance/messages/showMessageLength",
                                      false};
     EnumSetting<MessageOverflow> messageOverflow = {
@@ -127,6 +129,7 @@ public:
         "/appearance/messages/collapseMessagesMinLines", 0};
     BoolSetting alternateMessages = {
         "/appearance/messages/alternateMessageBackground", false};
+    BoolSetting grayOutRecents = {"/appearance/messages/gratOutRecents", true};
     FloatSetting boldScale = {"/appearance/boldScale", 63};
     BoolSetting showTabCloseButton = {"/appearance/showTabCloseButton", true};
     BoolSetting showTabLive = {"/appearance/showTabLiveButton", true};
@@ -436,7 +439,14 @@ public:
         "/external/imageUploader/deletionLink", ""};
 
     /// Misc
+    BoolSetting useBotLimits = {"/misc/botLimits", false};
     BoolSetting betaUpdates = {"/misc/beta", false};
+    BoolSetting abnormalNonceDetection = {"/misc/abnormalNonceDetection",
+                                          false};
+    BoolSetting normalNonceDetection = {"/misc/normalNonceDetection", false};
+    BoolSetting nonceFuckeryEnabled = {"/misc/nonceFuckeryEnabled", false};
+    QStringSetting webchatColor = {"/misc/webchatColor", "#3FFFA30B"};
+    BoolSetting fakeWebChat = {"/misc/fakeWebChat", false};
 #ifdef Q_OS_LINUX
     BoolSetting useKeyring = {"/misc/useKeyring", true};
 #endif

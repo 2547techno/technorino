@@ -243,7 +243,8 @@ void MessageLayout::paint(QPainter &painter, int width, int y, int messageIndex,
         //                         QBrush(QColor(64, 64, 64, 64)));
     }
 
-    if (this->message_->flags.has(MessageFlag::RecentMessage))
+    if (this->message_->flags.has(MessageFlag::RecentMessage) &&
+        getSettings()->grayOutRecents)
     {
         painter.fillRect(0, y, pixmap->width(), pixmap->height(),
                          app->themes->messages.disabled);
@@ -371,6 +372,12 @@ void MessageLayout::updateBuffer(QPixmap *buffer, int /*messageIndex*/,
     else if (this->message_->flags.has(MessageFlag::Debug))
     {
         backgroundColor = QColor("#4A273D");
+    }
+    else if (this->message_->flags.has(MessageFlag::WebchatDetected) &&
+             getSettings()->normalNonceDetection)
+    {
+        backgroundColor =
+            blendColors(backgroundColor, QColor(getSettings()->webchatColor));
     }
 
     painter.fillRect(buffer->rect(), backgroundColor);

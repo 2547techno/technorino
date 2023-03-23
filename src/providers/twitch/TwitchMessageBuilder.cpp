@@ -52,6 +52,23 @@ const QSet<QString> zeroWidthEmotes{
     "ReinDeer", "CandyCane", "cvMask",   "cvHazmat",
 };
 
+bool isAbnormalNonce(const QString &nonce)
+{
+    // matches /[0-9a-f]{32}/
+    if (nonce.size() != 32)
+    {
+        return true;
+    }
+    for (const auto letter : nonce)
+    {
+        if (('0' > letter || letter > '9') && ('a' > letter || letter > 'f'))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 }  // namespace
 
 namespace chatterino {
@@ -196,6 +213,29 @@ MessagePtr TwitchMessageBuilder::build()
             this->appendChannelPointRewardMessage(
                 reward.get(), this, this->channel->isMod(),
                 this->channel->isBroadcaster());
+        }
+    }
+
+    if (this->tags.contains("client-nonce") &&
+        getSettings()->nonceFuckeryEnabled)
+    {
+        auto isAbnormal =
+            isAbnormalNonce(this->tags["client-nonce"].toString());
+        if (isAbnormal && getSettings()->abnormalNonceDetection)
+        {
+            this->emplace<TimestampElement>();
+            this->emplace<TextElement>(
+                "Abnormal nonce:", MessageElementFlag::ChannelPointReward,
+                MessageColor::System);
+            this->emplace<TextElement>(this->tags["client-nonce"].toString(),
+                                       MessageElementFlag::ChannelPointReward,
+                                       MessageColor::Text);
+            this->emplace<LinebreakElement>(
+                MessageElementFlag::ChannelPointReward);
+        }
+        else if (!isAbnormal)
+        {
+            this->message().flags.set(MessageFlag::WebchatDetected);
         }
     }
 

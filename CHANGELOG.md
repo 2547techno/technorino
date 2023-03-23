@@ -2,6 +2,18 @@
 
 ## Unversioned
 
+- Minor: Lowered emote refresh cooldown from 30s to 1s
+- Minor: Added channel name to placeholder input text
+- Minor: Toggle to grey out recent messages
+- Minor: Added roles to usercard
+- Minor: Added RaccAttack links to emotes & usercard
+- Minor: Web chat detection
+- Minor: Added toggle to send message with random nonce
+- Minor: Open logs from usercard
+- Minor: /logs command
+- Minor: Open 7tv profile from usercard
+- Dev: Added detection for abnormal nonces
+
 ## 2.4.1
 
 - Major: Added live emote updates for BTTV. (#4147)

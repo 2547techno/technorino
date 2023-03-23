@@ -7,6 +7,7 @@
 #include <IrcMessage>
 #include <pajlada/signals/signal.hpp>
 #include <pajlada/signals/signalholder.hpp>
+#include <QRandomGenerator>
 
 #include <functional>
 #include <mutex>
@@ -104,6 +105,8 @@ private:
     pajlada::Signals::SignalHolder connections_;
 
     bool initialized_{false};
+
+    QRandomGenerator generator;
 };
 
 }  // namespace chatterino

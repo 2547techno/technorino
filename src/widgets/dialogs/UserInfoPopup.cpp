@@ -300,6 +300,7 @@ UserInfoPopup::UserInfoPopup(bool closeAutomatically, QWidget *parent,
                         previousMenu = menu;
 
                         auto avatarUrl = this->avatarUrl_;
+                        auto username = this->userName_;
 
                         // add context menu actions
                         menu->addAction("Open avatar in browser", [avatarUrl] {
@@ -309,6 +310,14 @@ UserInfoPopup::UserInfoPopup(bool closeAutomatically, QWidget *parent,
                         menu->addAction("Copy avatar link", [avatarUrl] {
                             crossPlatformCopy(avatarUrl);
                         });
+
+                        //RaccAttack profile
+                        menu->addAction(
+                            "Open RaccAttack profile in browser", [username] {
+                                QDesktopServices::openUrl(
+                                    QUrl("https://emotes.raccatta.cc/twitch/" +
+                                         username));
+                            });
 
                         // we need to assign login name for msvc compilation
                         auto loginName = this->userName_.toLower();
@@ -340,6 +349,15 @@ UserInfoPopup::UserInfoPopup(bool closeAutomatically, QWidget *parent,
                             });
                         menu->popup(QCursor::pos());
                         menu->raise();
+
+                        // Logs site
+                        menu->addAction(
+                            "Open logs site in browser", [loginName, this] {
+                                QDesktopServices::openUrl(
+                                    QUrl("https://logs.ivr.fi/?channel=" +
+                                         this->underlyingChannel_->getName() +
+                                         "&username=" + loginName));
+                            });
                     }
                     break;
 
@@ -400,6 +418,7 @@ UserInfoPopup::UserInfoPopup(bool closeAutomatically, QWidget *parent,
                 .assign(&this->ui_.createdDateLabel);
             vbox.emplace<Label>("").assign(&this->ui_.followageLabel);
             vbox.emplace<Label>("").assign(&this->ui_.subageLabel);
+            vbox.emplace<Label>("").assign(&this->ui_.rolesLabel);
         }
     }
 
@@ -415,6 +434,10 @@ UserInfoPopup::UserInfoPopup(bool closeAutomatically, QWidget *parent,
             .assign(&this->ui_.ignoreHighlights);
         auto usercard = user.emplace<EffectLabel2>(this);
         usercard->getLabel().setText("Usercard");
+        auto stvUser = user.emplace<EffectLabel2>(this);
+        stvUser.assign(&this->ui_.stvUser);
+        stvUser->getLabel().setText("7tv User Page");
+        stvUser->setVisible(false);
         auto mod = user.emplace<Button>(this);
         mod->setPixmap(getResources().buttons.mod);
         mod->setScaleIndependantSize(30, 30);
@@ -434,6 +457,11 @@ UserInfoPopup::UserInfoPopup(bool closeAutomatically, QWidget *parent,
             QDesktopServices::openUrl("https://www.twitch.tv/popout/" +
                                       this->underlyingChannel_->getName() +
                                       "/viewercard/" + this->userName_);
+        });
+
+        QObject::connect(stvUser.getElement(), &Button::leftClicked, [this] {
+            QDesktopServices::openUrl("https://7tv.app/users/" +
+                                      this->stvUserId_);
         });
 
         QObject::connect(mod.getElement(), &Button::leftClicked, [this] {
@@ -929,6 +957,44 @@ void UserInfoPopup::updateUserData()
                 }
             },
             [] {});
+
+        // get roles
+        getIvr()->getUserRoles(
+            this->userName_,
+            [this, hack](const IvrResolve &userInfo) {
+                if (!hack.lock())
+                {
+                    return;
+                }
+
+                QString rolesString = "";
+
+                if (userInfo.isBot)
+                {
+                    rolesString += "Bot ";
+                }
+                if (userInfo.isPartner)
+                {
+                    rolesString += "Partner ";
+                }
+                if (userInfo.isAffiliate)
+                {
+                    rolesString += "Affiliate ";
+                }
+                if (userInfo.isStaff)
+                {
+                    rolesString += "Staff ";
+                }
+                if (userInfo.isExStaff)
+                {
+                    rolesString += "Ex-Staff ";
+                }
+
+                this->ui_.rolesLabel->setText((rolesString));
+            },
+            [] {});
+
+        this->loadSevenTVUser(user);
     };
 
     getHelix()->getUserByName(this->userName_, onUserFetched,
@@ -1002,6 +1068,28 @@ void UserInfoPopup::loadAvatar(const HelixUser &user)
     {
         this->loadSevenTVAvatar(user);
     }
+}
+
+void UserInfoPopup::loadSevenTVUser(const HelixUser &user)
+{
+    NetworkRequest(SEVENTV_USER_API.arg(user.id))
+        .timeout(20000)
+        .onSuccess([this, hack = std::weak_ptr<bool>(this->lifetimeHack_)](
+                       const NetworkResult &result) -> Outcome {
+            if (!hack.lock())
+            {
+                return Success;
+            }
+
+            auto root = result.parseJson();
+            auto id = root["user"].toObject()["id"].toString();
+
+            this->stvUserId_ = id;
+            this->ui_.stvUser->setVisible(true);
+
+            return Success;
+        })
+        .execute();
 }
 
 void UserInfoPopup::loadSevenTVAvatar(const HelixUser &user)

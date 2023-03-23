@@ -277,6 +277,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
                        s.enableSmoothScrollingNewMessages);
     layout.addCheckbox("Show input when it's empty", s.showEmptyInput, false,
                        "Show the chat box even when there is nothing typed.");
+    layout.addCheckbox("Show placeholder in text input box (requires restart)",
+                       s.showTextInputPlaceholder);
     layout.addCheckbox(
         "Show message length while typing", s.showMessageLength, false,
         "Show how many characters are currently in your input box.\n"
@@ -305,6 +307,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
     layout.addCheckbox("Alternate background color", s.alternateMessages, false,
                        "Slightly change the background behind every other "
                        "message to help better tell them apart.");
+    layout.addCheckbox("Gray-out recent messages", s.grayOutRecents, false,
+                       "Gray-out recent messages");
     layout.addCheckbox("Hide deleted messages", s.hideModerated, false,
                        "When enabled, messages deleted by moderators will "
                        "be hidden.");
@@ -738,6 +742,18 @@ void GeneralPage::initLayout(GeneralPageView &layout)
                        s.useCustomFfzVipBadges);
 
     layout.addSubtitle("Miscellaneous");
+    layout.addCheckbox("Fake messages as webchat", s.fakeWebChat);
+    layout.addCheckbox("Use bot limits", s.useBotLimits);
+    layout.addCheckbox(
+        "Enable. Required for abnormal nonce and webchat detection to work!",
+        s.nonceFuckeryEnabled);
+    layout.addCheckbox("Abnormal nonce detection", s.abnormalNonceDetection);
+    layout.addCheckbox("Webchat detection. Highlights messages sent from "
+                       "webchat in color specified below.",
+                       s.normalNonceDetection);
+    layout.addColorButton("Webchat detected color",
+                          QColor(getSettings()->webchatColor.getValue()),
+                          getSettings()->webchatColor);
 
     if (supportsIncognitoLinks())
     {

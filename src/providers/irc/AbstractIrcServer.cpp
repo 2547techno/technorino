@@ -5,8 +5,11 @@
 #include "messages/LimitedQueueSnapshot.hpp"
 #include "messages/Message.hpp"
 #include "messages/MessageBuilder.hpp"
+#include "singletons/Settings.hpp"
 
 #include <QCoreApplication>
+
+#include <sstream>
 
 namespace chatterino {
 
@@ -15,8 +18,9 @@ const int RECONNECT_BASE_INTERVAL = 2000;
 const int MAX_FALLOFF_COUNTER = 60;
 
 // Ratelimits for joinBucket_
-const int JOIN_RATELIMIT_BUDGET = 18;
-const int JOIN_RATELIMIT_COOLDOWN = 12500;
+const int NORMAL_JOIN_RATELIMIT_BUDGET = 18;
+const int NORMAL_JOIN_RATELIMIT_COOLDOWN = 12500;
+const int BOT_JOIN_RATELIMIT_BUDGET = 2000;
 
 AbstractIrcServer::AbstractIrcServer()
 {
@@ -34,8 +38,18 @@ AbstractIrcServer::AbstractIrcServer()
         }
         this->readConnection_->sendRaw("JOIN #" + message);
     };
-    this->joinBucket_.reset(new RatelimitBucket(
-        JOIN_RATELIMIT_BUDGET, JOIN_RATELIMIT_COOLDOWN, actuallyJoin, this));
+    if (getSettings()->useBotLimits)
+    {
+        this->joinBucket_.reset(new RatelimitBucket(
+            BOT_JOIN_RATELIMIT_BUDGET, NORMAL_JOIN_RATELIMIT_COOLDOWN,
+            actuallyJoin, this));
+    }
+    else
+    {
+        this->joinBucket_.reset(new RatelimitBucket(
+            NORMAL_JOIN_RATELIMIT_BUDGET, NORMAL_JOIN_RATELIMIT_COOLDOWN,
+            actuallyJoin, this));
+    }
 
     QObject::connect(this->writeConnection_.get(),
                      &Communi::IrcConnection::messageReceived, this,
@@ -174,7 +188,23 @@ void AbstractIrcServer::disconnect()
 void AbstractIrcServer::sendMessage(const QString &channelName,
                                     const QString &message)
 {
-    this->sendRawMessage("PRIVMSG #" + channelName + " :" + message);
+    if (getSettings()->fakeWebChat)
+    {
+        std::ostringstream stream;
+        for (int i = 0; i < 4; i++)
+        {
+            qint64 nonce = this->generator.generate();
+            stream << std::setfill('0') << std::setw(sizeof(qint64)) << std::hex
+                   << nonce;
+        }
+        QString hex = QString::fromStdString(stream.str());
+        this->sendRawMessage("@client-nonce=" + hex + " PRIVMSG #" +
+                             channelName + " :" + message);
+    }
+    else
+    {
+        this->sendRawMessage("PRIVMSG #" + channelName + " :" + message);
+    }
 }
 
 void AbstractIrcServer::sendRawMessage(const QString &rawMessage)

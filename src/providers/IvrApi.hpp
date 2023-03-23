@@ -33,6 +33,50 @@ struct IvrSubage {
     }
 };
 
+struct IvrResolve {
+    const bool isPartner;
+    const bool isAffiliate;
+    const bool isBot;
+    const bool isStaff;
+    const bool isExStaff;
+
+    IvrResolve(QJsonArray arr)
+        : isPartner(arr.at(0)
+                        .toObject()
+                        .value("roles")
+                        .toObject()
+                        .value("isPartner")
+                        .toBool())
+        , isAffiliate(arr.at(0)
+                          .toObject()
+                          .value("roles")
+                          .toObject()
+                          .value("isAffiliate")
+                          .toBool())
+        , isBot(arr.at(0).toObject().value("verifiedBot").toBool())
+        , isStaff(arr.at(0)
+                      .toObject()
+                      .value("roles")
+                      .toObject()
+                      .value("isStaff")
+                      .toBool())
+        , isExStaff(!arr.at(0)
+                         .toObject()
+                         .value("roles")
+                         .toObject()
+                         .value("isStaff")
+                         .isNull() &&
+                    !arr.at(0)
+                         .toObject()
+                         .value("roles")
+                         .toObject()
+                         .value("isStaff")
+                         .toBool() &&
+                    !arr.at(0).isUndefined())
+    {
+    }
+};
+
 struct IvrEmoteSet {
     const QString setId;
     const QString displayName;
@@ -81,6 +125,11 @@ public:
     void getSubage(QString userName, QString channelName,
                    ResultCallback<IvrSubage> resultCallback,
                    IvrFailureCallback failureCallback);
+
+    // https://api.ivr.fi/v2/docs/static/index.html#/Twitch/get_twitch_user
+    void getUserRoles(QString userName,
+                      ResultCallback<IvrResolve> resultCallback,
+                      IvrFailureCallback failureCallback);
 
     // https://api.ivr.fi/v2/docs/static/index.html#/Twitch/get_twitch_emotes_sets
     void getBulkEmoteSets(QString emoteSetList,
