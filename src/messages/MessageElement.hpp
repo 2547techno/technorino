@@ -141,9 +141,7 @@ enum class MessageElementFlag : int64_t {
     LowercaseLink = (1LL << 29),
     OriginalLink = (1LL << 30),
 
-    // ZeroWidthEmotes are emotes that are supposed to overlay over any pre-existing emotes
-    // e.g. BTTV's SoSnowy during christmas season or 7TV's RainTime
-    ZeroWidthEmote = (1LL << 31),
+    // Unused: (1LL << 31)
 
     // for elements of the message reply
     RepliedMessage = (1LL << 32),
@@ -186,6 +184,7 @@ public:
     const ImagePtr &getThumbnail() const;
     const ThumbnailType &getThumbnailType() const;
 
+    const QString &getText() const;
     const Link &getLink() const;
     bool hasTrailingSpace() const;
     MessageElementFlags getFlags() const;
@@ -194,11 +193,15 @@ public:
     virtual void addToContainer(MessageLayoutContainer &container,
                                 MessageElementFlags flags) = 0;
 
+    virtual std::unique_ptr<MessageElement> clone() const = 0;
+
     pajlada::Signals::NoArgSignal linkChanged;
 
 protected:
     MessageElement(MessageElementFlags flags);
     bool trailingSpace = true;
+
+    void cloneFrom(const MessageElement &source);
 
 private:
     QString text_;
@@ -218,6 +221,8 @@ public:
     void addToContainer(MessageLayoutContainer &container,
                         MessageElementFlags flags) override;
 
+    std::unique_ptr<MessageElement> clone() const override;
+
     static EmptyElement &instance();
 
 private:
@@ -233,6 +238,8 @@ public:
     void addToContainer(MessageLayoutContainer &container,
                         MessageElementFlags flags) override;
 
+    std::unique_ptr<MessageElement> clone() const override;
+
 private:
     ImagePtr image_;
 };
@@ -247,6 +254,8 @@ public:
     void addToContainer(MessageLayoutContainer &container,
                         MessageElementFlags flags) override;
 
+    std::unique_ptr<MessageElement> clone() const override;
+
 private:
     ImagePtr image_;
     int padding_;
@@ -257,22 +266,33 @@ private:
 class TextElement : public MessageElement
 {
 public:
+    struct Word {
+        QString text;
+        int width = -1;
+    };
+
     TextElement(const QString &text, MessageElementFlags flags,
+                const MessageColor &color = MessageColor::Text,
+                FontStyle style = FontStyle::ChatMedium);
+    TextElement(std::vector<Word> &&words, MessageElementFlags flags,
                 const MessageColor &color = MessageColor::Text,
                 FontStyle style = FontStyle::ChatMedium);
     ~TextElement() override = default;
 
+    MessageColor color() const;
+    FontStyle style() const;
+
+    const std::vector<Word> &words() const;
+
     void addToContainer(MessageLayoutContainer &container,
                         MessageElementFlags flags) override;
+
+    std::unique_ptr<MessageElement> clone() const override;
 
 private:
     MessageColor color_;
     FontStyle style_;
 
-    struct Word {
-        QString text;
-        int width = -1;
-    };
     std::vector<Word> words_;
 };
 
@@ -287,6 +307,8 @@ public:
 
     void addToContainer(MessageLayoutContainer &container,
                         MessageElementFlags flags) override;
+
+    std::unique_ptr<MessageElement> clone() const override;
 
 private:
     MessageColor color_;
@@ -312,6 +334,8 @@ public:
                         MessageElementFlags flags_) override;
     EmotePtr getEmote() const;
 
+    std::unique_ptr<MessageElement> clone() const override;
+
 protected:
     virtual MessageLayoutElement *makeImageLayoutElement(const ImagePtr &image,
                                                          const QSize &size);
@@ -319,6 +343,46 @@ protected:
 private:
     std::unique_ptr<TextElement> textElement_;
     EmotePtr emote_;
+};
+
+// A LayeredEmoteElement represents multiple Emotes layered on top of each other.
+// This class takes care of rendering animated and non-animated emotes in the
+// correct order and aligning them in the right way.
+class LayeredEmoteElement : public MessageElement
+{
+public:
+    LayeredEmoteElement(
+        std::vector<EmotePtr> &&emotes, MessageElementFlags flags,
+        const MessageColor &textElementColor = MessageColor::Text);
+
+    void addEmoteLayer(const EmotePtr &emote);
+
+    void addToContainer(MessageLayoutContainer &container,
+                        MessageElementFlags flags) override;
+
+    // Returns a concatenation of each emote layer's cleaned copy string
+    QString getCleanCopyString() const;
+    const std::vector<EmotePtr> &getEmotes() const;
+    std::vector<EmotePtr> getUniqueEmotes() const;
+    const std::vector<QString> &getEmoteTooltips() const;
+    const MessageColor &textElementColor() const;
+
+    std::unique_ptr<MessageElement> clone() const override;
+
+private:
+    MessageLayoutElement *makeImageLayoutElement(
+        const std::vector<ImagePtr> &image, const std::vector<QSize> &sizes,
+        QSize largestSize);
+
+    QString getCopyString() const;
+    void updateTooltips();
+    std::vector<ImagePtr> getLoadedImages(float scale);
+
+    std::vector<EmotePtr> emotes_;
+    std::vector<QString> emoteTooltips_;
+
+    std::unique_ptr<TextElement> textElement_;
+    MessageColor textElementColor_;
 };
 
 class BadgeElement : public MessageElement
@@ -331,11 +395,11 @@ public:
 
     EmotePtr getEmote() const;
 
+    std::unique_ptr<MessageElement> clone() const override;
+
 protected:
     virtual MessageLayoutElement *makeImageLayoutElement(const ImagePtr &image,
                                                          const QSize &size);
-
-private:
     EmotePtr emote_;
 };
 
@@ -343,6 +407,8 @@ class ModBadgeElement : public BadgeElement
 {
 public:
     ModBadgeElement(const EmotePtr &data, MessageElementFlags flags_);
+
+    std::unique_ptr<MessageElement> clone() const override;
 
 protected:
     MessageLayoutElement *makeImageLayoutElement(const ImagePtr &image,
@@ -354,6 +420,8 @@ class VipBadgeElement : public BadgeElement
 public:
     VipBadgeElement(const EmotePtr &data, MessageElementFlags flags_);
 
+    std::unique_ptr<MessageElement> clone() const override;
+
 protected:
     MessageLayoutElement *makeImageLayoutElement(const ImagePtr &image,
                                                  const QSize &size) override;
@@ -364,6 +432,8 @@ class FfzBadgeElement : public BadgeElement
 public:
     FfzBadgeElement(const EmotePtr &data, MessageElementFlags flags_,
                     QColor color_);
+
+    std::unique_ptr<MessageElement> clone() const override;
 
 protected:
     MessageLayoutElement *makeImageLayoutElement(const ImagePtr &image,
@@ -383,6 +453,8 @@ public:
 
     TextElement *formatTime(const QTime &time);
 
+    std::unique_ptr<MessageElement> clone() const override;
+
 private:
     QTime time_;
     std::unique_ptr<TextElement> element_;
@@ -398,6 +470,8 @@ public:
 
     void addToContainer(MessageLayoutContainer &container,
                         MessageElementFlags flags) override;
+
+    std::unique_ptr<MessageElement> clone() const override;
 };
 
 // Forces a linebreak
@@ -408,6 +482,8 @@ public:
 
     void addToContainer(MessageLayoutContainer &container,
                         MessageElementFlags flags) override;
+
+    std::unique_ptr<MessageElement> clone() const override;
 };
 
 // Image element which will pick the quality of the image based on ui scale
@@ -418,6 +494,8 @@ public:
 
     void addToContainer(MessageLayoutContainer &container,
                         MessageElementFlags flags) override;
+
+    std::unique_ptr<MessageElement> clone() const override;
 
 private:
     ImageSet images_;
@@ -430,6 +508,8 @@ public:
 
     void addToContainer(MessageLayoutContainer &container,
                         MessageElementFlags flags) override;
+
+    std::unique_ptr<MessageElement> clone() const override;
 };
 
 }  // namespace chatterino

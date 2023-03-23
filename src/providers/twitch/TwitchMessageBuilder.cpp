@@ -14,6 +14,7 @@
 #include "providers/colors/ColorProvider.hpp"
 #include "providers/ffz/FfzBadges.hpp"
 #include "providers/seventv/SeventvBadges.hpp"
+#include "providers/seventv/SeventvPersonalEmotes.hpp"
 #include "providers/twitch/api/Helix.hpp"
 #include "providers/twitch/ChannelPointReward.hpp"
 #include "providers/twitch/PubSubActions.hpp"
@@ -861,14 +862,14 @@ void TwitchMessageBuilder::runIgnoreReplaces(
     };
 
     auto addReplEmotes = [&twitchEmotes](const IgnorePhrase &phrase,
-                                         const QStringRef &midrepl,
+                                         const auto &midrepl,
                                          int startIndex) mutable {
         if (!phrase.containsEmote())
         {
             return;
         }
 
-        QVector<QStringRef> words = midrepl.split(' ');
+        auto words = midrepl.split(' ');
         int pos = 0;
         for (const auto &word : words)
         {
@@ -883,7 +884,7 @@ void TwitchMessageBuilder::runIgnoreReplaces(
                     }
                     twitchEmotes.push_back(TwitchEmoteOccurrence{
                         startIndex + pos,
-                        startIndex + pos + emote.first.string.length(),
+                        startIndex + pos + (int)emote.first.string.length(),
                         emote.second,
                         emote.first,
                     });
@@ -944,8 +945,13 @@ void TwitchMessageBuilder::runIgnoreReplaces(
 
                 shiftIndicesAfter(from + len, midsize - len);
 
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+                auto midExtendedRef =
+                    QStringView{this->originalMessage_}.mid(pos1, pos2 - pos1);
+#else
                 auto midExtendedRef =
                     this->originalMessage_.midRef(pos1, pos2 - pos1);
+#endif
 
                 for (auto &tup : vret)
                 {
@@ -1009,8 +1015,13 @@ void TwitchMessageBuilder::runIgnoreReplaces(
 
                 shiftIndicesAfter(from + len, replacesize - len);
 
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+                auto midExtendedRef =
+                    QStringView{this->originalMessage_}.mid(pos1, pos2 - pos1);
+#else
                 auto midExtendedRef =
                     this->originalMessage_.midRef(pos1, pos2 - pos1);
+#endif
 
                 for (auto &tup : vret)
                 {
@@ -1053,15 +1064,24 @@ Outcome TwitchMessageBuilder::tryAppendEmote(const EmoteName &name)
 
     auto flags = MessageElementFlags();
     auto emote = boost::optional<EmotePtr>{};
+    bool zeroWidth = false;
 
     // Emote order:
+    //  - 7TV Personal
     //  - FrankerFaceZ Channel
     //  - BetterTTV Channel
     //  - 7TV Channel
     //  - FrankerFaceZ Global
     //  - BetterTTV Global
     //  - 7TV Global
-    if (this->twitchChannel && (emote = this->twitchChannel->ffzEmote(name)))
+    if (this->twitchChannel != nullptr &&
+        (emote =
+             app->seventvPersonalEmotes->getEmoteForUser(this->userId_, name)))
+    {
+        flags = MessageElementFlag::SevenTVEmote;
+    }
+    else if (this->twitchChannel &&
+             (emote = this->twitchChannel->ffzEmote(name)))
     {
         flags = MessageElementFlag::FfzEmote;
     }
@@ -1074,10 +1094,7 @@ Outcome TwitchMessageBuilder::tryAppendEmote(const EmoteName &name)
              (emote = this->twitchChannel->seventvEmote(name)))
     {
         flags = MessageElementFlag::SevenTVEmote;
-        if (emote.value()->zeroWidth)
-        {
-            flags.set(MessageElementFlag::ZeroWidthEmote);
-        }
+        zeroWidth = emote.value()->zeroWidth;
     }
     else if ((emote = globalFfzEmotes.emote(name)))
     {
@@ -1086,23 +1103,45 @@ Outcome TwitchMessageBuilder::tryAppendEmote(const EmoteName &name)
     else if ((emote = globalBttvEmotes.emote(name)))
     {
         flags = MessageElementFlag::BttvEmote;
-
-        if (zeroWidthEmotes.contains(name.string))
-        {
-            flags.set(MessageElementFlag::ZeroWidthEmote);
-        }
+        zeroWidth = zeroWidthEmotes.contains(name.string);
     }
     else if ((emote = globalSeventvEmotes.globalEmote(name)))
     {
         flags = MessageElementFlag::SevenTVEmote;
-        if (emote.value()->zeroWidth)
-        {
-            flags.set(MessageElementFlag::ZeroWidthEmote);
-        }
+        zeroWidth = emote.value()->zeroWidth;
     }
 
     if (emote)
     {
+        if (zeroWidth && getSettings()->enableZeroWidthEmotes &&
+            !this->isEmpty())
+        {
+            // Attempt to merge current zero-width emote into any previous emotes
+            auto asEmote = dynamic_cast<EmoteElement *>(&this->back());
+            if (asEmote)
+            {
+                // Make sure to access asEmote before taking ownership when releasing
+                auto baseEmote = asEmote->getEmote();
+                // Need to remove EmoteElement and replace with LayeredEmoteElement
+                auto baseEmoteElement = this->releaseBack();
+
+                std::vector<EmotePtr> layers = {baseEmote, emote.get()};
+                this->emplace<LayeredEmoteElement>(std::move(layers),
+                                                   baseEmoteElement->getFlags(),
+                                                   this->textColor_);
+                return Success;
+            }
+
+            auto asLayered = dynamic_cast<LayeredEmoteElement *>(&this->back());
+            if (asLayered)
+            {
+                asLayered->addEmoteLayer(emote.get());
+                return Success;
+            }
+
+            // No emote to merge with, just show as regular emote
+        }
+
         this->emplace<EmoteElement>(emote.get(), flags, this->textColor_);
         return Success;
     }

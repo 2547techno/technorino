@@ -1,6 +1,7 @@
 #pragma once
 
 #include "providers/seventv/eventapi/Subscription.hpp"
+#include "providers/seventv/SeventvCosmetics.hpp"
 
 #include <QJsonObject>
 #include <QString>
@@ -63,6 +64,37 @@ struct UserConnectionUpdateDispatch {
     UserConnectionUpdateDispatch(const Dispatch &dispatch,
                                  const QJsonObject &update,
                                  size_t connectionIndex);
+
+    bool validate() const;
+};
+
+struct CosmeticCreateDispatch {
+    QJsonObject data;
+    CosmeticKind kind;
+
+    CosmeticCreateDispatch(const Dispatch &dispatch);
+
+    bool validate() const;
+};
+
+struct EntitlementCreateDeleteDispatch {
+    /** id of the user */
+    QString userID;
+    QString userName;
+    /** id of the entitlement */
+    QString refID;
+    CosmeticKind kind;
+
+    EntitlementCreateDeleteDispatch(const Dispatch &dispatch);
+
+    bool validate() const;
+};
+
+struct EmoteSetCreateDispatch {
+    QString emoteSetID;
+    bool isPersonal;
+
+    EmoteSetCreateDispatch(const QJsonObject &emoteSet);
 
     bool validate() const;
 };

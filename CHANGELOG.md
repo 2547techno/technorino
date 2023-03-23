@@ -13,6 +13,22 @@
 - Minor: /logs command
 - Minor: Open 7tv profile from usercard
 - Dev: Added detection for abnormal nonces
+- Minor: Added support for FrankerFaceZ animated emotes. (#4434)
+- Bugfix: Fixed an issue where animated emotes would render on top of zero-width emotes. (#4314)
+- Bugfix: Fixed an issue where it was difficult to hover a zero-width emote. (#4314)
+- Dev: Ignore unhandled BTTV user-events. (#4438)
+- Dev: Only log debug messages when NDEBUG is not defined. (#4442)
+- Dev: Cleaned up theme related code. (#4450)
+
+## 2.4.2
+
+- Minor: Added `/banid` command that allows banning by user ID. (#4411)
+- Bugfix: Fixed FrankerFaceZ emotes/badges not loading due to an API change. (#4432)
+- Bugfix: Fixed uploaded AppImage not being able to execute most web requests. (#4400)
+- Bugfix: Fixed a potential race condition due to using the wrong lock when loading 7TV badges. (#4402)
+- Dev: Delete all but the last 5 crashdumps on application start. (#4392)
+- Dev: Added capability to build Chatterino with Qt6. (#4393)
+- Dev: Fixed homebrew update action. (#4394)
 
 ## 2.4.1
 
