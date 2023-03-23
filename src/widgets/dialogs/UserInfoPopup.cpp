@@ -400,6 +400,7 @@ UserInfoPopup::UserInfoPopup(bool closeAutomatically, QWidget *parent,
                 .assign(&this->ui_.createdDateLabel);
             vbox.emplace<Label>("").assign(&this->ui_.followageLabel);
             vbox.emplace<Label>("").assign(&this->ui_.subageLabel);
+            vbox.emplace<Label>("").assign(&this->ui_.rolesLabel);
         }
     }
 
@@ -927,6 +928,42 @@ void UserInfoPopup::updateUserData()
                         QString("★ Previously subscribed for %1 months")
                             .arg(subageInfo.totalSubMonths));
                 }
+            },
+            [] {});
+
+        // get roles
+        getIvr()->getUserRoles(
+            this->userName_,
+            [this, hack](const IvrResolve &userInfo) {
+                if (!hack.lock())
+                {
+                    return;
+                }
+
+                QString rolesString = "";
+
+                if (userInfo.isBot)
+                {
+                    rolesString += "Bot ";
+                }
+                if (userInfo.isPartner)
+                {
+                    rolesString += "Partner ";
+                }
+                if (userInfo.isAffiliate)
+                {
+                    rolesString += "Affiliate ";
+                }
+                if (userInfo.isStaff)
+                {
+                    rolesString += "Staff ";
+                }
+                if (userInfo.isExStaff)
+                {
+                    rolesString += "Ex-Staff ";
+                }
+
+                this->ui_.rolesLabel->setText((rolesString));
             },
             [] {});
     };
