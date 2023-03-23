@@ -8,8 +8,8 @@
 #include "singletons/Settings.hpp"
 
 #include <QCoreApplication>
-#include <iomanip>
 
+#include <iomanip>
 #include <sstream>
 
 namespace chatterino {
