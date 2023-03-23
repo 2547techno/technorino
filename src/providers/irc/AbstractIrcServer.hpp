@@ -5,6 +5,7 @@
 #include "util/RatelimitBucket.hpp"
 
 #include <IrcMessage>
+#include <QRandomGenerator>
 #include <pajlada/signals/signal.hpp>
 #include <pajlada/signals/signalholder.hpp>
 
@@ -104,6 +105,8 @@ private:
     pajlada::Signals::SignalHolder connections_;
 
     bool initialized_{false};
+
+    QRandomGenerator generator;
 };
 
 }  // namespace chatterino

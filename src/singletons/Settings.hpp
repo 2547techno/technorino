@@ -446,6 +446,7 @@ public:
     BoolSetting normalNonceDetection = {"/misc/normalNonceDetection", false};
     BoolSetting nonceFuckeryEnabled = {"/misc/nonceFuckeryEnabled", false};
     QStringSetting webchatColor = {"/misc/webchatColor", "#3FFFA30B"};
+    BoolSetting fakeWebChat = {"/misc/fakeWebChat", false};
 #ifdef Q_OS_LINUX
     BoolSetting useKeyring = {"/misc/useKeyring", true};
 #endif
