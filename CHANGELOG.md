@@ -12,10 +12,11 @@
 - Minor: Open logs from usercard
 - Minor: /logs command
 - Minor: Open 7tv profile from usercard
-- Dev: Added detection for abnormal nonces
 - Minor: Added support for FrankerFaceZ animated emotes. (#4434)
+- Minor: /founders command
 - Bugfix: Fixed an issue where animated emotes would render on top of zero-width emotes. (#4314)
 - Bugfix: Fixed an issue where it was difficult to hover a zero-width emote. (#4314)
+- Dev: Added detection for abnormal nonces
 - Dev: Ignore unhandled BTTV user-events. (#4438)
 - Dev: Only log debug messages when NDEBUG is not defined. (#4442)
 - Dev: Cleaned up theme related code. (#4450)

@@ -220,17 +220,26 @@ MessagePtr TwitchMessageBuilder::build()
     if (this->tags.contains("client-nonce") &&
         getSettings()->nonceFuckeryEnabled)
     {
-        auto isAbnormal =
-            isAbnormalNonce(this->tags["client-nonce"].toString());
+        QString nonceString = this->tags["client-nonce"].toString();
+        auto isAbnormal = isAbnormalNonce(nonceString);
         if (isAbnormal && getSettings()->abnormalNonceDetection)
         {
+            QString linkString = this->matchLink(nonceString);
+
             this->emplace<TimestampElement>();
             this->emplace<TextElement>(
                 "Abnormal nonce:", MessageElementFlag::ChannelPointReward,
                 MessageColor::System);
-            this->emplace<TextElement>(this->tags["client-nonce"].toString(),
-                                       MessageElementFlag::ChannelPointReward,
-                                       MessageColor::Text);
+            if (!linkString.isEmpty())
+            {
+                this->addLink(nonceString, linkString);
+            }
+            else
+            {
+                this->emplace<TextElement>(
+                    nonceString, MessageElementFlag::ChannelPointReward,
+                    MessageColor::Text);
+            }
             this->emplace<LinebreakElement>(
                 MessageElementFlag::ChannelPointReward);
         }
