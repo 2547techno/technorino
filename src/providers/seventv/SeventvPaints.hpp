@@ -11,6 +11,7 @@
 
 #include <optional>
 #include <shared_mutex>
+#include <string>
 #include <unordered_map>
 
 namespace chatterino {
@@ -34,9 +35,9 @@ private:
     mutable std::shared_mutex mutex_;
 
     // user-name => paint
-    std::unordered_map<QString, std::shared_ptr<Paint>> paintMap_;
+    std::unordered_map<std::string, std::shared_ptr<Paint>> paintMap_;
     // paint-id => paint
-    std::unordered_map<QString, std::shared_ptr<Paint>> knownPaints_;
+    std::unordered_map<std::string, std::shared_ptr<Paint>> knownPaints_;
 };
 
 }  // namespace chatterino

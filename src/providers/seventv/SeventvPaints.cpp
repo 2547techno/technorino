@@ -137,7 +137,7 @@ std::optional<std::shared_ptr<Paint>> SeventvPaints::getPaint(
 {
     std::shared_lock lock(this->mutex_);
 
-    const auto it = this->paintMap_.find(userName);
+    const auto it = this->paintMap_.find(userName.toStdString());
     if (it != this->paintMap_.end())
     {
         return it->second;
@@ -151,7 +151,8 @@ void SeventvPaints::addPaint(const QJsonObject &paintJson)
 
     std::unique_lock lock(this->mutex_);
 
-    if (this->knownPaints_.find(paintID) != this->knownPaints_.end())
+    if (this->knownPaints_.find(paintID.toStdString()) !=
+        this->knownPaints_.end())
     {
         return;
     }
@@ -162,7 +163,7 @@ void SeventvPaints::addPaint(const QJsonObject &paintJson)
         return;
     }
 
-    this->knownPaints_[paintID] = *paint;
+    this->knownPaints_[paintID.toStdString()] = *paint;
 }
 
 void SeventvPaints::assignPaintToUser(const QString &paintID,
@@ -170,10 +171,10 @@ void SeventvPaints::assignPaintToUser(const QString &paintID,
 {
     std::unique_lock lock(this->mutex_);
 
-    const auto paintIt = this->knownPaints_.find(paintID);
+    const auto paintIt = this->knownPaints_.find(paintID.toStdString());
     if (paintIt != this->knownPaints_.end())
     {
-        this->paintMap_[userName.string] = paintIt->second;
+        this->paintMap_[userName.string.toStdString()] = paintIt->second;
     }
 }
 
@@ -182,10 +183,10 @@ void SeventvPaints::clearPaintFromUser(const QString &paintID,
 {
     std::unique_lock lock(this->mutex_);
 
-    const auto it = this->paintMap_.find(userName.string);
+    const auto it = this->paintMap_.find(userName.string.toStdString());
     if (it != this->paintMap_.end() && it->second->id == paintID)
     {
-        this->paintMap_.erase(userName.string);
+        this->paintMap_.erase(userName.string.toStdString());
     }
 }
 
@@ -216,11 +217,12 @@ void SeventvPaints::loadSeventvPaints()
                     continue;
                 }
 
-                this->knownPaints_[paintJson["id"].toString()] = *paint;
+                this->knownPaints_[paintJson["id"].toString().toStdString()] =
+                    *paint;
 
                 for (const auto userJson : paintJson["users"].toArray())
                 {
-                    this->paintMap_[userJson.toString()] = *paint;
+                    this->paintMap_[userJson.toString().toStdString()] = *paint;
                 }
             }
 

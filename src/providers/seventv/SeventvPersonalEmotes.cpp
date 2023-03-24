@@ -25,9 +25,10 @@ void SeventvPersonalEmotes::initialize(Settings &settings, Paths & /*paths*/)
 void SeventvPersonalEmotes::createEmoteSet(const QString &id)
 {
     std::unique_lock<std::shared_mutex> lock(this->mutex_);
-    if (!this->emoteSets_.contains(id))
+    if (!this->emoteSets_.contains(id.toStdString()))
     {
-        this->emoteSets_.emplace(id, std::make_shared<const EmoteMap>());
+        this->emoteSets_.emplace(id.toStdString(),
+                                 std::make_shared<const EmoteMap>());
     }
 }
 
@@ -36,11 +37,11 @@ boost::optional<std::shared_ptr<const EmoteMap>>
                                                 const QString &userTwitchID)
 {
     std::unique_lock<std::shared_mutex> lock(this->mutex_);
-    if (!this->userEmoteSets_.contains(userTwitchID))
+    if (!this->userEmoteSets_.contains(userTwitchID.toStdString()))
     {
-        this->userEmoteSets_.emplace(userTwitchID, emoteSetID);
+        this->userEmoteSets_.emplace(userTwitchID.toStdString(), emoteSetID);
 
-        auto set = this->emoteSets_.find(emoteSetID);
+        auto set = this->emoteSets_.find(emoteSetID.toStdString());
         if (set == this->emoteSets_.end())
         {
             return boost::none;
@@ -54,7 +55,7 @@ void SeventvPersonalEmotes::updateEmoteSet(
     const QString &id, const seventv::eventapi::EmoteAddDispatch &dispatch)
 {
     std::unique_lock<std::shared_mutex> lock(this->mutex_);
-    auto emoteSet = this->emoteSets_.find(id);
+    auto emoteSet = this->emoteSets_.find(id.toStdString());
     if (emoteSet != this->emoteSets_.end())
     {
         // Make sure this emote is actually new to avoid copying the map
@@ -71,7 +72,7 @@ void SeventvPersonalEmotes::updateEmoteSet(
     const QString &id, const seventv::eventapi::EmoteUpdateDispatch &dispatch)
 {
     std::unique_lock<std::shared_mutex> lock(this->mutex_);
-    auto emoteSet = this->emoteSets_.find(id);
+    auto emoteSet = this->emoteSets_.find(id.toStdString());
     if (emoteSet != this->emoteSets_.end())
     {
         SeventvEmotes::updateEmote(emoteSet->second, dispatch,
@@ -82,7 +83,7 @@ void SeventvPersonalEmotes::updateEmoteSet(
     const QString &id, const seventv::eventapi::EmoteRemoveDispatch &dispatch)
 {
     std::unique_lock<std::shared_mutex> lock(this->mutex_);
-    auto emoteSet = this->emoteSets_.find(id);
+    auto emoteSet = this->emoteSets_.find(id.toStdString());
     if (emoteSet != this->emoteSets_.end())
     {
         SeventvEmotes::removeEmote(emoteSet->second, dispatch);
@@ -94,14 +95,15 @@ void SeventvPersonalEmotes::addEmoteSetForUser(const QString &emoteSetID,
                                                const QString &userTwitchID)
 {
     std::unique_lock<std::shared_mutex> lock(this->mutex_);
-    this->emoteSets_.emplace(emoteSetID, std::make_shared<const EmoteMap>(map));
-    this->userEmoteSets_[userTwitchID] = emoteSetID;
+    this->emoteSets_.emplace(emoteSetID.toStdString(),
+                             std::make_shared<const EmoteMap>(map));
+    this->userEmoteSets_[userTwitchID.toStdString()] = emoteSetID;
 }
 
 bool SeventvPersonalEmotes::hasEmoteSet(const QString &id) const
 {
     std::shared_lock<std::shared_mutex> lock(this->mutex_);
-    return this->emoteSets_.contains(id);
+    return this->emoteSets_.contains(id.toStdString());
 }
 
 boost::optional<std::shared_ptr<const EmoteMap>>
@@ -113,12 +115,12 @@ boost::optional<std::shared_ptr<const EmoteMap>>
         return boost::none;
     }
 
-    auto id = this->userEmoteSets_.find(userID);
+    auto id = this->userEmoteSets_.find(userID.toStdString());
     if (id == this->userEmoteSets_.end())
     {
         return boost::none;
     }
-    auto set = this->emoteSets_.find(id->second);
+    auto set = this->emoteSets_.find(id->second.toStdString());
     if (set == this->emoteSets_.end())
     {
         return boost::none;
