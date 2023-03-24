@@ -939,9 +939,8 @@ void CommandController::initialize(Settings &, Paths &paths)
             stripUserName(channelName);
         }
 
-        QString urlStr = "https://logs.ivr.fi/?channel=" + channelName +
-                         "&username=" + userName;
-
+        QString urlStr =
+            "https://logs.zonian.me/rdr/" + channelName + "/" + userName;
         QUrl url = QUrl::fromUserInput(urlStr);
 
         bool res = false;

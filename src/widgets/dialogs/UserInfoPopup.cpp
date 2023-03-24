@@ -355,9 +355,9 @@ UserInfoPopup::UserInfoPopup(bool closeAutomatically, QWidget *parent,
                         menu->addAction(
                             "Open logs site in browser", [loginName, this] {
                                 QDesktopServices::openUrl(
-                                    QUrl("https://logs.ivr.fi/?channel=" +
+                                    QUrl("https://logs.zonian.me/rdr/" +
                                          this->underlyingChannel_->getName() +
-                                         "&username=" + loginName));
+                                         "/" + loginName));
                             });
                     }
                     break;
