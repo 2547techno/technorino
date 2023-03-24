@@ -1147,8 +1147,9 @@ void CommandController::initialize(Settings &, Paths &paths)
                     "The /founders command only works in Twitch Channels"));
                 return "";
             }
-            
-            if (words.value(1).isEmpty()) {
+
+            if (words.value(1).isEmpty())
+            {
                 target = channel->getName();
             }
 
@@ -1172,7 +1173,8 @@ void CommandController::initialize(Settings &, Paths &paths)
                     channel->addMessage(builder.release());
                 },
                 [channel]() {
-                    channel->addMessage(makeSystemMessage("Could not get founders list!"));
+                    channel->addMessage(
+                        makeSystemMessage("Could not get founders list!"));
                 });
             return "";
         });
