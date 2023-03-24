@@ -17,6 +17,7 @@
 #include "messages/MessageThread.hpp"
 #include "providers/irc/IrcChannel2.hpp"
 #include "providers/irc/IrcServer.hpp"
+#include "providers/IvrApi.hpp"
 #include "providers/twitch/api/Helix.hpp"
 #include "providers/twitch/TwitchAccount.hpp"
 #include "providers/twitch/TwitchChannel.hpp"
@@ -1134,6 +1135,47 @@ void CommandController::initialize(Settings &, Paths &paths)
         }
         return errorMessage;
     };
+
+    this->registerCommand(
+        "/founders", [](const QStringList &words, auto channel) -> QString {
+            auto twitchChannel = dynamic_cast<TwitchChannel *>(channel.get());
+            QString target(words.value(1).toLower());
+
+            if (twitchChannel == nullptr)
+            {
+                channel->addMessage(makeSystemMessage(
+                    "The /founders command only works in Twitch Channels"));
+                return "";
+            }
+            
+            if (words.value(1).isEmpty()) {
+                target = channel->getName();
+            }
+
+            getIvr()->getFounders(
+                target,
+                [channel, twitchChannel](auto result) {
+                    QStringList founders;
+
+                    for (int i = 0; i < result.size(); i++)
+                    {
+                        founders.append(result.at(i)
+                                            .toObject()
+                                            .value("displayName")
+                                            .toString());
+                    }
+
+                    MessageBuilder builder;
+                    TwitchMessageBuilder::listOfUsersSystemMessage(
+                        "The founders of this channel are", founders,
+                        twitchChannel, &builder);
+                    channel->addMessage(builder.release());
+                },
+                [channel]() {
+                    channel->addMessage(makeSystemMessage("Could not get founders list!"));
+                });
+            return "";
+        });
 
     this->registerCommand(
         "/mods",
