@@ -37,7 +37,8 @@ public:
     void sendRawMessage(const QString &rawMessage);
 
     // channels
-    ChannelPtr getOrAddChannel(const QString &dirtyChannelName);
+    ChannelPtr getOrAddChannel(const QString &dirtyChannelName,
+                               bool isWatching = false);
     ChannelPtr getChannelOrEmpty(const QString &dirtyChannelName);
     std::vector<std::weak_ptr<Channel>> getChannels();
 
@@ -64,8 +65,8 @@ protected:
     virtual void initializeConnection(IrcConnection *connection,
                                       ConnectionType type) = 0;
 
-    virtual std::shared_ptr<Channel> createChannel(
-        const QString &channelName) = 0;
+    virtual std::shared_ptr<Channel> createChannel(const QString &channelName,
+                                                   bool isWatching = false) = 0;
 
     virtual void privateMessageReceived(Communi::IrcPrivateMessage *message);
     virtual void readConnectionMessageReceived(Communi::IrcMessage *message);

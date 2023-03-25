@@ -442,6 +442,8 @@ public:
         "/external/imageUploader/deletionLink", ""};
 
     /// Misc
+    BoolSetting autoDetachLiveTab = {"/misc/autoDetachLiveTab", false};
+    BoolSetting watchingTabLiveSound = {"/misc/watchingTabLiveSound", false};
     BoolSetting useBotLimits = {"/misc/botLimits", false};
     BoolSetting betaUpdates = {"/misc/beta", false};
     BoolSetting abnormalNonceDetection = {"/misc/abnormalNonceDetection",

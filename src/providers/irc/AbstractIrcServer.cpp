@@ -228,7 +228,8 @@ void AbstractIrcServer::writeConnectionMessageReceived(
     (void)message;
 }
 
-ChannelPtr AbstractIrcServer::getOrAddChannel(const QString &dirtyChannelName)
+ChannelPtr AbstractIrcServer::getOrAddChannel(const QString &dirtyChannelName,
+                                              bool isWatching)
 {
     auto channelName = this->cleanChannelName(dirtyChannelName);
 
@@ -242,7 +243,7 @@ ChannelPtr AbstractIrcServer::getOrAddChannel(const QString &dirtyChannelName)
     std::lock_guard<std::mutex> lock(this->channelMutex);
 
     // value doesn't exist
-    chan = this->createChannel(channelName);
+    chan = this->createChannel(channelName, isWatching);
     if (!chan)
     {
         return Channel::getEmpty();

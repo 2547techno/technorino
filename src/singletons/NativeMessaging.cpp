@@ -1,9 +1,11 @@
 #include "singletons/NativeMessaging.hpp"
 
 #include "Application.hpp"
+#include "common/Channel.hpp"
 #include "common/QLogging.hpp"
 #include "providers/twitch/TwitchIrcServer.hpp"
 #include "singletons/Paths.hpp"
+#include "singletons/Settings.hpp"
 #include "util/PostToThread.hpp"
 
 #include <boost/date_time/posix_time/posix_time.hpp>
@@ -28,7 +30,7 @@ namespace ipc = boost::interprocess;
 
 #include <iostream>
 
-#define EXTENSION_ID "glknmaideaikkmemifbfkhnomoknepka"
+#define EXTENSION_ID "iphlcjigblilalddfnkdjfghhnclkcek"
 #define MESSAGE_SIZE 1024
 
 namespace chatterino {
@@ -44,8 +46,8 @@ void registerNmHost(Paths &paths)
 
     auto getBaseDocument = [&] {
         QJsonObject obj;
-        obj.insert("name", "com.chatterino.chatterino");
-        obj.insert("description", "Browser interaction with chatterino.");
+        obj.insert("name", "com.2547techno.technorino");
+        obj.insert("description", "Browser interaction with technorino.");
         obj.insert("path", QCoreApplication::applicationFilePath());
         obj.insert("type", "stdio");
 
@@ -64,7 +66,7 @@ void registerNmHost(Paths &paths)
 
         registerNmManifest(paths, "/native-messaging-manifest-chrome.json",
                            "HKCU\\Software\\Google\\Chrome\\NativeMessagingHost"
-                           "s\\com.chatterino.chatterino",
+                           "s\\com.2547techno.technorino",
                            document);
     }
 
@@ -73,13 +75,13 @@ void registerNmHost(Paths &paths)
         QJsonDocument document;
 
         auto obj = getBaseDocument();
-        QJsonArray allowed_extensions = {"chatterino_native@chatterino.com"};
+        QJsonArray allowed_extensions = {"technorino_native@technorino.com"};
         obj.insert("allowed_extensions", allowed_extensions);
         document.setObject(obj);
 
         registerNmManifest(paths, "/native-messaging-manifest-firefox.json",
                            "HKCU\\Software\\Mozilla\\NativeMessagingHosts\\com."
-                           "chatterino.chatterino",
+                           "2547techno.technorino",
                            document);
     }
 }
@@ -141,9 +143,39 @@ void NativeMessagingClient::writeToCout(const QByteArray &array)
 
 // SERVER
 
+NativeMessagingServer::NativeMessagingServer()
+{
+    this->thread = new ReceiverThread(&(this->lastPing));
+}
+
 void NativeMessagingServer::start()
 {
-    this->thread.start();
+    auto app = getApp();
+    this->thread->start();
+
+    this->lastPing = QTime::currentTime();
+    this->detachTimer_ = new QTimer();
+    QObject::connect(this->detachTimer_, &QTimer::timeout, [=] {
+        if (getSettings()->autoDetachLiveTab &&
+            (this->lastPing.addSecs(10) < QTime::currentTime()))
+        {
+            // detach time out reached
+            this->lastPing = QTime::currentTime();
+            app->twitch->watchingChannel.reset(
+                app->twitch->getChannelOrEmpty(""));
+        };
+    });
+    detachTimer_->start(5 * 1000);
+}
+
+NativeMessagingServer::ReceiverThread::ReceiverThread()
+{
+}
+
+NativeMessagingServer::ReceiverThread::ReceiverThread(QTime *plastPing)
+{
+    //&(plastPing) = QTime::currentTime();
+    this->plastPing = plastPing;
 }
 
 void NativeMessagingServer::ReceiverThread::run()
@@ -191,6 +223,7 @@ void NativeMessagingServer::ReceiverThread::handleMessage(
 {
     auto app = getApp();
     QString action = root.value("action").toString();
+    QString data = root.value("data").toString();
 
     if (action.isNull())
     {
@@ -198,91 +231,30 @@ void NativeMessagingServer::ReceiverThread::handleMessage(
         return;
     }
 
-    if (action == "select")
+    if (action == "attach")
     {
-        QString _type = root.value("type").toString();
-        bool attach = root.value("attach").toBool();
-        bool attachFullscreen = root.value("attach_fullscreen").toBool();
-        QString name = root.value("name").toString();
-
-#ifdef USEWINSDK
-        AttachedWindow::GetArgs args;
-        args.winId = root.value("winId").toString();
-        args.yOffset = root.value("yOffset").toInt(-1);
-
-        {
-            const auto sizeObject = root.value("size").toObject();
-            args.x = sizeObject.value("x").toDouble(-1.0);
-            args.pixelRatio = sizeObject.value("pixelRatio").toDouble(-1.0);
-            args.width = sizeObject.value("width").toInt(-1);
-            args.height = sizeObject.value("height").toInt(-1);
-        }
-
-        args.fullscreen = attachFullscreen;
-
-        qCDebug(chatterinoNativeMessage)
-            << args.x << args.pixelRatio << args.width << args.height
-            << args.winId;
-
-        if (_type.isNull() || args.winId.isNull())
-        {
-            qCDebug(chatterinoNativeMessage)
-                << "NM type, name or winId missing";
-            attach = false;
-            attachFullscreen = false;
-            return;
-        }
-#endif
-
-        if (_type == "twitch")
-        {
-            postToThread([=] {
-                if (!name.isEmpty())
-                {
-                    auto channel = app->twitch->getOrAddChannel(name);
-                    if (app->twitch->watchingChannel.get() != channel)
-                    {
-                        app->twitch->watchingChannel.reset(channel);
-                    }
-                }
-
-                if (attach || attachFullscreen)
-                {
-#ifdef USEWINSDK
-                    //                    if (args.height != -1) {
-                    auto *window =
-                        AttachedWindow::get(::GetForegroundWindow(), args);
-                    if (!name.isEmpty())
-                    {
-                        window->setChannel(app->twitch->getOrAddChannel(name));
-                    }
-//                    }
-//                    window->show();
-#endif
-                }
-            });
-        }
-        else
-        {
-            qCDebug(chatterinoNativeMessage) << "NM unknown channel type";
-        }
+        qCDebug(chatterinoNativeMessage) << "NM ATTACH:" << data;
+        *(this->plastPing) = QTime::currentTime();
+        postToThread([=] {
+            if (!data.isEmpty())
+            {
+                app->twitch->watchingChannel.reset(
+                    app->twitch->getOrAddChannel(data, true));
+            }
+        });
+    }
+    else if (action == "ping")
+    {
+        qCDebug(chatterinoNativeMessage) << "NM PING";
+        *(this->plastPing) = QTime::currentTime();
     }
     else if (action == "detach")
     {
-        QString winId = root.value("winId").toString();
-
-        if (winId.isNull())
-        {
-            qCDebug(chatterinoNativeMessage) << "NM winId missing";
-            return;
-        }
-
-#ifdef USEWINSDK
-        postToThread([winId] {
-            qCDebug(chatterinoNativeMessage) << "NW detach";
-            AttachedWindow::detach(winId);
+        qCDebug(chatterinoNativeMessage) << "NM DETACH";
+        postToThread([=] {
+            app->twitch->watchingChannel.reset(
+                app->twitch->getChannelOrEmpty(""));
         });
-#endif
     }
     else
     {
