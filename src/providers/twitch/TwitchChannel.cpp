@@ -73,7 +73,7 @@ namespace {
     constexpr auto MAX_CHATTERS_TO_FETCH = 5000;
 }  // namespace
 
-TwitchChannel::TwitchChannel(const QString &name)
+TwitchChannel::TwitchChannel(const QString &name, bool isWatching)
     : Channel(name, Channel::Type::Twitch)
     , ChannelChatters(*static_cast<Channel *>(this))
     , nameOptions{name, name}
@@ -963,7 +963,9 @@ void TwitchChannel::setLive(bool newLiveStatus)
                 // Notify on all channels with a ping sound
                 if (getSettings()->notificationOnAnyChannel &&
                     !(isInStreamerMode() &&
-                      getSettings()->streamerModeSuppressLiveNotifications))
+                      getSettings()->streamerModeSuppressLiveNotifications) &&
+                    !(this->isWatching() &&
+                      !getSettings()->watchingTabLiveSound))
                 {
                     getApp()->notifications->playSound();
                 }
