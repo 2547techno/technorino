@@ -1155,7 +1155,7 @@ void CommandController::initialize(Settings &, Paths &paths)
 
             getIvr()->getFounders(
                 target,
-                [channel, twitchChannel](auto result) {
+                [channel, twitchChannel, target](auto result) {
                     QStringList founders;
 
                     for (int i = 0; i < result.size(); i++)
@@ -1168,7 +1168,7 @@ void CommandController::initialize(Settings &, Paths &paths)
 
                     MessageBuilder builder;
                     TwitchMessageBuilder::listOfUsersSystemMessage(
-                        "The founders of this channel are", founders,
+                        QString("The founders of %1 are").arg(target), founders,
                         twitchChannel, &builder);
                     channel->addMessage(builder.release());
                 },
