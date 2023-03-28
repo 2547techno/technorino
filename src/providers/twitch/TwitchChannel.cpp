@@ -939,7 +939,9 @@ void TwitchChannel::setLive(bool newLiveStatus)
                         getApp()->toasts->sendChannelNotification(
                             this->getName(), guard->title, Platform::Twitch);
                     }
-                    if (getSettings()->notificationPlaySound)
+                    if (getSettings()->notificationPlaySound &&
+                        !(this->isWatching() &&
+                          !getSettings()->watchingTabLiveSound))
                     {
                         getApp()->notifications->playSound();
                     }
@@ -967,6 +969,7 @@ void TwitchChannel::setLive(bool newLiveStatus)
                     !(this->isWatching() &&
                       !getSettings()->watchingTabLiveSound))
                 {
+                    qCDebug(chatterinoTwitch) << "watchingtablivesound";
                     getApp()->notifications->playSound();
                 }
             }
