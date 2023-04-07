@@ -118,6 +118,17 @@ struct IvrEmote {
     }
 };
 
+struct IvrModVip {
+    const QJsonArray mods;
+    const QJsonArray vips;
+
+    IvrModVip(const QJsonObject &root)
+        : mods(root.value("mods").toArray())
+        , vips(root.value("vips").toArray())
+    {
+    }
+};
+
 class IvrApi final : boost::noncopyable
 {
 public:
@@ -140,6 +151,11 @@ public:
     void getFounders(QString channelName,
                      ResultCallback<QJsonArray> resultCallback,
                      IvrFailureCallback failureCallback);
+
+    // https://api.ivr.fi/v2/docs/static/index.html#/Twitch/get_twitch_modvip__channel_
+    void getModVip(QString channelName,
+                   ResultCallback<IvrModVip> resultCallback,
+                   IvrFailureCallback failureCallback);
 
     static void initialize();
 

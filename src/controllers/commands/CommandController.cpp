@@ -1211,21 +1211,51 @@ void CommandController::initialize(Settings &, Paths &paths)
                 break;
             }
 
-            getHelix()->getModerators(
-                twitchChannel->roomId(), 500,
-                [channel, twitchChannel](auto result) {
-                    // TODO: sort results?
+            if (twitchChannel->isBroadcaster())
+            {
+                getHelix()->getModerators(
+                    twitchChannel->roomId(), 500,
+                    [channel, twitchChannel](auto result) {
+                        // TODO: sort results?
 
-                    MessageBuilder builder;
-                    TwitchMessageBuilder::listOfUsersSystemMessage(
-                        "The moderators of this channel are", result,
-                        twitchChannel, &builder);
-                    channel->addMessage(builder.release());
-                },
-                [channel, formatModsError](auto error, auto message) {
-                    auto errorMessage = formatModsError(error, message);
-                    channel->addMessage(makeSystemMessage(errorMessage));
-                });
+                        MessageBuilder builder;
+                        TwitchMessageBuilder::listOfUsersSystemMessage(
+                            "The moderators of this channel are", result,
+                            twitchChannel, &builder);
+                        channel->addMessage(builder.release());
+                    },
+                    [channel, formatModsError](auto error, auto message) {
+                        auto errorMessage = formatModsError(error, message);
+                        channel->addMessage(makeSystemMessage(errorMessage));
+                    });
+            }
+            else
+            {
+                QString target = channel->getName();
+                getIvr()->getModVip(
+                    target,
+                    [channel, twitchChannel, target](auto result) {
+                        QStringList mods;
+
+                        for (int i = 0; i < result.mods.size(); i++)
+                        {
+                            mods.append(result.mods.at(i)
+                                            .toObject()
+                                            .value("displayName")
+                                            .toString());
+                        }
+
+                        MessageBuilder builder;
+                        TwitchMessageBuilder::listOfUsersSystemMessage(
+                            "The moderators of this channel are", mods,
+                            twitchChannel, &builder);
+                        channel->addMessage(builder.release());
+                    },
+                    [channel]() {
+                        channel->addMessage(makeSystemMessage(
+                            "Could not get moderators list from IVR!"));
+                    });
+            }
             return "";
         });
 
@@ -3118,30 +3148,67 @@ void CommandController::initialize(Settings &, Paths &paths)
                 return "";
             }
 
-            getHelix()->getChannelVIPs(
-                twitchChannel->roomId(),
-                [channel, twitchChannel](const std::vector<HelixVip> &vipList) {
-                    if (vipList.empty())
-                    {
+            if (twitchChannel->isBroadcaster())
+            {
+                getHelix()->getChannelVIPs(
+                    twitchChannel->roomId(),
+                    [channel,
+                     twitchChannel](const std::vector<HelixVip> &vipList) {
+                        if (vipList.empty())
+                        {
+                            channel->addMessage(makeSystemMessage(
+                                "This channel does not have any VIPs."));
+                            return;
+                        }
+
+                        auto messagePrefix =
+                            QString("The VIPs of this channel are");
+
+                        // TODO: sort results?
+                        MessageBuilder builder;
+                        TwitchMessageBuilder::listOfUsersSystemMessage(
+                            messagePrefix, vipList, twitchChannel, &builder);
+
+                        channel->addMessage(builder.release());
+                    },
+                    [channel, formatVIPListError](auto error, auto message) {
+                        auto errorMessage = formatVIPListError(error, message);
+                        channel->addMessage(makeSystemMessage(errorMessage));
+                    });
+            }
+            else
+            {
+                QString target = channel->getName();
+                getIvr()->getModVip(
+                    target,
+                    [channel, twitchChannel, target](auto result) {
+                        if (result.vips.isEmpty())
+                        {
+                            channel->addMessage(makeSystemMessage(
+                                "This channel does not have any VIPs."));
+                            return;
+                        }
+
+                        QStringList vips;
+                        for (int i = 0; i < result.vips.size(); i++)
+                        {
+                            vips.append(result.vips.at(i)
+                                            .toObject()
+                                            .value("displayName")
+                                            .toString());
+                        }
+
+                        MessageBuilder builder;
+                        TwitchMessageBuilder::listOfUsersSystemMessage(
+                            "The VIPs of this channel are", vips, twitchChannel,
+                            &builder);
+                        channel->addMessage(builder.release());
+                    },
+                    [channel]() {
                         channel->addMessage(makeSystemMessage(
-                            "This channel does not have any VIPs."));
-                        return;
-                    }
-
-                    auto messagePrefix =
-                        QString("The VIPs of this channel are");
-
-                    // TODO: sort results?
-                    MessageBuilder builder;
-                    TwitchMessageBuilder::listOfUsersSystemMessage(
-                        messagePrefix, vipList, twitchChannel, &builder);
-
-                    channel->addMessage(builder.release());
-                },
-                [channel, formatVIPListError](auto error, auto message) {
-                    auto errorMessage = formatVIPListError(error, message);
-                    channel->addMessage(makeSystemMessage(errorMessage));
-                });
+                            "Could not get VIPs list from IVR!"));
+                    });
+            }
 
             return "";
         });

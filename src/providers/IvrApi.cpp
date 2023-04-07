@@ -57,6 +57,29 @@ void IvrApi::getFounders(QString channelName,
         .execute();
 }
 
+void IvrApi::getModVip(QString channelName,
+                       ResultCallback<IvrModVip> successCallback,
+                       IvrFailureCallback failureCallback)
+{
+    assert(!channelName.isEmpty());
+
+    this->makeRequest(QString("twitch/modvip/%1").arg(channelName), {})
+        .onSuccess([successCallback, failureCallback](auto result) -> Outcome {
+            auto root = result.parseJson();
+
+            successCallback(root);
+
+            return Success;
+        })
+        .onError([failureCallback](auto result) {
+            qCWarning(chatterinoIvr)
+                << "Failed IVR API Call!" << result.status()
+                << QString(result.getData());
+            failureCallback();
+        })
+        .execute();
+}
+
 void IvrApi::getBulkEmoteSets(QString emoteSetList,
                               ResultCallback<QJsonArray> successCallback,
                               IvrFailureCallback failureCallback)
