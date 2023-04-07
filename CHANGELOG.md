@@ -15,6 +15,8 @@
 - Minor: Added support for FrankerFaceZ animated emotes. (#4434)
 - Minor: /founders command
 - Minor: Auto-detach "watching tab" with technorino extension
+- Minor: Use IVR for /mods command in non-broadcaster channels
+- Minor: Use IVR for /vips command in non-broadcaster channels
 - Minor: Migrated viewer list to Helix API. (#4117)
 - Minor: Include normally-stripped mention in replies in logs. (#4420)
 - Minor: Added support for FrankerFaceZ animated emotes. (#4434)
