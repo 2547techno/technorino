@@ -28,6 +28,7 @@ Channel::Channel(const QString &name, Type type, bool watching)
     : completionModel(*this)
     , lastDate_(QDate::currentDate())
     , name_(name)
+    , messages_(getSettings()->scrollbackSplitLimit)
     , type_(type)
     , watching_(watching)
 {
