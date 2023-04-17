@@ -55,8 +55,7 @@
 - Dev: Experimental builds with Qt 6 are now provided. (#4522, #4551, #4553, #4554, #4555, #4556)
 - Dev: Removed `CHATTERINO_TEST` definitions. (#4526)
 - Dev: Builds for macOS now have `macos` in their name (previously: `osx`). (#4550)
-- Dev: Added detection for abnormal nonces
-
+- Dev: Added detection for abnormal nonces.
 
 ## 2.4.2
 
