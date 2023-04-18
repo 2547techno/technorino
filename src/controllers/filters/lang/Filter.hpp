@@ -36,6 +36,7 @@ static const QMap<QString, Type> MESSAGE_TYPING_CONTEXT = {
     {"flags.points_redeemed", Type::Bool},
     {"flags.sub_message", Type::Bool},
     {"flags.system_message", Type::Bool},
+    {"flags.webchat_detected", Type::Bool},
     {"flags.reward_message", Type::Bool},
     {"flags.first_message", Type::Bool},
     {"flags.elevated_message", Type::Bool},
