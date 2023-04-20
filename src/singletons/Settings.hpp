@@ -452,7 +452,8 @@ public:
     /// Misc
     BoolSetting autoDetachLiveTab = {"/misc/autoDetachLiveTab", false};
     BoolSetting watchingTabLiveSound = {"/misc/watchingTabLiveSound", false};
-    BoolSetting useBotLimits = {"/misc/botLimits", false};
+    BoolSetting useBotLimitsMessage = {"/misc/botLimitsMessage", false};
+    BoolSetting useBotLimitsJoin = {"/misc/botLimitsJoin", false};
     BoolSetting betaUpdates = {"/misc/beta", false};
     BoolSetting abnormalNonceDetection = {"/misc/abnormalNonceDetection",
                                           false};
