@@ -770,7 +770,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
                        s.autoDetachLiveTab);
     layout.addCheckbox("Watching tab live sound", s.watchingTabLiveSound);
     layout.addCheckbox("Fake messages as webchat", s.fakeWebChat);
-    layout.addCheckbox("Use bot limits", s.useBotLimits);
+    layout.addCheckbox("Use bot limits for messages", s.useBotLimitsMessage);
+    layout.addCheckbox("Use bot limits for JOINs", s.useBotLimitsJoin);
     layout.addCheckbox(
         "Enable. Required for abnormal nonce and webchat detection to work!",
         s.nonceFuckeryEnabled);

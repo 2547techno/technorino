@@ -39,7 +39,7 @@ AbstractIrcServer::AbstractIrcServer()
         }
         this->readConnection_->sendRaw("JOIN #" + message);
     };
-    if (getSettings()->useBotLimits)
+    if (getSettings()->useBotLimitsJoin)
     {
         this->joinBucket_.reset(new RatelimitBucket(
             BOT_JOIN_RATELIMIT_BUDGET, NORMAL_JOIN_RATELIMIT_COOLDOWN,
