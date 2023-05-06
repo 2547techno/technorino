@@ -1284,7 +1284,7 @@ void CommandController::initialize(Settings &, Paths &paths)
                         {
                             mods.append(result.mods.at(i)
                                             .toObject()
-                                            .value("displayName")
+                                            .value("login")
                                             .toString());
                         }
 
@@ -3237,7 +3237,7 @@ void CommandController::initialize(Settings &, Paths &paths)
                         {
                             vips.append(result.vips.at(i)
                                             .toObject()
-                                            .value("displayName")
+                                            .value("login")
                                             .toString());
                         }
 
