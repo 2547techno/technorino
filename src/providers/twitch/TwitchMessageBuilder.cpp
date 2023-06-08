@@ -1,6 +1,7 @@
 #include "providers/twitch/TwitchMessageBuilder.hpp"
 
 #include "Application.hpp"
+#include "common/LinkParser.hpp"
 #include "common/QLogging.hpp"
 #include "controllers/accounts/AccountController.hpp"
 #include "controllers/ignores/IgnoreController.hpp"
@@ -235,15 +236,15 @@ MessagePtr TwitchMessageBuilder::build()
         auto isAbnormal = isAbnormalNonce(nonceString);
         if (isAbnormal && getSettings()->abnormalNonceDetection)
         {
-            QString linkString = this->matchLink(nonceString);
+            LinkParser parsed(nonceString);
 
             this->emplace<TimestampElement>();
             this->emplace<TextElement>(
                 "Abnormal nonce:", MessageElementFlag::ChannelPointReward,
                 MessageColor::System);
-            if (!linkString.isEmpty())
+            if (parsed.result())
             {
-                this->addLink(nonceString, linkString);
+                this->addLink(*parsed.result());
             }
             else
             {
@@ -515,12 +516,12 @@ void TwitchMessageBuilder::addTextOrEmoji(const QString &string_)
     }
 
     // Actually just text
-    auto linkString = this->matchLink(string);
+    LinkParser parsed(string);
     auto textColor = this->textColor_;
 
-    if (!linkString.isEmpty())
+    if (parsed.result())
     {
-        this->addLink(string, linkString);
+        this->addLink(*parsed.result());
         return;
     }
 

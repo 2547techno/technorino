@@ -6,6 +6,7 @@
 #include "util/QStringHash.hpp"
 
 #include <boost/optional.hpp>
+#include <QDateTime>
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QString>
@@ -636,6 +637,18 @@ enum class HelixListVIPsError {  // /vips
     Forwarded,
 };  // /vips
 
+enum class HelixSendShoutoutError {
+    Unknown,
+    // 400
+    UserIsBroadcaster,
+    BroadcasterNotLive,
+    // 401
+    UserNotAuthorized,
+    UserMissingScope,
+
+    Ratelimited,
+};
+
 struct HelixStartCommercialResponse {
     // Length of the triggered commercial
     int length;
@@ -651,6 +664,39 @@ struct HelixStartCommercialResponse {
         this->message = jsonData.value("message").toString();
         this->retryAfter = jsonData.value("retry_after").toInt();
     }
+};
+
+struct HelixShieldModeStatus {
+    /// A Boolean value that determines whether Shield Mode is active. Is `true` if Shield Mode is active; otherwise, `false`.
+    bool isActive;
+    /// An ID that identifies the moderator that last activated Shield Mode.
+    QString moderatorID;
+    /// The moderator's login name.
+    QString moderatorLogin;
+    /// The moderator's display name.
+    QString moderatorName;
+    /// The UTC timestamp of when Shield Mode was last activated.
+    QDateTime lastActivatedAt;
+
+    explicit HelixShieldModeStatus(const QJsonObject &json)
+        : isActive(json["is_active"].toBool())
+        , moderatorID(json["moderator_id"].toString())
+        , moderatorLogin(json["moderator_login"].toString())
+        , moderatorName(json["moderator_name"].toString())
+        , lastActivatedAt(QDateTime::fromString(
+              json["last_activated_at"].toString(), Qt::ISODate))
+    {
+        this->lastActivatedAt.setTimeSpec(Qt::UTC);
+    }
+};
+
+enum class HelixUpdateShieldModeError {
+    Unknown,
+    UserMissingScope,
+    MissingPermission,
+
+    // The error message is forwarded directly from the Twitch API
+    Forwarded,
 };
 
 enum class HelixStartCommercialError {
@@ -972,6 +1018,19 @@ public:
         FailureCallback<HelixGetChannelBadgesError, QString>
             failureCallback) = 0;
 
+    // https://dev.twitch.tv/docs/api/reference/#update-shield-mode-status
+    virtual void updateShieldMode(
+        QString broadcasterID, QString moderatorID, bool isActive,
+        ResultCallback<HelixShieldModeStatus> successCallback,
+        FailureCallback<HelixUpdateShieldModeError, QString>
+            failureCallback) = 0;
+
+    // https://dev.twitch.tv/docs/api/reference/#send-a-shoutout
+    virtual void sendShoutout(
+        QString fromBroadcasterID, QString toBroadcasterID, QString moderatorID,
+        ResultCallback<> successCallback,
+        FailureCallback<HelixSendShoutoutError, QString> failureCallback) = 0;
+
     virtual void update(QString clientId, QString oauthToken) = 0;
 
 protected:
@@ -1270,6 +1329,19 @@ public:
                           FailureCallback<HelixGetChannelBadgesError, QString>
                               failureCallback) final;
 
+    // https://dev.twitch.tv/docs/api/reference/#update-shield-mode-status
+    void updateShieldMode(QString broadcasterID, QString moderatorID,
+                          bool isActive,
+                          ResultCallback<HelixShieldModeStatus> successCallback,
+                          FailureCallback<HelixUpdateShieldModeError, QString>
+                              failureCallback) final;
+
+    // https://dev.twitch.tv/docs/api/reference/#send-a-shoutout
+    void sendShoutout(
+        QString fromBroadcasterID, QString toBroadcasterID, QString moderatorID,
+        ResultCallback<> successCallback,
+        FailureCallback<HelixSendShoutoutError, QString> failureCallback) final;
+
     void update(QString clientId, QString oauthToken) final;
 
     static void initialize();
@@ -1313,7 +1385,13 @@ protected:
         FailureCallback<HelixGetModeratorsError, QString> failureCallback);
 
 private:
-    NetworkRequest makeRequest(QString url, QUrlQuery urlQuery);
+    NetworkRequest makeRequest(const QString &url, const QUrlQuery &urlQuery,
+                               NetworkRequestType type);
+    NetworkRequest makeGet(const QString &url, const QUrlQuery &urlQuery);
+    NetworkRequest makeDelete(const QString &url, const QUrlQuery &urlQuery);
+    NetworkRequest makePost(const QString &url, const QUrlQuery &urlQuery);
+    NetworkRequest makePut(const QString &url, const QUrlQuery &urlQuery);
+    NetworkRequest makePatch(const QString &url, const QUrlQuery &urlQuery);
 
     QString clientId;
     QString oauthToken;
