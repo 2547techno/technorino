@@ -221,7 +221,6 @@ void NativeMessagingServer::ReceiverThread::run()
 void NativeMessagingServer::ReceiverThread::handleMessage(
     const QJsonObject &root)
 {
-    auto app = getApp();
     QString action = root.value("action").toString();
     QString data = root.value("data").toString();
 

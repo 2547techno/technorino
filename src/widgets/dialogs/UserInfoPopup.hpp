@@ -45,7 +45,6 @@ private:
     void installEvents();
     void updateUserData();
     void updateLatestMessages();
-    void updateFocusLoss();
 
     void loadAvatar(const HelixUser &user);
 
@@ -91,8 +90,6 @@ private:
         Label *followerCountLabel = nullptr;
         Label *createdDateLabel = nullptr;
         Label *userIDLabel = nullptr;
-        // Can be uninitialized if usercard is not configured to close on focus loss
-        Button *pinButton = nullptr;
         Label *followageLabel = nullptr;
         Label *subageLabel = nullptr;
         Label *rolesLabel = nullptr;
