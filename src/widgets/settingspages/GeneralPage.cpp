@@ -199,6 +199,30 @@ void GeneralPage::initLayout(GeneralPageView &layout)
     tabDirectionDropdown->setMinimumWidth(
         tabDirectionDropdown->minimumSizeHint().width());
 
+    layout.addDropdown<std::underlying_type<NotebookTabVisibility>::type>(
+        "Tab visibility", {"All tabs", "Only live tabs"}, s.tabVisibility,
+        [](auto val) {
+            switch (val)
+            {
+                case NotebookTabVisibility::LiveOnly:
+                    return "Only live tabs";
+                case NotebookTabVisibility::AllTabs:
+                default:
+                    return "All tabs";
+            }
+        },
+        [](auto args) {
+            if (args.value == "Only live tabs")
+            {
+                return NotebookTabVisibility::LiveOnly;
+            }
+            else
+            {
+                return NotebookTabVisibility::AllTabs;
+            }
+        },
+        false, "Choose which tabs are visible in the notebook");
+
     layout.addCheckbox(
         "Show message reply context", s.hideReplyContext, true,
         "This setting will only affect how messages are shown. You can reply "
@@ -309,6 +333,74 @@ void GeneralPage::initLayout(GeneralPageView &layout)
         false,
         "Specify how Chatterino will handle messages that exceed Twitch "
         "message limits");
+    layout.addDropdown<std::underlying_type<UsernameRightClickBehavior>::type>(
+        "Username right-click behavior",
+        {
+            "Reply",
+            "Mention",
+            "Ignore",
+        },
+        s.usernameRightClickBehavior,
+        [](auto index) {
+            return index;
+        },
+        [](auto args) {
+            return static_cast<UsernameRightClickBehavior>(args.index);
+        },
+        false,
+        "Specify how Chatterino will handle right-clicking a username in "
+        "chat when not holding the modifier.");
+    layout.addDropdown<std::underlying_type<UsernameRightClickBehavior>::type>(
+        "Username right-click with modifier behavior",
+        {
+            "Reply",
+            "Mention",
+            "Ignore",
+        },
+        s.usernameRightClickModifierBehavior,
+        [](auto index) {
+            return index;
+        },
+        [](auto args) {
+            return static_cast<UsernameRightClickBehavior>(args.index);
+        },
+        false,
+        "Specify how Chatterino will handle right-clicking a username in "
+        "chat when holding down the modifier.");
+    layout.addDropdown<std::underlying_type<Qt::KeyboardModifier>::type>(
+        "Modifier for alternate right-click action",
+        {"Shift", "Control", "Alt", META_KEY}, s.usernameRightClickModifier,
+        [](int index) {
+            switch (index)
+            {
+                case Qt::ShiftModifier:
+                    return 0;
+                case Qt::ControlModifier:
+                    return 1;
+                case Qt::AltModifier:
+                    return 2;
+                case Qt::MetaModifier:
+                    return 3;
+                default:
+                    return 0;
+            }
+        },
+        [](DropdownArgs args) {
+            switch (args.index)
+            {
+                case 0:
+                    return Qt::ShiftModifier;
+                case 1:
+                    return Qt::ControlModifier;
+                case 2:
+                    return Qt::AltModifier;
+                case 3:
+                    return Qt::MetaModifier;
+                default:
+                    return Qt::NoModifier;
+            }
+        },
+        false);
 
     layout.addTitle("Messages");
     layout.addCheckbox(
@@ -478,6 +570,11 @@ void GeneralPage::initLayout(GeneralPageView &layout)
                        "When enabled, channel emotes will get updated "
                        "automatically (no reload required) and cosmetics "
                        "(badges/paints/personal emotes) will get updated.");
+    layout.addCheckbox("Send activity to 7TV", s.sendSevenTVActivity, false,
+                       "When enabled, Chatterino will signal an activity to "
+                       "7TV when you send a chat mesage. This is used for "
+                       "badges, paints, and personal emotes. When disabled, no "
+                       "activity is sent and others won't see your cosmetics.");
 
     layout.addTitle("Streamer Mode");
     layout.addDescription(
@@ -509,8 +606,9 @@ void GeneralPage::initLayout(GeneralPageView &layout)
     layout.addCheckbox(
         "Hide viewer count and stream length while hovering over split header",
         s.streamerModeHideViewerCountAndDuration);
-    layout.addCheckbox("Hide moderation actions", s.streamerModeHideModActions,
-                       false, "Hide bans & timeouts from appearing in chat.");
+    layout.addCheckbox(
+        "Hide moderation actions", s.streamerModeHideModActions, false,
+        "Hide bans, timeouts, and automod messages from appearing in chat.");
     layout.addCheckbox("Mute mention sounds", s.streamerModeMuteMentions, false,
                        "Mute your ping sound from playing.");
     layout.addCheckbox(
@@ -815,6 +913,10 @@ void GeneralPage::initLayout(GeneralPageView &layout)
     layout.addCheckbox("Show 7TV Animated Profile Picture",
                        s.displaySevenTVAnimatedProfile);
     layout.addCheckbox(
+        "Load AVIF images", s.allowAvifImages, false,
+        "When enabled and an AVIF decoder is found, AVIF images will be "
+        "preferred over WEBP on 7TV. This saves bandwidth.");
+    layout.addCheckbox(
         "Show moderation messages", s.hideModerationActions, true,
         "Show messages for timeouts, bans, and other moderator actions.");
     layout.addCheckbox("Show deletions of single messages",
@@ -921,6 +1023,13 @@ void GeneralPage::initLayout(GeneralPageView &layout)
         "Highlight received inline whispers", s.highlightInlineWhispers, false,
         "Highlight the whispers shown in all splits.\nIf \"Show Twitch "
         "whispers inline\" is disabled, this setting will do nothing.");
+    layout.addCheckbox(
+        "Automatically subscribe to participated reply threads",
+        s.autoSubToParticipatedThreads, false,
+        "When enabled, you will automatically subscribe to reply threads you "
+        "participate in.\n"
+        "This means reply threads you participate in will use your "
+        "\"Subscribed Reply Threads\" highlight settings.");
     layout.addCheckbox("Load message history on connect",
                        s.loadTwitchMessageHistoryOnConnect);
     // TODO: Change phrasing to use better english once we can tag settings, right now it's kept as history instead of historical so that the setting shows up when the user searches for history

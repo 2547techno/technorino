@@ -7,13 +7,14 @@ on:
       - technorino
   pull_request:
   workflow_dispatch:
+  merge_group:
 
 concurrency:
   group: build-${{ github.ref }}
   cancel-in-progress: true
 
 env:
-  C2_ENABLE_LTO: ${{ github.ref == 'refs/heads/master' }}
+  C2_ENABLE_LTO: ${{ github.ref == 'refs/heads/chatterino7' }}
   CHATTERINO_REQUIRE_CLEAN_GIT: On
   C2_BUILD_WITH_QT6: Off
   # Last known good conan version
@@ -99,7 +100,7 @@ jobs:
 
       - name: Install Qt5
         if: startsWith(matrix.qt-version, '5.')
-        uses: jurplel/install-qt-action@v3.2.0
+        uses: jurplel/install-qt-action@v3.3.0
         with:
           cache: true
           cache-key-prefix: ${{ runner.os }}-QtCache-${{ matrix.qt-version }}-v2
@@ -107,7 +108,7 @@ jobs:
 
       - name: Install Qt6
         if: startsWith(matrix.qt-version, '6.')
-        uses: jurplel/install-qt-action@v3.2.0
+        uses: jurplel/install-qt-action@v3.3.0
         with:
           cache: true
           cache-key-prefix: ${{ runner.os }}-QtCache-${{ matrix.qt-version }}-v2
@@ -125,6 +126,18 @@ jobs:
           "C2_USE_OPENSSL3=$(if ($Env:C2_BUILD_WITH_QT6 -eq "on") { "True" } else { "False" })" >> "$Env:GITHUB_ENV"
           "C2_CONAN_CACHE_SUFFIX=$(if ($Env:C2_BUILD_WITH_QT6 -eq "on") { "-QT6" } else { "`" })" >> "$Env:GITHUB_ENV"
         shell: powershell
+
+      - name: Setup sccache (Windows)
+        # sccache v0.5.3
+        uses: nerixyz/ccache-action@9a7e8d00116ede600ee7717350c6594b8af6aaa5
+        if: startsWith(matrix.os, 'windows')
+        with:
+          variant: sccache
+          # only save on on the default (master) branch
+          save: ${{ github.event_name == 'push' }}
+          key: sccache-build-${{ matrix.os }}-${{ matrix.qt-version }}-${{ matrix.skip-crashpad }}
+          restore-keys: |
+            sccache-build-${{ matrix.os }}-${{ matrix.qt-version }}
 
       - name: Cache conan packages (Windows)
         if: startsWith(matrix.os, 'windows')
@@ -163,13 +176,16 @@ jobs:
       - name: Build (Windows)
         if: startsWith(matrix.os, 'windows')
         shell: pwsh
+        env:
+          # Always enable PCH on Windows
+          C2_WINDOWS_USE_PCH: "ON"
         run: |
           cd build
           cmake `
               -G"NMake Makefiles" `
               -DCMAKE_BUILD_TYPE=RelWithDebInfo `
               -DCMAKE_TOOLCHAIN_FILE="conan_toolchain.cmake" `
-              -DUSE_PRECOMPILED_HEADERS=OFF `
+              -DUSE_PRECOMPILED_HEADERS=${{ env.C2_WINDOWS_USE_PCH }} `
               -DBUILD_WITH_CRASHPAD="$Env:C2_ENABLE_CRASHPAD" `
               -DCHATTERINO_LTO="$Env:C2_ENABLE_LTO" `
               -DCHATTERINO_PLUGINS="$Env:C2_PLUGINS" `
@@ -268,12 +284,12 @@ jobs:
 
       - name: clang-tidy review
         if: matrix.clang-tidy-review && github.event_name == 'pull_request'
-        uses: ZedThree/clang-tidy-review@v0.13.0
+        uses: ZedThree/clang-tidy-review@v0.13.3
         with:
           build_dir: build-clang-tidy
           config_file: ".clang-tidy"
           split_workflow: true
-          exclude: "tests/*,lib/*"
+          exclude: "lib/*"
           cmake_command: >-
             cmake -S. -Bbuild-clang-tidy 
             -DCMAKE_BUILD_TYPE=Release 
@@ -283,16 +299,27 @@ jobs:
             -DCHATTERINO_LTO=Off 
             -DCHATTERINO_PLUGINS=On 
             -DBUILD_WITH_QT6=Off
+            -DBUILD_TESTS=On
+            -DBUILD_BENCHMARKS=On
           apt_packages: >-
             qttools5-dev, qt5-image-formats-plugins, libqt5svg5-dev, 
             libsecret-1-dev,
             libboost-dev, libboost-system-dev, libboost-filesystem-dev,
             libssl-dev,
-            rapidjson-dev
+            rapidjson-dev,
+            libbenchmark-dev,
+            libavif-dev
 
       - name: clang-tidy-review upload
         if: matrix.clang-tidy-review && github.event_name == 'pull_request'
-        uses: ZedThree/clang-tidy-review/upload@v0.13.0
+        uses: ZedThree/clang-tidy-review/upload@v0.13.3
+
+      - name: Package - AppImage (Ubuntu)
+        if: startsWith(matrix.os, 'ubuntu-22.04') && !matrix.skip-artifact
+        run: |
+          cd build
+          sh ./../.CI/CreateAppImage.sh
+        shell: bash
 
       - name: Package - .deb (Ubuntu)
         if: startsWith(matrix.os, 'ubuntu') && !matrix.skip-artifact
@@ -300,6 +327,13 @@ jobs:
           cd build
           sh ./../.CI/CreateUbuntuDeb.sh
         shell: bash
+
+      - name: Upload artifact - AppImage (Ubuntu)
+        if: startsWith(matrix.os, 'ubuntu-22.04') && !matrix.skip-artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: Chatterino-x86_64-${{ matrix.qt-version }}.AppImage
+          path: build/Chatterino-x86_64.AppImage
 
       - name: Upload artifact - .deb (Ubuntu)
         if: startsWith(matrix.os, 'ubuntu') && !matrix.skip-artifact
@@ -312,7 +346,7 @@ jobs:
       - name: Install dependencies (MacOS)
         if: startsWith(matrix.os, 'macos')
         run: |
-          brew install boost openssl rapidjson p7zip create-dmg cmake tree
+          brew install boost openssl rapidjson p7zip create-dmg cmake tree libavif
         shell: bash
 
       - name: Build (MacOS)
@@ -389,6 +423,12 @@ jobs:
         name: Windows Qt5.15 symbols
         with:
           name: chatterino-windows-x86-64-Qt-5.15.2-symbols.pdb.7z
+          path: release-artifacts/
+
+      - uses: actions/download-artifact@v3
+        name: Linux Qt5.15.2 AppImage
+        with:
+          name: Chatterino-x86_64-5.15.2.AppImage
           path: release-artifacts/
 
       - uses: actions/download-artifact@v3

@@ -117,15 +117,18 @@ AboutPage::AboutPage()
 #ifdef CHATTERINO_HAVE_PLUGINS
             addLicense(form.getElement(), "lua", "https://lua.org",
                        ":/licenses/lua.txt");
-            addLicense(form.getElement(), "Fluent icons",
-                       "https://github.com/microsoft/fluentui-system-icons",
-                       ":/licenses/fluenticons.txt");
 #endif
 #ifdef CHATTERINO_WITH_CRASHPAD
             addLicense(form.getElement(), "sentry-crashpad",
                        "https://github.com/getsentry/crashpad",
                        ":/licenses/crashpad.txt");
 #endif
+            addLicense(form.getElement(), "Fluent icons",
+                       "https://github.com/microsoft/fluentui-system-icons",
+                       ":/licenses/fluenticons.txt");
+            addLicense(form.getElement(), "KImageFormats",
+                       "https://invent.kde.org/frameworks/kimageformats",
+                       ":/licenses/kimageformats.txt");
         }
 
         // Attributions

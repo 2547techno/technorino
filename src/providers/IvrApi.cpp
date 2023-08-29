@@ -27,7 +27,7 @@ void IvrApi::getSubage(QString userName, QString channelName,
         })
         .onError([failureCallback](auto result) {
             qCWarning(chatterinoIvr)
-                << "Failed IVR API Call!" << result.status()
+                << "Failed IVR API Call!" << result.formatError()
                 << QString(result.getData());
             failureCallback();
         })
@@ -50,7 +50,7 @@ void IvrApi::getFounders(QString channelName,
         })
         .onError([failureCallback](auto result) {
             qCWarning(chatterinoIvr)
-                << "Failed IVR API Call!" << result.status()
+                << "Failed IVR API Call!" << result.formatError()
                 << QString(result.getData());
             failureCallback();
         })
@@ -73,7 +73,7 @@ void IvrApi::getModVip(QString channelName,
         })
         .onError([failureCallback](auto result) {
             qCWarning(chatterinoIvr)
-                << "Failed IVR API Call!" << result.status()
+                << "Failed IVR API Call!" << result.formatError()
                 << QString(result.getData());
             failureCallback();
         })
@@ -97,7 +97,7 @@ void IvrApi::getBulkEmoteSets(QString emoteSetList,
         })
         .onError([failureCallback](auto result) {
             qCWarning(chatterinoIvr)
-                << "Failed IVR API Call!" << result.status()
+                << "Failed IVR API Call!" << result.formatError()
                 << QString(result.getData());
             failureCallback();
         })
@@ -121,7 +121,7 @@ void IvrApi::getUserRoles(QString userName,
         })
         .onError([failureCallback](auto result) {
             qCWarning(chatterinoIvr)
-                << "Failed IVR API Call!" << result.status()
+                << "Failed IVR API Call!" << result.formatError()
                 << QString(result.getData());
             failureCallback();
         })

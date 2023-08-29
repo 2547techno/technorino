@@ -15,7 +15,7 @@ Chatterino7 is a fork of Chatterino 2. This fork mainly contains features that a
 
 - 7TV Name Paints
 
-- 7TV Personal Emotes (_currently_: nightly only)
+- 7TV Personal Emotes
 
 - 7TV Animated Profile Avatars
 
@@ -85,6 +85,18 @@ git submodule update --init --recursive
 [Building on Mac](../master/BUILDING_ON_MAC.md)
 
 [Building on FreeBSD](../master/BUILDING_ON_FREEBSD.md)
+
+## Git blame
+
+This project has big commits in the history which for example update all line
+endings. To improve the output of git-blame, consider setting:
+
+```
+git config blame.ignoreRevsFile .git-blame-ignore-revs
+```
+
+This will ignore all revisions mentioned in the [`.git-blame-ignore-revs`
+file](./.git-blame-ignore-revs). GitHub does this by default.
 
 ## Code style
 
