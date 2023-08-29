@@ -38,6 +38,7 @@
 #include <QFile>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
+#include <QPointer>
 
 const QString TEXT_FOLLOWERS("Followers: %1");
 const QString TEXT_CREATED("Created: %1");
@@ -154,7 +155,6 @@ UserInfoPopup::UserInfoPopup(bool closeAutomatically, QWidget *parent,
     assert(split != nullptr &&
            "split being nullptr causes lots of bugs down the road");
     this->setWindowTitle("Usercard");
-    this->setStayInScreenRect(true);
 
     HotkeyController::HotkeyMap actions{
         {"delete",
@@ -241,6 +241,11 @@ UserInfoPopup::UserInfoPopup(bool closeAutomatically, QWidget *parent,
                  msg, this->underlyingChannel_, false);
 
              this->underlyingChannel_->sendMessage(msg);
+             return "";
+         }},
+        {"pin",
+         [this](std::vector<QString> /*arguments*/) -> QString {
+             this->togglePinned();
              return "";
          }},
 
@@ -640,7 +645,7 @@ void UserInfoPopup::installEvents()
                     this->ui_.block->setEnabled(false);
 
                     getApp()->accounts->twitch.getCurrent()->unblockUser(
-                        this->userId_,
+                        this->userId_, this,
                         [this, reenableBlockCheckbox, currentUser] {
                             this->channel_->addMessage(makeSystemMessage(
                                 QString("You successfully unblocked user %1")
@@ -667,7 +672,7 @@ void UserInfoPopup::installEvents()
                     this->ui_.block->setEnabled(false);
 
                     getApp()->accounts->twitch.getCurrent()->blockUser(
-                        this->userId_,
+                        this->userId_, this,
                         [this, reenableBlockCheckbox, currentUser] {
                             this->channel_->addMessage(makeSystemMessage(
                                 QString("You successfully blocked user %1")
@@ -756,9 +761,6 @@ void UserInfoPopup::setData(const QString &name,
     this->userStateChanged_.invoke();
 
     this->updateLatestMessages();
-    QTimer::singleShot(1, this, [this] {
-        this->setStayInScreenRect(true);
-    });
 }
 
 void UserInfoPopup::updateLatestMessages()
@@ -877,13 +879,7 @@ void UserInfoPopup::updateUserData()
             });
 
         // get ignore state
-        bool isIgnoring = false;
-
-        if (auto blocks = currentUser->accessBlockedUserIds();
-            blocks->find(user.id) != blocks->end())
-        {
-            isIgnoring = true;
-        }
+        bool isIgnoring = currentUser->blockedUserIds().contains(user.id);
 
         // get ignoreHighlights state
         bool isIgnoringHighlights = false;

@@ -29,7 +29,6 @@ ReplyThreadPopup::ReplyThreadPopup(bool closeAutomatically, QWidget *parent,
     , split_(split)
 {
     this->setWindowTitle(QStringLiteral("Reply Thread"));
-    this->setStayInScreenRect(true);
 
     HotkeyController::HotkeyMap actions{
         {"delete",
@@ -60,6 +59,11 @@ ReplyThreadPopup::ReplyThreadPopup(bool closeAutomatically, QWidget *parent,
              {
                  qCWarning(chatterinoHotkeys) << "Unknown scroll direction";
              }
+             return "";
+         }},
+        {"pin",
+         [this](std::vector<QString> /*arguments*/) -> QString {
+             this->togglePinned();
              return "";
          }},
 
@@ -145,6 +149,7 @@ ReplyThreadPopup::ReplyThreadPopup(bool closeAutomatically, QWidget *parent,
                                  }
                              });
             hbox->addWidget(this->ui_.notificationCheckbox, 1);
+            this->ui_.notificationCheckbox->setFocusPolicy(Qt::ClickFocus);
         }
 
         if (closeAutomatically)

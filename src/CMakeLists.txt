@@ -3,6 +3,9 @@ set(VERSION_PROJECT "${LIBRARY_PROJECT}-version")
 set(EXECUTABLE_PROJECT "${PROJECT_NAME}")
 add_compile_definitions(QT_DISABLE_DEPRECATED_BEFORE=0x050F00)
 
+# registers the native messageing host
+option(CHATTERINO_DEBUG_NATIVE_MESSAGES "Debug native messages" OFF)
+
 set(SOURCE_FILES
         Application.cpp
         Application.hpp
@@ -33,6 +36,7 @@ set(SOURCE_FILES
         common/Env.hpp
         common/LinkParser.cpp
         common/LinkParser.hpp
+        common/Literals.hpp
         common/Modes.cpp
         common/Modes.hpp
         common/NetworkCommon.cpp
@@ -166,12 +170,15 @@ set(SOURCE_FILES
         controllers/plugins/LuaUtilities.cpp
         controllers/plugins/LuaUtilities.hpp
 
+        controllers/sound/SoundController.cpp
+        controllers/sound/SoundController.hpp
+
+        controllers/twitch/LiveController.cpp
+        controllers/twitch/LiveController.hpp
+
         controllers/userdata/UserDataController.cpp
         controllers/userdata/UserDataController.hpp
         controllers/userdata/UserData.hpp
-
-        controllers/sound/SoundController.cpp
-        controllers/sound/SoundController.hpp
 
         debug/Benchmark.cpp
         debug/Benchmark.hpp
@@ -202,6 +209,8 @@ set(SOURCE_FILES
         messages/layouts/MessageLayout.hpp
         messages/layouts/MessageLayoutContainer.cpp
         messages/layouts/MessageLayoutContainer.hpp
+        messages/layouts/MessageLayoutContext.cpp
+        messages/layouts/MessageLayoutContext.hpp
         messages/layouts/MessageLayoutElement.cpp
         messages/layouts/MessageLayoutElement.hpp
         messages/search/AuthorPredicate.cpp
@@ -229,8 +238,6 @@ set(SOURCE_FILES
         providers/LinkResolver.hpp
         providers/NetworkConfigurationProvider.cpp
         providers/NetworkConfigurationProvider.hpp
-        providers/RecentMessagesApi.cpp
-        providers/RecentMessagesApi.hpp
 
         providers/seventv/SeventvBadges.cpp
         providers/seventv/SeventvBadges.hpp
@@ -296,6 +303,13 @@ set(SOURCE_FILES
         providers/liveupdates/BasicPubSubManager.hpp
         providers/liveupdates/BasicPubSubWebsocket.hpp
 
+        providers/recentmessages/Api.cpp
+        providers/recentmessages/Api.hpp
+        providers/recentmessages/Impl.cpp
+        providers/recentmessages/Impl.hpp
+
+        providers/seventv/SeventvAPI.cpp
+        providers/seventv/SeventvAPI.hpp
         providers/seventv/SeventvBadges.cpp
         providers/seventv/SeventvBadges.hpp
         providers/seventv/SeventvCosmetics.hpp
@@ -401,6 +415,8 @@ set(SOURCE_FILES
 
         util/AttachToConsole.cpp
         util/AttachToConsole.hpp
+        util/CancellationToken.hpp
+        util/ChannelHelpers.hpp
         util/Clipboard.cpp
         util/Clipboard.hpp
         util/ConcurrentMap.hpp
@@ -420,6 +436,8 @@ set(SOURCE_FILES
         util/IncognitoBrowser.hpp
         util/InitUpdateButton.cpp
         util/InitUpdateButton.hpp
+        util/IpcQueue.cpp
+        util/IpcQueue.hpp
         util/LayoutHelper.cpp
         util/LayoutHelper.hpp
         util/NuulsUploader.cpp
@@ -443,6 +461,12 @@ set(SOURCE_FILES
         util/TypeName.hpp
         util/WindowsHelper.cpp
         util/WindowsHelper.hpp
+        util/XDGDesktopFile.cpp
+        util/XDGDesktopFile.hpp
+        util/XDGDirectory.cpp
+        util/XDGDirectory.hpp
+        util/XDGHelper.cpp
+        util/XDGHelper.hpp
 
         util/serialize/Container.hpp
 
@@ -468,8 +492,6 @@ set(SOURCE_FILES
         widgets/Notebook.hpp
         widgets/Scrollbar.cpp
         widgets/Scrollbar.hpp
-        widgets/StreamView.cpp
-        widgets/StreamView.hpp
         widgets/TooltipEntryWidget.cpp
         widgets/TooltipEntryWidget.hpp
         widgets/TooltipWidget.cpp
@@ -729,6 +751,7 @@ if (BUILD_APP)
     else()
         add_executable(${EXECUTABLE_PROJECT} main.cpp)
     endif()
+    target_link_libraries(${EXECUTABLE_PROJECT} PRIVATE chatterino-qt-plugins)
 
     if(COMMAND add_sanitizers)
         add_sanitizers(${EXECUTABLE_PROJECT})
@@ -858,6 +881,9 @@ if (WIN32)
     if (BUILD_APP)
         set_target_properties(${EXECUTABLE_PROJECT} PROPERTIES WIN32_EXECUTABLE TRUE)
     endif ()
+endif ()
+if (CHATTERINO_DEBUG_NATIVE_MESSAGES)
+    target_compile_definitions(${LIBRARY_PROJECT} PRIVATE CHATTERINO_DEBUG_NM)
 endif ()
 
 if (MSVC)

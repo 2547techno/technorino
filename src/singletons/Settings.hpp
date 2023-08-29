@@ -83,6 +83,12 @@ enum ThumbnailPreviewMode : int {
     ShowOnShift = 2,
 };
 
+enum UsernameRightClickBehavior : int {
+    Reply = 0,
+    Mention = 1,
+    Ignore = 2,
+};
+
 /// Settings which are availlable for reading and writing on the gui thread.
 // These settings are still accessed concurrently in the code but it is bad practice.
 class Settings : public ABSettings, public ConcurrentSettings
@@ -198,6 +204,20 @@ public:
     BoolSetting autoCloseUserPopup = {"/behaviour/autoCloseUserPopup", true};
     BoolSetting autoCloseThreadPopup = {"/behaviour/autoCloseThreadPopup",
                                         false};
+
+    EnumSetting<UsernameRightClickBehavior> usernameRightClickBehavior = {
+        "/behaviour/usernameRightClickBehavior",
+        UsernameRightClickBehavior::Mention,
+    };
+    EnumSetting<UsernameRightClickBehavior> usernameRightClickModifierBehavior =
+        {
+            "/behaviour/usernameRightClickBehaviorWithModifier",
+            UsernameRightClickBehavior::Reply,
+        };
+    EnumSetting<Qt::KeyboardModifier> usernameRightClickModifier = {
+        "/behaviour/usernameRightClickModifier",
+        Qt::KeyboardModifier::ShiftModifier};
+
     BoolSetting autoSubToParticipatedThreads = {
         "/behaviour/autoSubToParticipatedThreads",
         true,
@@ -260,6 +280,9 @@ public:
     BoolSetting enableSevenTVPersonalEmotes = {"/emotes/seventv/personal",
                                                true};
     BoolSetting enableSevenTVEventAPI = {"/emotes/seventv/eventapi", true};
+    BoolSetting sendSevenTVActivity = {"/emotes/seventv/sendActivity", true};
+
+    BoolSetting allowAvifImages = {"/emotes/allowAvif", true};
 
     /// Links
     BoolSetting linksDoubleClickOnly = {"/links/doubleClickToOpen", false};

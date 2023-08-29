@@ -7,13 +7,14 @@ on:
       - technorino
   pull_request:
   workflow_dispatch:
+  merge_group:
 
 concurrency:
   group: build-${{ github.ref }}
   cancel-in-progress: true
 
 env:
-  C2_ENABLE_LTO: ${{ github.ref == 'refs/heads/master' }}
+  C2_ENABLE_LTO: ${{ github.ref == 'refs/heads/chatterino7' }}
   CHATTERINO_REQUIRE_CLEAN_GIT: On
   C2_BUILD_WITH_QT6: Off
   # Last known good conan version
@@ -99,7 +100,7 @@ jobs:
 
       - name: Install Qt5
         if: startsWith(matrix.qt-version, '5.')
-        uses: jurplel/install-qt-action@v3.2.1
+        uses: jurplel/install-qt-action@v3.3.0
         with:
           cache: true
           cache-key-prefix: ${{ runner.os }}-QtCache-${{ matrix.qt-version }}-v2
@@ -107,7 +108,7 @@ jobs:
 
       - name: Install Qt6
         if: startsWith(matrix.qt-version, '6.')
-        uses: jurplel/install-qt-action@v3.2.1
+        uses: jurplel/install-qt-action@v3.3.0
         with:
           cache: true
           cache-key-prefix: ${{ runner.os }}-QtCache-${{ matrix.qt-version }}-v2
@@ -132,6 +133,8 @@ jobs:
         if: startsWith(matrix.os, 'windows')
         with:
           variant: sccache
+          # only save on on the default (master) branch
+          save: ${{ github.event_name == 'push' }}
           key: sccache-build-${{ matrix.os }}-${{ matrix.qt-version }}-${{ matrix.skip-crashpad }}
           restore-keys: |
             sccache-build-${{ matrix.os }}-${{ matrix.qt-version }}
@@ -173,13 +176,16 @@ jobs:
       - name: Build (Windows)
         if: startsWith(matrix.os, 'windows')
         shell: pwsh
+        env:
+          # Always enable PCH on Windows
+          C2_WINDOWS_USE_PCH: "ON"
         run: |
           cd build
           cmake `
               -G"NMake Makefiles" `
               -DCMAKE_BUILD_TYPE=RelWithDebInfo `
               -DCMAKE_TOOLCHAIN_FILE="conan_toolchain.cmake" `
-              -DUSE_PRECOMPILED_HEADERS=OFF `
+              -DUSE_PRECOMPILED_HEADERS=${{ env.C2_WINDOWS_USE_PCH }} `
               -DBUILD_WITH_CRASHPAD="$Env:C2_ENABLE_CRASHPAD" `
               -DCHATTERINO_LTO="$Env:C2_ENABLE_LTO" `
               -DCHATTERINO_PLUGINS="$Env:C2_PLUGINS" `
@@ -278,7 +284,7 @@ jobs:
 
       - name: clang-tidy review
         if: matrix.clang-tidy-review && github.event_name == 'pull_request'
-        uses: ZedThree/clang-tidy-review@v0.13.1
+        uses: ZedThree/clang-tidy-review@v0.13.3
         with:
           build_dir: build-clang-tidy
           config_file: ".clang-tidy"
@@ -301,11 +307,12 @@ jobs:
             libboost-dev, libboost-system-dev, libboost-filesystem-dev,
             libssl-dev,
             rapidjson-dev,
-            libbenchmark-dev
+            libbenchmark-dev,
+            libavif-dev
 
       - name: clang-tidy-review upload
         if: matrix.clang-tidy-review && github.event_name == 'pull_request'
-        uses: ZedThree/clang-tidy-review/upload@v0.13.1
+        uses: ZedThree/clang-tidy-review/upload@v0.13.3
 
       - name: Package - AppImage (Ubuntu)
         if: startsWith(matrix.os, 'ubuntu-22.04') && !matrix.skip-artifact
@@ -339,7 +346,7 @@ jobs:
       - name: Install dependencies (MacOS)
         if: startsWith(matrix.os, 'macos')
         run: |
-          brew install boost openssl rapidjson p7zip create-dmg cmake tree
+          brew install boost openssl rapidjson p7zip create-dmg cmake tree libavif
         shell: bash
 
       - name: Build (MacOS)
