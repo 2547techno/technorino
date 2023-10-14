@@ -98,7 +98,8 @@ void SeventvPersonalEmotes::addEmoteSetForUser(const QString &emoteSetID,
                                                const QString &userTwitchID)
 {
     std::unique_lock<std::shared_mutex> lock(this->mutex_);
-    this->emoteSets_.emplace(emoteSetID.toStdString(), std::make_shared<const EmoteMap>(map));
+    this->emoteSets_.emplace(emoteSetID.toStdString(),
+                             std::make_shared<const EmoteMap>(map));
     this->userEmoteSets_[userTwitchID.toStdString()].append(emoteSetID);
 }
 
