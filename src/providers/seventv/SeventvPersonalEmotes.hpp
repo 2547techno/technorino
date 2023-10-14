@@ -7,6 +7,7 @@
 
 #include <boost/optional.hpp>
 #include <pajlada/signals/signalholder.hpp>
+#include <QList>
 
 #include <memory>
 #include <shared_mutex>
@@ -38,7 +39,7 @@ public:
 
     bool hasEmoteSet(const QString &id) const;
 
-    boost::optional<std::shared_ptr<const EmoteMap>> getEmoteSetForUser(
+    QList<std::shared_ptr<const EmoteMap>> getEmoteSetsForUser(
         const QString &userID) const;
 
     boost::optional<EmotePtr> getEmoteForUser(const QString &userID,
@@ -49,7 +50,7 @@ private:
     std::unordered_map<std::string, Atomic<std::shared_ptr<const EmoteMap>>>
         emoteSets_;
     // userID => emoteSetID
-    std::unordered_map<std::string, QString> userEmoteSets_;
+    std::unordered_map<std::string, QList<QString>> userEmoteSets_;
 
     bool enabled_ = true;
     pajlada::Signals::SignalHolder signalHolder_;

@@ -9,8 +9,6 @@ option(CHATTERINO_DEBUG_NATIVE_MESSAGES "Debug native messages" OFF)
 set(SOURCE_FILES
         Application.cpp
         Application.hpp
-        BaseSettings.cpp
-        BaseSettings.hpp
         BrowserExtension.cpp
         BrowserExtension.hpp
         RunGui.cpp
@@ -26,8 +24,6 @@ set(SOURCE_FILES
         common/ChatterinoSetting.hpp
         common/ChatterSet.cpp
         common/ChatterSet.hpp
-        common/CompletionModel.cpp
-        common/CompletionModel.hpp
         common/Credentials.cpp
         common/Credentials.hpp
         common/DownloadManager.cpp
@@ -78,6 +74,28 @@ set(SOURCE_FILES
         controllers/commands/Command.hpp
         controllers/commands/CommandModel.cpp
         controllers/commands/CommandModel.hpp
+
+        controllers/completion/CompletionModel.cpp
+        controllers/completion/CompletionModel.hpp
+        controllers/completion/sources/Source.hpp
+        controllers/completion/sources/CommandSource.cpp
+        controllers/completion/sources/CommandSource.hpp
+        controllers/completion/sources/EmoteSource.cpp
+        controllers/completion/sources/EmoteSource.hpp
+        controllers/completion/sources/Helpers.hpp
+        controllers/completion/sources/UnifiedSource.cpp
+        controllers/completion/sources/UnifiedSource.hpp
+        controllers/completion/sources/UserSource.cpp
+        controllers/completion/sources/UserSource.hpp
+        controllers/completion/strategies/Strategy.hpp
+        controllers/completion/strategies/ClassicEmoteStrategy.cpp
+        controllers/completion/strategies/ClassicEmoteStrategy.hpp
+        controllers/completion/strategies/ClassicUserStrategy.cpp
+        controllers/completion/strategies/ClassicUserStrategy.hpp
+        controllers/completion/strategies/CommandStrategy.cpp
+        controllers/completion/strategies/CommandStrategy.hpp
+        controllers/completion/TabCompletionModel.cpp
+        controllers/completion/TabCompletionModel.hpp
 
         controllers/filters/FilterModel.cpp
         controllers/filters/FilterModel.hpp
@@ -459,6 +477,8 @@ set(SOURCE_FILES
         util/Twitch.cpp
         util/Twitch.hpp
         util/TypeName.hpp
+        util/WidgetHelpers.cpp
+        util/WidgetHelpers.hpp
         util/WindowsHelper.cpp
         util/WindowsHelper.hpp
         util/XDGDesktopFile.cpp
@@ -559,6 +579,8 @@ set(SOURCE_FILES
         widgets/helper/EditableModelView.hpp
         widgets/helper/EffectLabel.cpp
         widgets/helper/EffectLabel.hpp
+        widgets/helper/InvisibleSizeGrip.cpp
+        widgets/helper/InvisibleSizeGrip.hpp
         widgets/helper/NotebookButton.cpp
         widgets/helper/NotebookButton.hpp
         widgets/helper/NotebookTab.cpp
@@ -751,7 +773,11 @@ if (BUILD_APP)
     else()
         add_executable(${EXECUTABLE_PROJECT} main.cpp)
     endif()
-    target_link_libraries(${EXECUTABLE_PROJECT} PRIVATE chatterino-qt-plugins)
+    
+    if (CHATTERINO_WITH_AVIF_PLUGIN)
+        target_link_libraries(${EXECUTABLE_PROJECT} PRIVATE kimageformats)
+        target_compile_definitions(${EXECUTABLE_PROJECT} PRIVATE CHATTERINO_WITH_AVIF_PLUGIN)
+    endif()
 
     if(COMMAND add_sanitizers)
         add_sanitizers(${EXECUTABLE_PROJECT})

@@ -17,13 +17,23 @@
 #include <QCommandLineParser>
 #include <QMessageBox>
 #include <QStringList>
+#include <QtCore/QtPlugin>
 
 #include <memory>
+
+#ifdef CHATTERINO_WITH_AVIF_PLUGIN
+Q_IMPORT_PLUGIN(QAVIFPlugin)
+#endif
 
 using namespace chatterino;
 
 int main(int argc, char **argv)
 {
+    // TODO: This is a temporary fix (see #4552).
+#if defined(Q_OS_WINDOWS) && QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    qputenv("QT_ENABLE_HIGHDPI_SCALING", "0");
+#endif
+
     QApplication a(argc, argv);
 
     QCoreApplication::setApplicationName("chatterino");

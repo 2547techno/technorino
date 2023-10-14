@@ -8,7 +8,7 @@ list(APPEND CMAKE_MODULE_PATH
     "${CMAKE_SOURCE_DIR}/cmake/sanitizers-cmake/cmake"
     )
 
-project(chatterino VERSION 7.4.5)
+project(chatterino VERSION 7.4.6)
 
 option(BUILD_APP "Build Chatterino" ON)
 option(BUILD_TESTS "Build the tests for Chatterino" OFF)
@@ -26,6 +26,8 @@ option(BUILD_TRANSLATIONS "" OFF)
 option(BUILD_SHARED_LIBS "" OFF)
 option(CHATTERINO_LTO "Enable LTO for all targets" OFF)
 option(CHATTERINO_PLUGINS "Enable EXPERIMENTAL plugin support in Chatterino" OFF)
+option(CHATTERINO_NO_AVIF_PLUGIN "Disable AVIF plugin" OFF)
+option(CHATTERINO_STATIC_AVIF "Link to static libavif" ON)
 
 if(CHATTERINO_LTO)
     include(CheckIPOSupported)
@@ -60,12 +62,15 @@ macro(set_alternate_linker linker)
     else()
       add_link_options("-fuse-ld=${USE_ALTERNATE_LINKER}")
     endif()
+    message(STATUS "Linking with ${USE_ALTERNATE_LINKER}")
   else()
     set(USE_ALTERNATE_LINKER "" CACHE STRING "Use alternate linker" FORCE)
+    message(STATUS "Failed to find alternate linker ${USE_ALTERNATE_LINKER}")
   endif()
 endmacro()
 
 set(USE_ALTERNATE_LINKER "" CACHE STRING "Use alternate linker. Leave empty for system default; alternatives are 'gold', 'lld', 'bfd', 'mold'")
+
 if(NOT "${USE_ALTERNATE_LINKER}" STREQUAL "")
   set_alternate_linker(${USE_ALTERNATE_LINKER})
 endif()
@@ -115,9 +120,7 @@ endif ()
 find_package(Sanitizers QUIET)
 
 # Find boost on the system
-# `OPTIONAL_COMPONENTS random` is required for vcpkg builds to link.
-# `OPTIONAL` is required, because conan doesn't set `boost_random_FOUND`.
-find_package(Boost REQUIRED OPTIONAL_COMPONENTS random)
+find_package(Boost REQUIRED OPTIONAL_COMPONENTS headers)
 
 # Find OpenSSL on the system
 find_package(OpenSSL REQUIRED)
@@ -207,6 +210,15 @@ if (BUILD_WITH_CRASHPAD)
     add_subdirectory("${CMAKE_SOURCE_DIR}/lib/crashpad" EXCLUDE_FROM_ALL)
 endif()
 
+if (NOT CHATTERINO_NO_AVIF_PLUGIN)
+    include(${CMAKE_SOURCE_DIR}/cmake/AVIF.cmake)
+endif ()
+
+if (libavif_FOUND AND NOT CHATTERINO_NO_AVIF_PLUGIN)
+    message(STATUS "Adding AVIF plugin")
+    set(CHATTERINO_WITH_AVIF_PLUGIN ON)
+endif()
+
 # Used to provide a date of build in the About page (for nightly builds). Getting the actual time of
 # compilation in CMake is a more involved, as documented in https://stackoverflow.com/q/24292898.
 # For CI runs, however, the date of build file generation should be consistent with the date of
@@ -222,8 +234,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Generate resource files
 include(cmake/resources/generate_resources.cmake)
-
-add_subdirectory(${CMAKE_SOURCE_DIR}/lib/qt-plugins)
 
 add_subdirectory(src)
 

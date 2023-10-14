@@ -503,34 +503,9 @@ void BaseWindow::leaveEvent(QEvent *)
     TooltipWidget::instance()->hide();
 }
 
-void BaseWindow::moveTo(QPoint point, bool offset, BoundsChecker boundsChecker)
+void BaseWindow::moveTo(QPoint point, widgets::BoundsChecking mode)
 {
-    if (offset)
-    {
-        point.rx() += 16;
-        point.ry() += 16;
-    }
-
-    switch (boundsChecker)
-    {
-        case BoundsChecker::Off: {
-            // The bounds checker is off, *just* move the window
-            this->move(point);
-        }
-        break;
-
-        case BoundsChecker::CursorPosition: {
-            // The bounds checker is on, use the cursor position as the origin
-            this->moveWithinScreen(point, QCursor::pos());
-        }
-        break;
-
-        case BoundsChecker::DesiredPosition: {
-            // The bounds checker is on, use the desired position as the origin
-            this->moveWithinScreen(point, point);
-        }
-        break;
-    }
+    widgets::moveWindowTo(this, point, mode);
 }
 
 void BaseWindow::resizeEvent(QResizeEvent *)
@@ -584,51 +559,6 @@ void BaseWindow::closeEvent(QCloseEvent *)
 
 void BaseWindow::showEvent(QShowEvent *)
 {
-}
-
-void BaseWindow::moveWithinScreen(QPoint point, QPoint origin)
-{
-    // move the widget into the screen geometry if it's not already in there
-    auto *screen = QApplication::screenAt(origin);
-
-    if (screen == nullptr)
-    {
-        screen = QApplication::primaryScreen();
-    }
-    const QRect bounds = screen->availableGeometry();
-
-    bool stickRight = false;
-    bool stickBottom = false;
-
-    const auto w = this->frameGeometry().width();
-    const auto h = this->frameGeometry().height();
-
-    if (point.x() < bounds.left())
-    {
-        point.setX(bounds.left());
-    }
-    if (point.y() < bounds.top())
-    {
-        point.setY(bounds.top());
-    }
-    if (point.x() + w > bounds.right())
-    {
-        stickRight = true;
-        point.setX(bounds.right() - w);
-    }
-    if (point.y() + h > bounds.bottom())
-    {
-        stickBottom = true;
-        point.setY(bounds.bottom() - h);
-    }
-
-    if (stickRight && stickBottom)
-    {
-        const QPoint globalCursorPos = QCursor::pos();
-        point.setY(globalCursorPos.y() - this->height() - 16);
-    }
-
-    this->move(point);
 }
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
@@ -710,7 +640,7 @@ void BaseWindow::updateScale()
     auto scale =
         this->nativeScale_ * (this->flags_.has(DisableCustomScaling)
                                   ? 1
-                                  : getABSettings()->getClampedUiScale());
+                                  : getSettings()->getClampedUiScale());
 
     this->setScale(scale);
 

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "common/CompletionModel.hpp"
 #include "common/FlagsEnum.hpp"
+#include "controllers/completion/TabCompletionModel.hpp"
 #include "messages/LimitedQueue.hpp"
 
 #include <boost/optional.hpp>
@@ -52,7 +52,6 @@ public:
     pajlada::Signals::Signal<const QString &, const QString &, const QString &,
                              bool &>
         sendReplySignal;
-    pajlada::Signals::Signal<MessagePtr &> messageRemovedFromStart;
     pajlada::Signals::Signal<MessagePtr &, boost::optional<MessageFlags>>
         messageAppended;
     pajlada::Signals::Signal<std::vector<MessagePtr> &> messagesAddedAtStart;
@@ -110,11 +109,12 @@ public:
 
     static std::shared_ptr<Channel> getEmpty();
 
-    CompletionModel completionModel;
+    TabCompletionModel completionModel;
     QDate lastDate_;
 
 protected:
     virtual void onConnected();
+    virtual void messageRemovedFromStart(const MessagePtr &msg);
 
 private:
     const QString name_;
