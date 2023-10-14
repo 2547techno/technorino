@@ -37,18 +37,21 @@ boost::optional<std::shared_ptr<const EmoteMap>>
                                                 const QString &userTwitchID)
 {
     std::unique_lock<std::shared_mutex> lock(this->mutex_);
-    if (!this->userEmoteSets_.contains(userTwitchID.toStdString()))
-    {
-        this->userEmoteSets_.emplace(userTwitchID.toStdString(), emoteSetID);
 
-        auto set = this->emoteSets_.find(emoteSetID.toStdString());
-        if (set == this->emoteSets_.end())
-        {
-            return boost::none;
-        }
-        return set->second.get();  // copy the shared_ptr
+    auto &list = this->userEmoteSets_[userTwitchID.toStdString()];
+
+    if (list.contains(emoteSetID))
+    {
+        return boost::none;
     }
-    return boost::none;
+    list.append(emoteSetID);
+
+    auto set = this->emoteSets_.find(emoteSetID.toStdString());
+    if (set == this->emoteSets_.end())
+    {
+        return boost::none;
+    }
+    return set->second.get();  // copy the shared_ptr
 }
 
 void SeventvPersonalEmotes::updateEmoteSet(
@@ -95,9 +98,8 @@ void SeventvPersonalEmotes::addEmoteSetForUser(const QString &emoteSetID,
                                                const QString &userTwitchID)
 {
     std::unique_lock<std::shared_mutex> lock(this->mutex_);
-    this->emoteSets_.emplace(emoteSetID.toStdString(),
-                             std::make_shared<const EmoteMap>(map));
-    this->userEmoteSets_[userTwitchID.toStdString()] = emoteSetID;
+    this->emoteSets_.emplace(emoteSetID.toStdString(), std::make_shared<const EmoteMap>(map));
+    this->userEmoteSets_[userTwitchID.toStdString()].append(emoteSetID);
 }
 
 bool SeventvPersonalEmotes::hasEmoteSet(const QString &id) const
@@ -106,40 +108,69 @@ bool SeventvPersonalEmotes::hasEmoteSet(const QString &id) const
     return this->emoteSets_.contains(id.toStdString());
 }
 
-boost::optional<std::shared_ptr<const EmoteMap>>
-    SeventvPersonalEmotes::getEmoteSetForUser(const QString &userID) const
+QList<std::shared_ptr<const EmoteMap>>
+    SeventvPersonalEmotes::getEmoteSetsForUser(const QString &userID) const
 {
     std::shared_lock<std::shared_mutex> lock(this->mutex_);
     if (!this->enabled_)
     {
-        return boost::none;
+        return {};
     }
 
-    auto id = this->userEmoteSets_.find(userID.toStdString());
-    if (id == this->userEmoteSets_.end())
+    auto ids = this->userEmoteSets_.find(userID.toStdString());
+    if (ids == this->userEmoteSets_.end())
     {
-        return boost::none;
+        return {};
     }
-    auto set = this->emoteSets_.find(id->second.toStdString());
-    if (set == this->emoteSets_.end())
+
+    QList<std::shared_ptr<const EmoteMap>> sets;
+    sets.reserve(ids->second.length());
+    for (const auto &id : ids->second)
     {
-        return boost::none;
+        auto set = this->emoteSets_.find(id.toStdString());
+        if (set == this->emoteSets_.end())
+        {
+            continue;
+        }
+        sets.append(set->second.get());  // copy the shared_ptr
     }
-    return set->second.get();  // copy the shared_ptr
+
+    return sets;
 }
 
 boost::optional<EmotePtr> SeventvPersonalEmotes::getEmoteForUser(
     const QString &userID, const EmoteName &emoteName) const
 {
-    return this->getEmoteSetForUser(userID).flat_map(
-        [emoteName](const auto &map) -> boost::optional<EmotePtr> {
-            auto it = map->find(emoteName);
-            if (it == map->end())
-            {
-                return boost::none;
-            }
-            return it->second;
-        });
+    std::shared_lock<std::shared_mutex> lock(this->mutex_);
+    if (!this->enabled_)
+    {
+        return {};
+    }
+
+    auto ids = this->userEmoteSets_.find(userID.toStdString());
+    if (ids == this->userEmoteSets_.end())
+    {
+        return {};
+    }
+
+    for (const auto &id : ids->second)
+    {
+        auto setIt = this->emoteSets_.find(id.toStdString());
+        if (setIt == this->emoteSets_.end())
+        {
+            continue;  // set doesn't exist
+        }
+
+        const auto &set = setIt->second.get();
+        auto it = set->find(emoteName);
+        if (it == set->end())
+        {
+            continue;  // not in this set
+        }
+        return it->second;  // found the emote
+    }
+
+    return boost::none;
 }
 
 }  // namespace chatterino

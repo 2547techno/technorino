@@ -1,7 +1,6 @@
 #include "EmotePopup.hpp"
 
 #include "Application.hpp"
-#include "common/CompletionModel.hpp"
 #include "common/QLogging.hpp"
 #include "controllers/accounts/AccountController.hpp"
 #include "controllers/hotkeys/HotkeyController.hpp"
@@ -17,6 +16,7 @@
 #include "singletons/Emotes.hpp"
 #include "singletons/Settings.hpp"
 #include "singletons/WindowManager.hpp"
+#include "util/Helpers.hpp"
 #include "widgets/helper/ChannelView.hpp"
 #include "widgets/helper/TrimRegExpValidator.hpp"
 #include "widgets/Notebook.hpp"
@@ -59,8 +59,7 @@ auto makeEmoteMessage(const EmoteMap &map, const MessageElementFlag &emoteFlag)
     std::sort(vec.begin(), vec.end(),
               [](const std::pair<EmoteName, EmotePtr> &l,
                  const std::pair<EmoteName, EmotePtr> &r) {
-                  return CompletionModel::compareStrings(l.first.string,
-                                                         r.first.string);
+                  return compareEmoteStrings(l.first.string, r.first.string);
               });
     for (const auto &emote : vec)
     {
@@ -208,8 +207,8 @@ EmotePopup::EmotePopup(QWidget *parent)
     , notebook_(new Notebook(this))
 {
     // this->setStayInScreenRect(true);
-    this->moveTo(getApp()->windows->emotePopupPos(), false,
-                 BaseWindow::BoundsChecker::DesiredPosition);
+    this->moveTo(getApp()->windows->emotePopupPos(),
+                 widgets::BoundsChecking::DesiredPosition);
 
     auto *layout = new QVBoxLayout();
     this->getLayoutContainer()->setLayout(layout);
@@ -247,7 +246,9 @@ EmotePopup::EmotePopup(QWidget *parent)
             MessageElementFlag::Default, MessageElementFlag::AlwaysShow,
             MessageElementFlag::EmoteImages});
         view->setEnableScrollingToBottom(false);
-        view->linkClicked.connect(clicked);
+        // We can safely ignore this signal connection since the ChannelView is deleted
+        // either when the notebook is deleted, or when our main layout is deleted.
+        std::ignore = view->linkClicked.connect(clicked);
 
         if (addToNotebook)
         {
@@ -432,11 +433,10 @@ void EmotePopup::loadChannel(ChannelPtr channel)
     }
 
     // personal
-    if (const auto map = getApp()->seventvPersonalEmotes->getEmoteSetForUser(
-            getApp()->accounts->twitch.getCurrent()->getUserId()))
+    for (const auto &map : getApp()->seventvPersonalEmotes->getEmoteSetsForUser(
+             getApp()->accounts->twitch.getCurrent()->getUserId()))
     {
-        addEmotes(*subChannel, *map.get(), "7TV",
-                  MessageElementFlag::SevenTVEmote);
+        addEmotes(*subChannel, *map, "7TV", MessageElementFlag::SevenTVEmote);
     }
 
     this->globalEmotesView_->setChannel(globalChannel);
@@ -536,10 +536,10 @@ void EmotePopup::filterTwitchEmotes(std::shared_ptr<Channel> searchChannel,
                   MessageElementFlag::SevenTVEmote);
     }
 
-    if (const auto map = getApp()->seventvPersonalEmotes->getEmoteSetForUser(
-            getApp()->accounts->twitch.getCurrent()->getUserId()))
+    for (const auto &map : getApp()->seventvPersonalEmotes->getEmoteSetsForUser(
+             getApp()->accounts->twitch.getCurrent()->getUserId()))
     {
-        auto seventvPersonalEmotes = filterEmoteMap(searchText, map.get());
+        auto seventvPersonalEmotes = filterEmoteMap(searchText, map);
         if (!seventvPersonalEmotes.empty())
         {
             addEmotes(*searchChannel, seventvPersonalEmotes,

@@ -26,7 +26,7 @@ namespace chatterino {
 // Channel
 //
 Channel::Channel(const QString &name, Type type, bool watching)
-    : completionModel(*this)
+    : completionModel(*this, nullptr)
     , lastDate_(QDate::currentDate())
     , name_(name)
     , messages_(getSettings()->scrollbackSplitLimit)
@@ -112,7 +112,7 @@ void Channel::addMessage(MessagePtr message,
 
     if (this->messages_.pushBack(message, deleted))
     {
-        this->messageRemovedFromStart.invoke(deleted);
+        this->messageRemovedFromStart(deleted);
     }
 
     this->messageAppended.invoke(message, overridingFlags);
@@ -356,6 +356,10 @@ std::shared_ptr<Channel> Channel::getEmpty()
 }
 
 void Channel::onConnected()
+{
+}
+
+void Channel::messageRemovedFromStart(const MessagePtr &msg)
 {
 }
 
