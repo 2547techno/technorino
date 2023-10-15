@@ -362,7 +362,7 @@ UserInfoPopup::UserInfoPopup(bool closeAutomatically, QWidget *parent,
                         menu->addAction(
                             "Open logs site in browser", [loginName, this] {
                                 QDesktopServices::openUrl(
-                                    QUrl("https://logs.zonian.me/rdr/" +
+                                    QUrl("https://logs.zonian.dev/rdr/" +
                                          this->underlyingChannel_->getName() +
                                          "/" + loginName));
                             });

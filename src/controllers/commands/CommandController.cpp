@@ -951,7 +951,7 @@ void CommandController::initialize(Settings &, Paths &paths)
         }
 
         QString urlStr =
-            "https://logs.zonian.me/rdr/" + channelName + "/" + userName;
+            "https://logs.zonian.dev/rdr/" + channelName + "/" + userName;
         QUrl url = QUrl::fromUserInput(urlStr);
 
         bool res = false;
