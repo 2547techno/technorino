@@ -38,8 +38,8 @@ public:
                  const ChannelPtr &openingChannel);
 
 protected:
-    virtual void themeChangedEvent() override;
-    virtual void scaleChangedEvent(float scale) override;
+    void themeChangedEvent() override;
+    void scaleChangedEvent(float scale) override;
 
 private:
     void installEvents();
@@ -52,9 +52,8 @@ private:
     void loadSevenTVAvatar(const HelixUser &user);
     void setSevenTVAvatar(const QString &filename);
 
-    bool avatarDestroyed{};
-
-    void saveCacheAvatar(const QByteArray &avatar, const QString &filename);
+    void saveCacheAvatar(const QByteArray &avatar,
+                         const QString &filename) const;
 
     bool isMod_{};
     bool isBroadcaster_{};

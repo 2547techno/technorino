@@ -4,11 +4,11 @@
 #include "common/Outcome.hpp"
 #include "messages/SharedMessageBuilder.hpp"
 
-#include <boost/optional.hpp>
 #include <IrcMessage>
 #include <QString>
 #include <QVariant>
 
+#include <optional>
 #include <unordered_map>
 
 namespace chatterino {
@@ -58,6 +58,7 @@ public:
     MessagePtr build() override;
 
     void setThread(std::shared_ptr<MessageThread> thread);
+    void setParent(MessagePtr parent);
     void setMessageOffset(int offset);
 
     static void appendChannelPointRewardMessage(
@@ -108,7 +109,7 @@ private:
 
     void runIgnoreReplaces(std::vector<TwitchEmoteOccurrence> &twitchEmotes);
 
-    boost::optional<EmotePtr> getTwitchBadge(const Badge &badge);
+    std::optional<EmotePtr> getTwitchBadge(const Badge &badge) const;
     Outcome tryAppendEmote(const EmoteName &name) override;
 
     void addWords(const QStringList &words,
@@ -131,6 +132,7 @@ private:
     bool bitsStacked = false;
     bool historicalMessage_ = false;
     std::shared_ptr<MessageThread> thread_;
+    MessagePtr parent_;
 
     /**
      * Starting offset to be used on index-based operations on `originalMessage_`.

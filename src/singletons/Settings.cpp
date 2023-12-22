@@ -87,7 +87,7 @@ bool Settings::isMutedChannel(const QString &channelName)
     return false;
 }
 
-boost::optional<QString> Settings::matchNickname(const QString &usernameText)
+std::optional<QString> Settings::matchNickname(const QString &usernameText)
 {
     auto nicknames = this->nicknames.readOnly();
 
@@ -99,7 +99,7 @@ boost::optional<QString> Settings::matchNickname(const QString &usernameText)
         }
     }
 
-    return boost::none;
+    return std::nullopt;
 }
 
 void Settings::mute(const QString &channelName)
@@ -137,6 +137,7 @@ bool Settings::toggleMutedChannel(const QString &channelName)
 Settings *Settings::instance_ = nullptr;
 
 Settings::Settings(const QString &settingsDirectory)
+    : prevInstance_(Settings::instance_)
 {
     QString settingsPath = settingsDirectory + "/settings.json";
 
@@ -196,7 +197,10 @@ Settings::Settings(const QString &settingsDirectory)
         false);
 }
 
-Settings::~Settings() = default;
+Settings::~Settings()
+{
+    Settings::instance_ = this->prevInstance_;
+}
 
 void Settings::saveSnapshot()
 {
