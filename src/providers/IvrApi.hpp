@@ -157,12 +157,12 @@ public:
                    IvrFailureCallback failureCallback);
 
     void getMods2807Tools(QString channelName,
-                   ResultCallback<QJsonArray> resultCallback,
-                   IvrFailureCallback failureCallback);
+                          ResultCallback<QJsonArray> resultCallback,
+                          IvrFailureCallback failureCallback);
 
     void getVips2807Tools(QString channelName,
-                   ResultCallback<QJsonArray> resultCallback,
-                   IvrFailureCallback failureCallback);
+                          ResultCallback<QJsonArray> resultCallback,
+                          IvrFailureCallback failureCallback);
 
     static void initialize();
 

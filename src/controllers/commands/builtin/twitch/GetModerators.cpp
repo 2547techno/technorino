@@ -109,8 +109,10 @@ QString getModerators(const CommandContext &ctx)
                 QStringList mods;
                 for (int i = 0; i < result.size(); i++)
                 {
-                    mods.append(
-                        result.at(i).toObject().value("displayName").toString());
+                    mods.append(result.at(i)
+                                    .toObject()
+                                    .value("displayName")
+                                    .toString());
                 }
 
                 MessageBuilder builder;

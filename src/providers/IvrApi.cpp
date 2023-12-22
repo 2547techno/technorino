@@ -74,8 +74,8 @@ void IvrApi::getModVip(QString channelName,
 }
 
 void IvrApi::getMods2807Tools(QString channelName,
-                ResultCallback<QJsonArray> resultCallback,
-                IvrFailureCallback failureCallback)
+                              ResultCallback<QJsonArray> resultCallback,
+                              IvrFailureCallback failureCallback)
 {
     assert(!channelName.isEmpty());
 
@@ -95,8 +95,8 @@ void IvrApi::getMods2807Tools(QString channelName,
 }
 
 void IvrApi::getVips2807Tools(QString channelName,
-                ResultCallback<QJsonArray> resultCallback,
-                IvrFailureCallback failureCallback)
+                              ResultCallback<QJsonArray> resultCallback,
+                              IvrFailureCallback failureCallback)
 {
     assert(!channelName.isEmpty());
 
