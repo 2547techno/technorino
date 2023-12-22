@@ -112,7 +112,7 @@ namespace {
         {
             MessagePtr message = snapshot[i];
 
-            auto overrideFlags = boost::optional<MessageFlags>(message->flags);
+            auto overrideFlags = std::optional<MessageFlags>(message->flags);
             overrideFlags->set(MessageFlag::DoNotLog);
 
             if (checkMessageUserName(userName, message))
@@ -272,11 +272,6 @@ UserInfoPopup::UserInfoPopup(bool closeAutomatically, QWidget *parent,
         auto avatar =
             head.emplace<Button>(nullptr).assign(&this->ui_.avatarButton);
 
-        this->avatarDestroyed = false;
-        QObject::connect(avatar.getElement(), &QObject::destroyed, [this] {
-            this->avatarDestroyed = true;
-        });
-
         avatar->setScaleIndependantSize(100, 100);
         avatar->setDim(Button::Dim::None);
         QObject::connect(
@@ -297,15 +292,8 @@ UserInfoPopup::UserInfoPopup(bool closeAutomatically, QWidget *parent,
                             return;
                         }
 
-                        static QMenu *previousMenu = nullptr;
-                        if (previousMenu != nullptr)
-                        {
-                            previousMenu->deleteLater();
-                            previousMenu = nullptr;
-                        }
-
-                        auto menu = new QMenu;
-                        previousMenu = menu;
+                        auto *menu = new QMenu(this);
+                        menu->setAttribute(Qt::WA_DeleteOnClose);
 
                         auto avatarUrl = this->avatarUrl_;
                         auto username = this->userName_;
@@ -755,7 +743,18 @@ void UserInfoPopup::setData(const QString &name,
                             const ChannelPtr &contextChannel,
                             const ChannelPtr &openingChannel)
 {
-    this->userName_ = name;
+    const QStringView idPrefix = u"id:";
+    bool isId = name.startsWith(idPrefix);
+    if (isId)
+    {
+        this->userId_ = name.mid(idPrefix.size());
+        this->userName_ = "";
+    }
+    else
+    {
+        this->userName_ = name;
+    }
+
     this->channel_ = openingChannel;
 
     if (!contextChannel->isEmpty())
@@ -777,7 +776,11 @@ void UserInfoPopup::setData(const QString &name,
 
     this->userStateChanged_.invoke();
 
-    this->updateLatestMessages();
+    if (!isId)
+    {
+        this->updateLatestMessages();
+    }
+    // If we're opening by ID, this will be called as soon as we get the information from twitch
 }
 
 void UserInfoPopup::updateLatestMessages()
@@ -844,6 +847,14 @@ void UserInfoPopup::updateUserData()
         if (!hack.lock())
         {
             return;
+        }
+
+        // Correct for when being opened with ID
+        if (this->userName_.isEmpty())
+        {
+            this->userName_ = user.login;
+            // Ensure recent messages are shown
+            this->updateLatestMessages();
         }
 
         this->userId_ = user.id;
@@ -1001,8 +1012,16 @@ void UserInfoPopup::updateUserData()
         this->loadSevenTVUser(user);
     };
 
-    getHelix()->getUserByName(this->userName_, onUserFetched,
-                              onUserFetchFailed);
+    if (!this->userId_.isEmpty())
+    {
+        getHelix()->getUserById(this->userId_, onUserFetched,
+                                onUserFetchFailed);
+    }
+    else
+    {
+        getHelix()->getUserByName(this->userName_, onUserFetched,
+                                  onUserFetchFailed);
+    }
 
     this->ui_.block->setEnabled(false);
     this->ui_.ignoreHighlights->setEnabled(false);
@@ -1059,10 +1078,10 @@ void UserInfoPopup::loadSevenTVUser(const HelixUser &user)
     NetworkRequest(SEVENTV_USER_API.arg(user.id))
         .timeout(20000)
         .onSuccess([this, hack = std::weak_ptr<bool>(this->lifetimeHack_)](
-                       const NetworkResult &result) -> Outcome {
+                       const NetworkResult &result) {
             if (!hack.lock())
             {
-                return Success;
+                return;
             }
 
             auto root = result.parseJson();
@@ -1071,7 +1090,7 @@ void UserInfoPopup::loadSevenTVUser(const HelixUser &user)
             this->stvUserId_ = id;
             this->ui_.stvUser->setVisible(true);
 
-            return Success;
+            return;
         })
         .execute();
 }
@@ -1081,10 +1100,10 @@ void UserInfoPopup::loadSevenTVAvatar(const HelixUser &user)
     NetworkRequest(SEVENTV_USER_API.arg(user.id))
         .timeout(20000)
         .onSuccess([this, hack = std::weak_ptr<bool>(this->lifetimeHack_)](
-                       const NetworkResult &result) -> Outcome {
+                       const NetworkResult &result) {
             if (!hack.lock())
             {
-                return Success;
+                return;
             }
 
             auto root = result.parseJson();
@@ -1092,7 +1111,7 @@ void UserInfoPopup::loadSevenTVAvatar(const HelixUser &user)
 
             if (url.isEmpty())
             {
-                return Success;
+                return;
             }
             url.prepend("https:");
 
@@ -1106,7 +1125,7 @@ void UserInfoPopup::loadSevenTVAvatar(const HelixUser &user)
             {
                 this->avatarUrl_ = url;
                 this->setSevenTVAvatar(filename);
-                return Success;
+                return;
             }
 
             QNetworkRequest req(url);
@@ -1116,35 +1135,31 @@ void UserInfoPopup::loadSevenTVAvatar(const HelixUser &user)
             static auto *manager = new QNetworkAccessManager();
             auto *reply = manager->get(req);
 
-            QObject::connect(reply, &QNetworkReply::finished, this, [=, this] {
-                if (reply->error() == QNetworkReply::NoError)
-                {
-                    this->avatarUrl_ = url;
-                    this->saveCacheAvatar(reply->readAll(), filename);
-                    this->setSevenTVAvatar(filename);
-                }
-                else
-                {
-                    qCWarning(chatterinoSeventv)
-                        << "Error fetching Profile Picture:" << reply->error();
-                }
-            });
+            QObject::connect(reply, &QNetworkReply::finished, this,
+                             [this, reply, url, filename] {
+                                 if (reply->error() == QNetworkReply::NoError)
+                                 {
+                                     this->avatarUrl_ = url;
+                                     this->saveCacheAvatar(reply->readAll(),
+                                                           filename);
+                                     this->setSevenTVAvatar(filename);
+                                 }
+                                 else
+                                 {
+                                     qCWarning(chatterinoSeventv)
+                                         << "Error fetching Profile Picture:"
+                                         << reply->error();
+                                 }
+                             });
 
-            return Success;
+            return;
         })
         .execute();
 }
 
 void UserInfoPopup::setSevenTVAvatar(const QString &filename)
 {
-    auto hack = std::weak_ptr<bool>(this->lifetimeHack_);
-
-    if (this->avatarDestroyed || !hack.lock())
-    {
-        return;
-    }
-
-    auto *movie = new QMovie(filename, {});
+    auto *movie = new QMovie(filename, {}, this);
     if (!movie->isValid())
     {
         qCWarning(chatterinoSeventv)
@@ -1152,18 +1167,7 @@ void UserInfoPopup::setSevenTVAvatar(const QString &filename)
         return;
     }
 
-    QObject::connect(movie, &QMovie::frameChanged, [this, movie, hack] {
-        auto destroyed = this->avatarDestroyed || !hack.lock();
-
-        if (destroyed)
-        {
-            movie->disconnect();
-            movie->stop();
-            delete movie;
-
-            return;
-        };
-
+    QObject::connect(movie, &QMovie::frameChanged, this, [this, movie] {
         this->ui_.avatarButton->setPixmap(movie->currentPixmap());
     });
 
@@ -1171,7 +1175,7 @@ void UserInfoPopup::setSevenTVAvatar(const QString &filename)
 }
 
 void UserInfoPopup::saveCacheAvatar(const QByteArray &avatar,
-                                    const QString &filename)
+                                    const QString &filename) const
 {
     QFile outfile(filename);
     if (outfile.open(QIODevice::WriteOnly))

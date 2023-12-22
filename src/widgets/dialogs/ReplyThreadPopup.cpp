@@ -189,7 +189,7 @@ ReplyThreadPopup::ReplyThreadPopup(bool closeAutomatically, QWidget *parent,
 void ReplyThreadPopup::setThread(std::shared_ptr<MessageThread> thread)
 {
     this->thread_ = std::move(thread);
-    this->ui_.replyInput->setReply(this->thread_);
+    this->ui_.replyInput->setReply(this->thread_->root());
     this->addMessagesFromThread();
     this->updateInputUI();
 
@@ -239,7 +239,7 @@ void ReplyThreadPopup::addMessagesFromThread()
     this->ui_.threadView->setSourceChannel(sourceChannel);
 
     auto overrideFlags =
-        boost::optional<MessageFlags>(this->thread_->root()->flags);
+        std::optional<MessageFlags>(this->thread_->root()->flags);
     overrideFlags->set(MessageFlag::DoNotLog);
 
     this->virtualChannel_->addMessage(this->thread_->root(), overrideFlags);
@@ -247,7 +247,7 @@ void ReplyThreadPopup::addMessagesFromThread()
     {
         if (auto msg = msgRef.lock())
         {
-            auto overrideFlags = boost::optional<MessageFlags>(msg->flags);
+            auto overrideFlags = std::optional<MessageFlags>(msg->flags);
             overrideFlags->set(MessageFlag::DoNotLog);
 
             this->virtualChannel_->addMessage(msg, overrideFlags);
@@ -261,7 +261,7 @@ void ReplyThreadPopup::addMessagesFromThread()
                 if (message->replyThread == this->thread_)
                 {
                     auto overrideFlags =
-                        boost::optional<MessageFlags>(message->flags);
+                        std::optional<MessageFlags>(message->flags);
                     overrideFlags->set(MessageFlag::DoNotLog);
 
                     // same reply thread, add message

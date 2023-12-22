@@ -5,9 +5,8 @@ Features taken from:
 - https://github.com/MrAuro/chatterino2
 - https://github.com/Mm2PL/dankerino
 
-![alt text](https://fourtf.com/img/chatterino-icon-64.png)
+![chatterinoLogo](https://user-images.githubusercontent.com/41973452/272541622-52457e89-5f16-4c83-93e7-91866c25b606.png)
 Chatterino7 [![GitHub Actions Build (Windows, Ubuntu, MacOS)](https://github.com/SevenTV/chatterino7/workflows/Build/badge.svg?branch=chatterino7)](https://github.com/SevenTV/chatterino7/actions?query=workflow%3ABuild+branch%3Achatterino7) [![Chocolatey Package](https://img.shields.io/chocolatey/v/chatterino7?include_prereleases)](https://chocolatey.org/packages/chatterino7)
-============
 
 Chatterino7 is a fork of Chatterino 2. This fork mainly contains features that aren't accepted into Chatterino 2, most notably 7TV subscriber features.
 
@@ -108,7 +107,7 @@ The code is formatted using clang format in Qt Creator. [.clang-format](src/.cla
 
 ### Get it automated with QT Creator + Beautifier + Clang Format
 
-1. Download LLVM: https://github.com/llvm/llvm-project/releases/download/llvmorg-15.0.5/LLVM-15.0.5-win64.exe
+1. Download LLVM: https://github.com/llvm/llvm-project/releases/download/llvmorg-16.0.6/LLVM-16.0.6-win64.exe
 2. During the installation, make sure to add it to your path
 3. In QT Creator, select `Help` > `About Plugins` > `C++` > `Beautifier` to enable the plugin
 4. Restart QT Creator

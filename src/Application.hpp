@@ -44,6 +44,8 @@ class SeventvPaints;
 class FfzBadges;
 class SeventvBadges;
 class SeventvPersonalEmotes;
+class ImageUploader;
+class SeventvAPI;
 
 class IApplication
 {
@@ -66,8 +68,13 @@ public:
     virtual ITwitchIrcServer *getTwitch() = 0;
     virtual ChatterinoBadges *getChatterinoBadges() = 0;
     virtual FfzBadges *getFfzBadges() = 0;
+    virtual SeventvBadges *getSeventvBadges() = 0;
     virtual IUserDataController *getUserData() = 0;
     virtual ITwitchLiveController *getTwitchLiveController() = 0;
+
+    virtual SeventvPersonalEmotes *getSeventvPersonalEmotes() = 0;
+    virtual ImageUploader *getImageUploader() = 0;
+    virtual SeventvAPI *getSeventvAPI() = 0;
 };
 
 class Application : public IApplication
@@ -96,6 +103,8 @@ public:
     HotkeyController *const hotkeys{};
     WindowManager *const windows{};
     Toasts *const toasts{};
+    ImageUploader *const imageUploader{};
+    SeventvAPI *const seventvAPI{};
 
     CommandController *const commands{};
     NotificationController *const notifications{};
@@ -165,8 +174,25 @@ public:
     {
         return this->ffzBadges;
     }
+    SeventvBadges *getSeventvBadges() override
+    {
+        return this->seventvBadges;
+    }
     IUserDataController *getUserData() override;
     ITwitchLiveController *getTwitchLiveController() override;
+    ImageUploader *getImageUploader() override
+    {
+        return this->imageUploader;
+    }
+    SeventvAPI *getSeventvAPI() override
+    {
+        return this->seventvAPI;
+    }
+
+    SeventvPersonalEmotes *getSeventvPersonalEmotes() override
+    {
+        return this->seventvPersonalEmotes;
+    }
 
     pajlada::Signals::NoArgSignal streamerModeChanged;
 

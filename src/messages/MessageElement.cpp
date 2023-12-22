@@ -12,6 +12,7 @@
 #include "singletons/Settings.hpp"
 #include "singletons/Theme.hpp"
 #include "util/DebugCount.hpp"
+#include "util/Variant.hpp"
 
 #include <memory>
 
@@ -787,57 +788,66 @@ void SingleLineTextElement::addToContainer(MessageLayoutContainer &container,
         QString currentText;
 
         container.first = FirstWord::Neutral;
+
+        bool firstIteration = true;
         for (Word &word : this->words_)
         {
-            auto parsedWords = app->emotes->emojis.parse(word.text);
-            if (parsedWords.size() == 0)
+            if (firstIteration)
             {
-                continue;  // sanity check
+                firstIteration = false;
+            }
+            else
+            {
+                currentText += ' ';
             }
 
-            auto &parsedWord = parsedWords[0];
-            if (parsedWord.type() == typeid(QString))
+            for (const auto &parsedWord : app->emotes->emojis.parse(word.text))
             {
-                if (!currentText.isEmpty())
+                if (parsedWord.type() == typeid(QString))
                 {
-                    currentText += ' ';
-                }
-                currentText += word.text;
-                QString prev = currentText;  // only increments the ref-count
-                currentText = metrics.elidedText(currentText, Qt::ElideRight,
-                                                 container.remainingWidth());
-                if (currentText != prev)
-                {
-                    break;
-                }
-            }
-            else if (parsedWord.type() == typeid(EmotePtr))
-            {
-                auto emote = boost::get<EmotePtr>(parsedWord);
-                auto image =
-                    emote->images.getImageOrLoaded(container.getScale());
-                if (!image->isEmpty())
-                {
-                    auto emoteScale = getSettings()->emoteScale.getValue();
-
-                    int currentWidth = metrics.horizontalAdvance(currentText);
-                    auto emoteSize = QSize(image->width(), image->height()) *
-                                     (emoteScale * container.getScale());
-
-                    if (!container.fitsInLine(currentWidth + emoteSize.width()))
+                    currentText += boost::get<QString>(parsedWord);
+                    QString prev =
+                        currentText;  // only increments the ref-count
+                    currentText =
+                        metrics.elidedText(currentText, Qt::ElideRight,
+                                           container.remainingWidth());
+                    if (currentText != prev)
                     {
-                        currentText += ellipsis;
                         break;
                     }
+                }
+                else if (parsedWord.type() == typeid(EmotePtr))
+                {
+                    auto emote = boost::get<EmotePtr>(parsedWord);
+                    auto image =
+                        emote->images.getImageOrLoaded(container.getScale());
+                    if (!image->isEmpty())
+                    {
+                        auto emoteScale = getSettings()->emoteScale.getValue();
 
-                    // Add currently pending text to container, then add the emote after.
-                    container.addElementNoLineBreak(
-                        getTextLayoutElement(currentText, currentWidth, false));
-                    currentText.clear();
+                        int currentWidth =
+                            metrics.horizontalAdvance(currentText);
+                        auto emoteSize =
+                            QSize(image->width(), image->height()) *
+                            (emoteScale * container.getScale());
 
-                    container.addElementNoLineBreak(
-                        (new ImageLayoutElement(*this, image, emoteSize))
-                            ->setLink(this->getLink()));
+                        if (!container.fitsInLine(currentWidth +
+                                                  emoteSize.width()))
+                        {
+                            currentText += ellipsis;
+                            break;
+                        }
+
+                        // Add currently pending text to container, then add the emote after.
+                        container.addElementNoLineBreak(getTextLayoutElement(
+                            currentText, currentWidth, false));
+                        currentText.clear();
+
+                        container.addElementNoLineBreak(
+                            (new ImageLayoutElement(*this, image, emoteSize))
+                                ->setLink(this->getLink())
+                                ->setTrailingSpace(false));
+                    }
                 }
             }
         }
@@ -845,9 +855,6 @@ void SingleLineTextElement::addToContainer(MessageLayoutContainer &container,
         // Add the last of the pending message text to the container.
         if (!currentText.isEmpty())
         {
-            // Remove trailing space.
-            currentText = currentText.trimmed();
-
             int width = metrics.horizontalAdvance(currentText);
             container.addElementNoLineBreak(
                 getTextLayoutElement(currentText, width, false));
@@ -926,7 +933,7 @@ void TwitchModerationElement::addToContainer(MessageLayoutContainer &container,
             if (auto image = action.getImage())
             {
                 container.addElement(
-                    (new ImageLayoutElement(*this, image.get(), size))
+                    (new ImageLayoutElement(*this, *image, size))
                         ->setLink(Link(Link::UserAction, action.getAction())));
             }
             else
