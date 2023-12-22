@@ -114,11 +114,11 @@ QString getVIPs(const CommandContext &ctx)
     else
     {
         QString target = ctx.channel->getName();
-        getIvr()->getModVip(
+        getIvr()->getVips2807Tools(
             target,
             [channel{ctx.channel}, twitchChannel{ctx.twitchChannel},
              target](auto result) {
-                if (result.vips.isEmpty())
+                if (result.isEmpty())
                 {
                     channel->addMessage(makeSystemMessage(
                         "This channel does not have any VIPs."));
@@ -126,10 +126,10 @@ QString getVIPs(const CommandContext &ctx)
                 }
 
                 QStringList vips;
-                for (int i = 0; i < result.vips.size(); i++)
+                for (int i = 0; i < result.size(); i++)
                 {
                     vips.append(
-                        result.vips.at(i).toObject().value("login").toString());
+                        result.at(i).toObject().value("login").toString());
                 }
 
                 MessageBuilder builder;
