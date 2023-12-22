@@ -3,10 +3,10 @@
 #include "common/Channel.hpp"
 #include "controllers/commands/CommandContext.hpp"
 #include "messages/MessageBuilder.hpp"
+#include "providers/IvrApi.hpp"
 #include "providers/twitch/api/Helix.hpp"
 #include "providers/twitch/TwitchChannel.hpp"
 #include "providers/twitch/TwitchMessageBuilder.hpp"
-#include "providers/IvrApi.hpp"
 
 namespace {
 
@@ -70,7 +70,8 @@ QString getModerators(const CommandContext &ctx)
     {
         getHelix()->getModerators(
             ctx.twitchChannel->roomId(), 500,
-            [channel{ctx.channel}, twitchChannel{ctx.twitchChannel}](auto result) {
+            [channel{ctx.channel},
+             twitchChannel{ctx.twitchChannel}](auto result) {
                 if (result.empty())
                 {
                     channel->addMessage(makeSystemMessage(
@@ -81,47 +82,47 @@ QString getModerators(const CommandContext &ctx)
 
                 MessageBuilder builder;
                 TwitchMessageBuilder::listOfUsersSystemMessage(
-                    "The moderators of this channel are", result,
-                    twitchChannel, &builder);
+                    "The moderators of this channel are", result, twitchChannel,
+                    &builder);
                 channel->addMessage(builder.release());
             },
-            [channel{ctx.channel}, formatModsError{formatModsError}](auto error, auto message) {
+            [channel{ctx.channel}, formatModsError{formatModsError}](
+                auto error, auto message) {
                 auto errorMessage = formatModsError(error, message);
                 channel->addMessage(makeSystemMessage(errorMessage));
             });
     }
     else
     {
-    QString target = ctx.channel->getName();
-    getIvr()->getModVip(
-        target,
-        [channel{ctx.channel}, twitchChannel{ctx.twitchChannel}, target](auto result) {
-            if (result.mods.empty())
-            {
+        QString target = ctx.channel->getName();
+        getIvr()->getModVip(
+            target,
+            [channel{ctx.channel}, twitchChannel{ctx.twitchChannel},
+             target](auto result) {
+                if (result.mods.empty())
+                {
+                    channel->addMessage(makeSystemMessage(
+                        "This channel does not have any moderators."));
+                    return;
+                }
+
+                QStringList mods;
+                for (int i = 0; i < result.mods.size(); i++)
+                {
+                    mods.append(
+                        result.mods.at(i).toObject().value("login").toString());
+                }
+
+                MessageBuilder builder;
+                TwitchMessageBuilder::listOfUsersSystemMessage(
+                    "The moderators of this channel are", mods, twitchChannel,
+                    &builder);
+                channel->addMessage(builder.release());
+            },
+            [channel{ctx.channel}]() {
                 channel->addMessage(makeSystemMessage(
-                    "This channel does not have any moderators."));
-                return;
-            }
-
-            QStringList mods;
-            for (int i = 0; i < result.mods.size(); i++)
-            {
-                mods.append(result.mods.at(i)
-                                .toObject()
-                                .value("login")
-                                .toString());
-            }
-
-            MessageBuilder builder;
-            TwitchMessageBuilder::listOfUsersSystemMessage(
-                "The moderators of this channel are", mods,
-                twitchChannel, &builder);
-            channel->addMessage(builder.release());
-        },
-        [channel{ctx.channel}]() {
-            channel->addMessage(makeSystemMessage(
-                "Could not get moderators list from IVR!"));
-        });
+                    "Could not get moderators list from IVR!"));
+            });
     }
     return "";
 }

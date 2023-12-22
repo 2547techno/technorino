@@ -4,11 +4,11 @@
 #include "controllers/accounts/AccountController.hpp"
 #include "controllers/commands/CommandContext.hpp"
 #include "messages/MessageBuilder.hpp"
+#include "providers/IvrApi.hpp"
 #include "providers/twitch/api/Helix.hpp"
 #include "providers/twitch/TwitchAccount.hpp"
 #include "providers/twitch/TwitchChannel.hpp"
 #include "providers/twitch/TwitchMessageBuilder.hpp"
-#include "providers/IvrApi.hpp"
 #include "util/Twitch.hpp"
 
 namespace {
@@ -88,7 +88,8 @@ QString getVIPs(const CommandContext &ctx)
     {
         getHelix()->getChannelVIPs(
             ctx.twitchChannel->roomId(),
-            [channel{ctx.channel}, twitchChannel{ctx.twitchChannel}](const std::vector<HelixVip> &vipList) {
+            [channel{ctx.channel}, twitchChannel{ctx.twitchChannel}](
+                const std::vector<HelixVip> &vipList) {
                 if (vipList.empty())
                 {
                     channel->addMessage(makeSystemMessage(
@@ -96,8 +97,7 @@ QString getVIPs(const CommandContext &ctx)
                     return;
                 }
 
-                auto messagePrefix =
-                    QString("The VIPs of this channel are");
+                auto messagePrefix = QString("The VIPs of this channel are");
 
                 // TODO: sort results?
                 MessageBuilder builder;
@@ -116,7 +116,8 @@ QString getVIPs(const CommandContext &ctx)
         QString target = ctx.channel->getName();
         getIvr()->getModVip(
             target,
-            [channel{ctx.channel}, twitchChannel{ctx.twitchChannel}, target](auto result) {
+            [channel{ctx.channel}, twitchChannel{ctx.twitchChannel},
+             target](auto result) {
                 if (result.vips.isEmpty())
                 {
                     channel->addMessage(makeSystemMessage(
@@ -127,10 +128,8 @@ QString getVIPs(const CommandContext &ctx)
                 QStringList vips;
                 for (int i = 0; i < result.vips.size(); i++)
                 {
-                    vips.append(result.vips.at(i)
-                                    .toObject()
-                                    .value("login")
-                                    .toString());
+                    vips.append(
+                        result.vips.at(i).toObject().value("login").toString());
                 }
 
                 MessageBuilder builder;
@@ -140,8 +139,8 @@ QString getVIPs(const CommandContext &ctx)
                 channel->addMessage(builder.release());
             },
             [channel{ctx.channel}]() {
-                channel->addMessage(makeSystemMessage(
-                    "Could not get VIPs list from IVR!"));
+                channel->addMessage(
+                    makeSystemMessage("Could not get VIPs list from IVR!"));
             });
     }
 
