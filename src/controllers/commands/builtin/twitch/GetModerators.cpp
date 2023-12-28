@@ -95,11 +95,11 @@ QString getModerators(const CommandContext &ctx)
     else
     {
         QString target = ctx.channel->getName();
-        getIvr()->getModVip(
+        getIvr()->getMods2807Tools(
             target,
             [channel{ctx.channel}, twitchChannel{ctx.twitchChannel},
              target](auto result) {
-                if (result.mods.empty())
+                if (result.isEmpty())
                 {
                     channel->addMessage(makeSystemMessage(
                         "This channel does not have any moderators."));
@@ -107,10 +107,12 @@ QString getModerators(const CommandContext &ctx)
                 }
 
                 QStringList mods;
-                for (int i = 0; i < result.mods.size(); i++)
+                for (int i = 0; i < result.size(); i++)
                 {
-                    mods.append(
-                        result.mods.at(i).toObject().value("login").toString());
+                    mods.append(result.at(i)
+                                    .toObject()
+                                    .value("displayName")
+                                    .toString());
                 }
 
                 MessageBuilder builder;
