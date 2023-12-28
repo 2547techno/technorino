@@ -15,8 +15,8 @@
 - Minor: Added support for FrankerFaceZ animated emotes. (#4434)
 - Minor: /founders command
 - Minor: Auto-detach "watching tab" with technorino extension
-- Minor: Use IVR for /mods command in non-broadcaster channels
-- Minor: Use IVR for /vips command in non-broadcaster channels
+- Minor: Use external API for /mods command in non-broadcaster channels
+- Minor: Use external API for /vips command in non-broadcaster channels
 
 - Minor: Migrate to the new Get Channel Followers Helix endpoint, fixing follower count not showing up in usercards. (#4809)
 - Minor: The account switcher is now styled to match your theme. (#4817)
