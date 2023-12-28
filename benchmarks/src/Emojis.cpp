@@ -177,8 +177,9 @@ static void BM_EmojiParsing2(benchmark::State &state, Args &&...args)
 
 BENCHMARK_CAPTURE(BM_EmojiParsing2, one_emoji, "foo 🐧 bar", 1);
 BENCHMARK_CAPTURE(BM_EmojiParsing2, two_emoji, "foo 🐧 bar 🐧", 2);
-BENCHMARK_CAPTURE(BM_EmojiParsing2, many_emoji,
-                  "😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 "
-                  "😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 "
-                  "😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 ",
-                  61);
+BENCHMARK_CAPTURE(
+    BM_EmojiParsing2, many_emoji,
+    "😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 "
+    "😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 "
+    "😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 😂 ",
+    61);

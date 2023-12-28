@@ -5,8 +5,8 @@
 #include "messages/LimitedQueueSnapshot.hpp"
 #include "messages/Message.hpp"
 #include "messages/MessageBuilder.hpp"
-#include "singletons/Settings.hpp"
 #include "providers/twitch/TwitchChannel.hpp"
+#include "singletons/Settings.hpp"
 
 #include <QCoreApplication>
 
