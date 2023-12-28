@@ -5,6 +5,7 @@
 #include "messages/LimitedQueueSnapshot.hpp"
 #include "messages/Message.hpp"
 #include "messages/MessageBuilder.hpp"
+#include "providers/twitch/TwitchChannel.hpp"
 #include "singletons/Settings.hpp"
 
 #include <QCoreApplication>
@@ -13,10 +14,6 @@
 #include <sstream>
 
 namespace chatterino {
-
-const int RECONNECT_BASE_INTERVAL = 2000;
-// 60 falloff counter means it will try to reconnect at most every 60*2 seconds
-const int MAX_FALLOFF_COUNTER = 60;
 
 // Ratelimits for joinBucket_
 const int NORMAL_JOIN_RATELIMIT_BUDGET = 18;
@@ -103,6 +100,9 @@ AbstractIrcServer::AbstractIrcServer()
             }
             this->readConnection_->smartReconnect();
         });
+    this->connections_.managedConnect(this->readConnection_->heartbeat, [this] {
+        this->markChannelsConnected();
+    });
 }
 
 void AbstractIrcServer::initializeIrc()
@@ -363,8 +363,6 @@ void AbstractIrcServer::onReadConnected(IrcConnection *connection)
         {
             chan->addMessage(connectedMsg);
         }
-
-        chan->connected.invoke();
     }
 
     this->falloffCounter_ = 1;
@@ -392,7 +390,22 @@ void AbstractIrcServer::onDisconnected()
         }
 
         chan->addMessage(disconnectedMsg);
+
+        if (auto *channel = dynamic_cast<TwitchChannel *>(chan.get()))
+        {
+            channel->markDisconnected();
+        }
     }
+}
+
+void AbstractIrcServer::markChannelsConnected()
+{
+    this->forEachChannel([](const ChannelPtr &chan) {
+        if (auto *channel = dynamic_cast<TwitchChannel *>(chan.get()))
+        {
+            channel->markConnected();
+        }
+    });
 }
 
 std::shared_ptr<Channel> AbstractIrcServer::getCustomChannel(
