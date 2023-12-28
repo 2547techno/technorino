@@ -122,8 +122,8 @@ QString getModerators(const CommandContext &ctx)
                 channel->addMessage(builder.release());
             },
             [channel{ctx.channel}]() {
-                channel->addMessage(makeSystemMessage(
-                    "Could not get moderators list from IVR!"));
+                channel->addMessage(
+                    makeSystemMessage("Could not get moderators list!"));
             });
     }
     return "";

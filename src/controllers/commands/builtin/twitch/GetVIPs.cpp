@@ -140,7 +140,7 @@ QString getVIPs(const CommandContext &ctx)
             },
             [channel{ctx.channel}]() {
                 channel->addMessage(
-                    makeSystemMessage("Could not get VIPs list from IVR!"));
+                    makeSystemMessage("Could not get VIPs list!"));
             });
     }
 
