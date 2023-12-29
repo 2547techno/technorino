@@ -125,11 +125,21 @@ QString getVIPs(const CommandContext &ctx)
                     return;
                 }
 
-                QStringList vips;
+                std::vector<HelixVip> vips;
                 for (int i = 0; i < result.size(); i++)
                 {
-                    vips.append(
-                        result.at(i).toObject().value("login").toString());
+                    QJsonObject vipJson;
+
+                    vipJson.insert("user_id",
+                                   result.at(i).toObject().value("id"));
+                    vipJson.insert("user_name", result.at(i).toObject().value(
+                                                    "displayName"));
+                    vipJson.insert("user_login",
+                                   result.at(i).toObject().value("login"));
+
+                    HelixVip vip(vipJson);
+
+                    vips.push_back(vip);
                 }
 
                 MessageBuilder builder;
