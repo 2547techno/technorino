@@ -106,13 +106,21 @@ QString getModerators(const CommandContext &ctx)
                     return;
                 }
 
-                QStringList mods;
+                std::vector<HelixModerator> mods;
                 for (int i = 0; i < result.size(); i++)
                 {
-                    mods.append(result.at(i)
-                                    .toObject()
-                                    .value("displayName")
-                                    .toString());
+                    QJsonObject modJson;
+
+                    modJson.insert("user_id",
+                                   result.at(i).toObject().value("id"));
+                    modJson.insert("user_name", result.at(i).toObject().value(
+                                                    "displayName"));
+                    modJson.insert("user_login",
+                                   result.at(i).toObject().value("login"));
+
+                    HelixModerator moderator(modJson);
+
+                    mods.push_back(moderator);
                 }
 
                 MessageBuilder builder;
