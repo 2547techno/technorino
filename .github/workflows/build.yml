@@ -36,14 +36,14 @@ jobs:
           - os: windows-latest
             qt-version: 6.5.0
             force-lto: false
-            plugins: false
+            plugins: true
             skip-artifact: false
             skip-crashpad: false
           # Ubuntu 22.04, Qt 5.15
           - os: ubuntu-22.04
             qt-version: 5.15.2
             force-lto: false
-            plugins: false
+            plugins: true
             skip-artifact: false
             skip-crashpad: false
           # Ubuntu 22.04, Qt 6.2.4 - tests LTO & plugins
@@ -57,7 +57,7 @@ jobs:
           - os: macos-latest
             qt-version: 5.15.2
             force-lto: false
-            plugins: false
+            plugins: true
             skip-artifact: false
             skip-crashpad: false
 
