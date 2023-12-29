@@ -450,14 +450,23 @@ void CommandController::initialize(Settings &, Paths &paths)
             getIvr()->getFounders(
                 target,
                 [channel, twitchChannel, target](auto result) {
-                    QStringList founders;
+                    std::vector<HelixModerator> founders;
 
                     for (int i = 0; i < result.size(); i++)
                     {
-                        founders.append(result.at(i)
-                                            .toObject()
-                                            .value("displayName")
-                                            .toString());
+                        QJsonObject founderJson;
+
+                        founderJson.insert("user_id",
+                                           result.at(i).toObject().value("id"));
+                        founderJson.insert(
+                            "user_name",
+                            result.at(i).toObject().value("displayName"));
+                        founderJson.insert(
+                            "user_login",
+                            result.at(i).toObject().value("login"));
+
+                        HelixModerator founder(founderJson);
+                        founders.push_back(founder);
                     }
 
                     MessageBuilder builder;
