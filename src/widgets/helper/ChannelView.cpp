@@ -355,6 +355,10 @@ ChannelView::ChannelView(InternalCtor /*tag*/, QWidget *parent, Split *split,
     auto curve = QEasingCurve();
     curve.setCustomType(highlightEasingFunction);
     this->highlightAnimation_.setEasingCurve(curve);
+    QObject::connect(&this->highlightAnimation_,
+                     &QVariantAnimation::valueChanged, this, [this] {
+                         this->queueUpdate();
+                     });
 
     this->messageColors_.applyTheme(getTheme());
     this->messagePreferences_.connectSettings(getSettings(),
@@ -409,13 +413,13 @@ void ChannelView::initializeSignals()
         },
         this->signalHolder_);
 
-    this->signalHolder_.managedConnect(getApp()->windows->gifRepaintRequested,
-                                       [&] {
-                                           if (this->anyAnimationShown_)
-                                           {
-                                               this->queueUpdate();
-                                           }
-                                       });
+    this->signalHolder_.managedConnect(
+        getApp()->windows->gifRepaintRequested, [&] {
+            if (!this->animationArea_.isEmpty())
+            {
+                this->queueUpdate(this->animationArea_);
+            }
+        });
 
     this->signalHolder_.managedConnect(
         getApp()->windows->layoutRequested, [&](Channel *channel) {
@@ -583,6 +587,11 @@ void ChannelView::scaleChangedEvent(float scale)
 void ChannelView::queueUpdate()
 {
     this->update();
+}
+
+void ChannelView::queueUpdate(const QRect &area)
+{
+    this->update(area);
 }
 
 void ChannelView::queueLayout()
@@ -1098,12 +1107,13 @@ void ChannelView::messageAppended(MessagePtr &message,
 
     if (!messageFlags->has(MessageFlag::DoNotTriggerNotification))
     {
-        if (messageFlags->has(MessageFlag::Highlighted) &&
-            messageFlags->has(MessageFlag::ShowInMentions) &&
-            !messageFlags->has(MessageFlag::Subscription) &&
-            (getSettings()->highlightMentions ||
-             this->channel_->getType() != Channel::Type::TwitchMentions))
-
+        if ((messageFlags->has(MessageFlag::Highlighted) &&
+             messageFlags->has(MessageFlag::ShowInMentions) &&
+             !messageFlags->has(MessageFlag::Subscription) &&
+             (getSettings()->highlightMentions ||
+              this->channel_->getType() != Channel::Type::TwitchMentions)) ||
+            (this->channel_->getType() == Channel::Type::TwitchAutomod &&
+             getSettings()->enableAutomodHighlight))
         {
             this->tabHighlightRequested.invoke(HighlightState::Highlighted);
         }
@@ -1422,7 +1432,7 @@ void ChannelView::scrollToMessageLayout(MessageLayout *layout,
     }
 }
 
-void ChannelView::paintEvent(QPaintEvent * /*event*/)
+void ChannelView::paintEvent(QPaintEvent *event)
 {
     //    BenchmarkGuard benchmark("paint");
 
@@ -1431,7 +1441,7 @@ void ChannelView::paintEvent(QPaintEvent * /*event*/)
     painter.fillRect(rect(), this->theme->splits.background);
 
     // draw messages
-    this->drawMessages(painter);
+    this->drawMessages(painter, event->rect());
 
     // draw paused sign
     if (this->paused())
@@ -1445,7 +1455,7 @@ void ChannelView::paintEvent(QPaintEvent * /*event*/)
 
 // if overlays is false then it draws the message, if true then it draws things
 // such as the grey overlay when a message is disabled
-void ChannelView::drawMessages(QPainter &painter)
+void ChannelView::drawMessages(QPainter &painter, const QRect &area)
 {
     auto &messagesSnapshot = this->getMessagesSnapshot();
 
@@ -1478,7 +1488,10 @@ void ChannelView::drawMessages(QPainter &painter)
     };
     bool showLastMessageIndicator = getSettings()->showLastMessageIndicator;
 
-    bool anyAnimation = false;
+    QRect animationArea;
+    auto areaContainsY = [&area](auto y) {
+        return y >= area.y() && y < area.y() + area.height();
+    };
 
     for (; ctx.messageIndex < messagesSnapshot.size(); ++ctx.messageIndex)
     {
@@ -1493,16 +1506,36 @@ void ChannelView::drawMessages(QPainter &painter)
             ctx.isLastReadMessage = false;
         }
 
-        anyAnimation |= layout->paint(ctx).hasAnimatedElements;
-
-        if (this->highlightedMessage_ == layout)
+        if (areaContainsY(ctx.y) ||
+            areaContainsY(ctx.y + layout->getHeight()) ||
+            (ctx.y < area.y() && layout->getHeight() > area.height()))
         {
-            painter.fillRect(
-                0, ctx.y, layout->getWidth(), layout->getHeight(),
-                this->highlightAnimation_.currentValue().value<QColor>());
-            if (this->highlightAnimation_.state() == QVariantAnimation::Stopped)
+            auto paintResult = layout->paint(ctx);
+            if (paintResult.hasAnimatedElements)
             {
-                this->highlightedMessage_ = nullptr;
+                if (animationArea.isNull())
+                {
+                    animationArea = QRect{0, ctx.y, layout->getWidth(),
+                                          layout->getHeight()};
+                }
+                else
+                {
+                    animationArea.setBottom(ctx.y + layout->getHeight());
+                    animationArea.setWidth(
+                        std::max(layout->getWidth(), animationArea.width()));
+                }
+            }
+
+            if (this->highlightedMessage_ == layout)
+            {
+                painter.fillRect(
+                    0, ctx.y, layout->getWidth(), layout->getHeight(),
+                    this->highlightAnimation_.currentValue().value<QColor>());
+                if (this->highlightAnimation_.state() ==
+                    QVariantAnimation::Stopped)
+                {
+                    this->highlightedMessage_ = nullptr;
+                }
             }
         }
 
@@ -1514,7 +1547,23 @@ void ChannelView::drawMessages(QPainter &painter)
             break;
         }
     }
-    this->anyAnimationShown_ = anyAnimation;
+
+    // Only update on a full repaint as some messages with animated elements
+    // might get left out in partial repaints.
+    // This happens for example when hovering over the go-to-bottom button.
+    if (this->height() <= area.height())
+    {
+        this->animationArea_ = animationArea;
+    }
+#ifdef FOURTF
+    else
+    {
+        // shows the updated area on partial repaints
+        painter.setPen(Qt::red);
+        painter.drawRect(area.x(), area.y(), area.width() - 1,
+                         area.height() - 1);
+    }
+#endif
 
     if (end == nullptr)
     {
