@@ -423,7 +423,7 @@ QString AbstractIrcServer::cleanChannelName(const QString &dirtyChannelName)
 
 void AbstractIrcServer::addFakeMessage(const QString &data)
 {
-    auto fakeMessage = Communi::IrcMessage::fromData(
+    auto *fakeMessage = Communi::IrcMessage::fromData(
         data.toUtf8(), this->readConnection_.get());
 
     if (fakeMessage->command() == "PRIVMSG")

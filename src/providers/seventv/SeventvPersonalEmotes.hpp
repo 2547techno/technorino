@@ -19,7 +19,7 @@ namespace chatterino {
 class SeventvPersonalEmotes : public Singleton
 {
 public:
-    void initialize(Settings &settings, Paths &paths) override;
+    void initialize(Settings &settings, const Paths &paths) override;
 
     void createEmoteSet(const QString &id);
 
@@ -44,6 +44,9 @@ public:
 
     std::optional<EmotePtr> getEmoteForUser(const QString &userID,
                                             const EmoteName &emoteName) const;
+
+    std::optional<std::shared_ptr<const EmoteMap>> getEmoteSetByID(
+        const QString &emoteSetID) const;
 
 private:
     // emoteSetID => emoteSet
