@@ -1,13 +1,16 @@
-#include "SeventvPaints.hpp"
+#include "providers/seventv/SeventvPaints.hpp"
 
-#include "common/NetworkRequest.hpp"
-#include "common/NetworkResult.hpp"
+#include "Application.hpp"
+#include "common/network/NetworkRequest.hpp"
+#include "common/network/NetworkResult.hpp"
 #include "common/Outcome.hpp"
 #include "messages/Image.hpp"
 #include "providers/seventv/paints/LinearGradientPaint.hpp"
 #include "providers/seventv/paints/PaintDropShadow.hpp"
 #include "providers/seventv/paints/RadialGradientPaint.hpp"
 #include "providers/seventv/paints/UrlPaint.hpp"
+#include "singletons/WindowManager.hpp"
+#include "util/PostToThread.hpp"
 
 #include <QUrlQuery>
 
@@ -84,7 +87,6 @@ std::vector<PaintDropShadow> parseDropShadows(const QJsonArray &dropShadows)
 
 std::optional<std::shared_ptr<Paint>> parsePaint(const QJsonObject &paintJson)
 {
-    qDebug() << paintJson;
     const QString name = paintJson["name"].toString();
     const QString id = paintJson["id"].toString();
 
@@ -128,7 +130,7 @@ std::optional<std::shared_ptr<Paint>> parsePaint(const QJsonObject &paintJson)
 
 namespace chatterino {
 
-void SeventvPaints::initialize(Settings & /*settings*/, Paths & /*paths*/)
+void SeventvPaints::initialize(Settings & /*settings*/, const Paths & /*paths*/)
 {
     this->loadSeventvPaints();
 }
@@ -175,7 +177,25 @@ void SeventvPaints::assignPaintToUser(const QString &paintID,
     const auto paintIt = this->knownPaints_.find(paintID.toStdString());
     if (paintIt != this->knownPaints_.end())
     {
-        this->paintMap_[userName.string.toStdString()] = paintIt->second;
+        auto it = this->paintMap_.find(userName.string.toStdString());
+        bool changed = false;
+        if (it == this->paintMap_.end())
+        {
+            this->paintMap_.emplace(userName.string.toStdString(), paintIt->second);
+            changed = true;
+        }
+        else if (it->second != paintIt->second)
+        {
+            it->second = paintIt->second;
+            changed = true;
+        }
+
+        if (changed)
+        {
+            postToThread([] {
+                getIApp()->getWindows()->invalidateChannelViewBuffers();
+            });
+        }
     }
 }
 
