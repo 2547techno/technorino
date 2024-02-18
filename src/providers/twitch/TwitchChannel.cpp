@@ -167,12 +167,14 @@ TwitchChannel::TwitchChannel(const QString &name, bool isWatching)
             MessageBuilder builder;
             TwitchMessageBuilder::liveSystemMessage(this->getDisplayName(),
                                                     &builder);
+            builder.message().id = this->roomId();
             this->addMessage(builder.release());
 
             // Message in /live channel
             MessageBuilder builder2;
             TwitchMessageBuilder::liveMessage(this->getDisplayName(),
                                               &builder2);
+            builder2.message().id = this->roomId();
             getApp()->twitch->liveChannel->addMessage(builder2.release());
 
             // Notify on all channels with a ping sound
@@ -200,14 +202,12 @@ TwitchChannel::TwitchChannel(const QString &name, bool isWatching)
 
             // MSVC hates this code if the parens are not there
             int end = (std::max)(0, snapshotLength - 200);
-            auto liveMessageSearchText =
-                QString("%1 is live!").arg(this->getDisplayName());
 
             for (int i = snapshotLength - 1; i >= end; --i)
             {
                 const auto &s = snapshot[i];
 
-                if (s->messageText == liveMessageSearchText)
+                if (s->id == this->roomId())
                 {
                     s->flags.set(MessageFlag::Disabled);
                     break;
@@ -1836,7 +1836,7 @@ void TwitchChannel::upsertPersonalSeventvEmotes(
     /// or, if they're zero-width, to a layered emote element.
     const auto upsertWords = [&](MessageElementVec &elements,
                                  TextElement *textElement) {
-        std::vector<TextElement::Word> words;
+        QStringList words;
 
         /// Appends a text element with the pending @a words
         /// and clears the vector.
@@ -1900,7 +1900,7 @@ void TwitchChannel::upsertPersonalSeventvEmotes(
         // Find all words that match a personal emote and replace them with emotes
         for (const auto &word : textElement->words())
         {
-            auto emoteIt = emoteMap->find(EmoteName{word.text});
+            auto emoteIt = emoteMap->find(EmoteName{word});
             if (emoteIt == emoteMap->end())
             {
                 words.emplace_back(word);
