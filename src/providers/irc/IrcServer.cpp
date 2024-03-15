@@ -372,6 +372,11 @@ void IrcServer::sendWhisper(const QString &target, const QString &message)
     }
 }
 
+void IrcServer::sendRawMessage(const QString &rawMessage)
+{
+    AbstractIrcServer::sendRawMessage(rawMessage.left(510));
+}
+
 bool IrcServer::hasEcho() const
 {
     return this->hasEcho_;
