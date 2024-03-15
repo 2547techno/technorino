@@ -73,7 +73,7 @@ jobs:
 
       - name: Create nightly release
         if: ${{ contains(steps.build-installer.outputs.C2_INSTALLER_BASE_NAME, 'Nightly') && env.RELEASE_NIGHTLY_INSTALLER == 'ON' }}
-        uses: ncipollo/release-action@v1.12.0
+        uses: ncipollo/release-action@v1.14.0
         with:
           replacesArtifacts: true
           allowUpdates: true
@@ -93,7 +93,7 @@ jobs:
     outputs:
       IS_TAGGED: ${{ steps.is-rel.outputs.IS_TAGGED }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # allows for tags access
       - name: Check Release
@@ -107,19 +107,18 @@ jobs:
   draft-release:
     runs-on: ubuntu-latest
     needs: [create-installer, check-release]
-    if: ${{ needs.check-release.outputs.IS_TAGGED == '0' }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # allows for tags access
 
       - uses: actions/download-artifact@v4
         with:
-          name: Chatterino7.Installer.exe
+          name: Chatterino7${{ needs.check-release.outputs.IS_TAGGED != '0' && '.Nightly' || '' }}.Installer.exe
           path: build/
       - uses: actions/download-artifact@v4
         with:
-          name: Chatterino7.Portable.zip
+          name: Chatterino7${{ needs.check-release.outputs.IS_TAGGED != '0' && '.Nightly' || '' }}.Portable.zip
           path: build/
 
       - name: Download artifact
@@ -144,11 +143,9 @@ jobs:
         working-directory: build
         run: |
           ls -l
-          mv Chatterino-ubuntu-22.04-Qt-5.15.2.deb Chatterino-Ubuntu-22.04.deb
-          mv Chatterino-ubuntu-22.04-Qt-6.2.4.deb Chatterino-Ubuntu-22.04-Qt6.deb
+          mv Chatterino-ubuntu-22.04-Qt-6.6.1.deb Chatterino-Ubuntu-22.04-Qt6.deb
 
-          mv Chatterino-x86_64-5.15.2.AppImage Chatterino-x86_64.AppImage
-          mv Chatterino-x86_64-6.2.4.AppImage Chatterino-x86_64-Qt6.AppImage
+          mv Chatterino-x86_64-Qt-6.6.1.AppImage Chatterino-x86_64-Qt6.AppImage
 
           mv chatterino-windows-x86-64-Qt-6.5.0-symbols.pdb.7z Chatterino-Windows-debug-symbols.pdb.7z
 
@@ -160,11 +157,25 @@ jobs:
         run: |
           sha256sum * > sha256-checksums.txt
 
+      - name: Dry Run
+        if: ${{ needs.check-release.outputs.IS_TAGGED != '0' }}
+        run: |
+          echo "Dry Run"
+          echo "========================================"
+          echo "Files:"
+          ls -la build
+          echo "========================================"
+          echo "Sha256 sums:"
+          cat build/sha256-checksums.txt
+
       - name: Get Tag
         id: get-tag
+        if: ${{ needs.check-release.outputs.IS_TAGGED == '0' }}
         run: echo "VALUE=$(git describe --exact-match --match 'v*')" >> "$GITHUB_OUTPUT"
+
       - name: Create release
-        uses: ncipollo/release-action@v1.12.0
+        uses: ncipollo/release-action@v1.14.0
+        if: ${{ needs.check-release.outputs.IS_TAGGED == '0' }}
         with:
           replacesArtifacts: true
           allowUpdates: true

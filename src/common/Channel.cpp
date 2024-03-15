@@ -334,6 +334,11 @@ bool Channel::isLive() const
     return false;
 }
 
+bool Channel::isRerun() const
+{
+    return false;
+}
+
 bool Channel::shouldIgnoreHighlights() const
 {
     return this->type_ == Type::TwitchAutomod ||

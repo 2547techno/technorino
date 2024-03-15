@@ -9,7 +9,6 @@
 #include "providers/irc/IrcChannel2.hpp"
 #include "providers/irc/IrcServer.hpp"
 #include "providers/twitch/TwitchIrcServer.hpp"
-#include "singletons/Fonts.hpp"
 #include "singletons/Paths.hpp"
 #include "singletons/Settings.hpp"
 #include "singletons/Theme.hpp"
@@ -185,8 +184,7 @@ void WindowManager::updateWordTypeMask()
     flags.set(MEF::Collapsed);
     flags.set(settings->boldUsernames ? MEF::BoldUsername
                                       : MEF::NonBoldUsername);
-    flags.set(settings->lowercaseDomains ? MEF::LowercaseLink
-                                         : MEF::OriginalLink);
+    flags.set(MEF::LowercaseLinks, settings->lowercaseDomains);
     flags.set(MEF::ChannelPointReward);
 
     // update flags

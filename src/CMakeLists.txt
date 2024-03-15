@@ -223,8 +223,12 @@ set(SOURCE_FILES
 
         controllers/plugins/api/ChannelRef.cpp
         controllers/plugins/api/ChannelRef.hpp
+        controllers/plugins/api/IOWrapper.cpp
+        controllers/plugins/api/IOWrapper.hpp
         controllers/plugins/LuaAPI.cpp
         controllers/plugins/LuaAPI.hpp
+        controllers/plugins/PluginPermission.cpp
+        controllers/plugins/PluginPermission.hpp
         controllers/plugins/Plugin.cpp
         controllers/plugins/Plugin.hpp
         controllers/plugins/PluginController.hpp
@@ -297,8 +301,6 @@ set(SOURCE_FILES
 
         providers/IvrApi.cpp
         providers/IvrApi.hpp
-        providers/LinkResolver.cpp
-        providers/LinkResolver.hpp
         providers/NetworkConfigurationProvider.cpp
         providers/NetworkConfigurationProvider.hpp
 
@@ -361,6 +363,11 @@ set(SOURCE_FILES
         providers/irc/IrcMessageBuilder.hpp
         providers/irc/IrcServer.cpp
         providers/irc/IrcServer.hpp
+
+        providers/links/LinkInfo.cpp
+        providers/links/LinkInfo.hpp
+        providers/links/LinkResolver.cpp
+        providers/links/LinkResolver.hpp
 
         providers/liveupdates/BasicPubSubClient.hpp
         providers/liveupdates/BasicPubSubManager.hpp
@@ -468,6 +475,8 @@ set(SOURCE_FILES
         singletons/Resources.hpp
         singletons/Settings.cpp
         singletons/Settings.hpp
+        singletons/StreamerMode.cpp
+        singletons/StreamerMode.hpp
         singletons/Theme.cpp
         singletons/Theme.hpp
         singletons/Toasts.cpp
@@ -521,8 +530,6 @@ set(SOURCE_FILES
         util/SplitCommand.hpp
         util/StreamLink.cpp
         util/StreamLink.hpp
-        util/StreamerMode.cpp
-        util/StreamerMode.hpp
         util/ThreadGuard.hpp
         util/Twitch.cpp
         util/Twitch.hpp
@@ -747,7 +754,7 @@ add_library(${LIBRARY_PROJECT} OBJECT ${SOURCE_FILES})
 
 if(CHATTERINO_PLUGINS)
     target_compile_definitions(${LIBRARY_PROJECT}
-        PRIVATE
+        PUBLIC
         CHATTERINO_HAVE_PLUGINS
     )
     message(STATUS "Building Chatterino with lua plugin support enabled.")
@@ -786,6 +793,7 @@ target_link_libraries(${LIBRARY_PROJECT}
         RapidJSON::RapidJSON
         LRUCache
         MagicEnum
+        $<$<BOOL:${WIN32}>:Wtsapi32>
         )
 if (CHATTERINO_PLUGINS)
     target_link_libraries(${LIBRARY_PROJECT} PUBLIC lua)
@@ -838,7 +846,10 @@ if (BUILD_APP)
     endif()
 
     if (CHATTERINO_STATIC_QT_BUILD)
-        qt_import_plugins(${EXECUTABLE_PROJECT} INCLUDE_BY_TYPE platforms Qt::QXcbIntegrationPlugin)
+        qt_import_plugins(${EXECUTABLE_PROJECT} INCLUDE_BY_TYPE
+            platforms Qt::QXcbIntegrationPlugin
+            Qt::QMinimalIntegrationPlugin
+        )
     endif ()
 
     target_include_directories(${EXECUTABLE_PROJECT} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_BINARY_DIR}/autogen/)

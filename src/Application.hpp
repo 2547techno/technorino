@@ -4,8 +4,6 @@
 #include "debug/AssertInGuiThread.hpp"
 #include "singletons/NativeMessaging.hpp"
 
-#include <pajlada/signals.hpp>
-#include <pajlada/signals/signal.hpp>
 #include <QApplication>
 
 #include <cassert>
@@ -46,7 +44,6 @@ class Fonts;
 class Toasts;
 class IChatterinoBadges;
 class ChatterinoBadges;
-class SeventvBadges;
 class SeventvPaints;
 class FfzBadges;
 class SeventvBadges;
@@ -57,6 +54,8 @@ class CrashHandler;
 class BttvEmotes;
 class FfzEmotes;
 class SeventvEmotes;
+class ILinkResolver;
+class IStreamerMode;
 
 class IApplication
 {
@@ -101,6 +100,8 @@ public:
     virtual BttvEmotes *getBttvEmotes() = 0;
     virtual FfzEmotes *getFfzEmotes() = 0;
     virtual SeventvEmotes *getSeventvEmotes() = 0;
+    virtual ILinkResolver *getLinkResolver() = 0;
+    virtual IStreamerMode *getStreamerMode() = 0;
 };
 
 class Application : public IApplication
@@ -139,7 +140,7 @@ public:
 
 private:
     Theme *const themes{};
-    Fonts *const fonts{};
+    std::unique_ptr<Fonts> fonts{};
     Emotes *const emotes{};
     AccountController *const accounts{};
     HotkeyController *const hotkeys{};
@@ -170,6 +171,8 @@ private:
     std::unique_ptr<FfzEmotes> ffzEmotes;
     std::unique_ptr<SeventvEmotes> seventvEmotes;
     const std::unique_ptr<Logging> logging;
+    std::unique_ptr<ILinkResolver> linkResolver;
+    std::unique_ptr<IStreamerMode> streamerMode;
 #ifdef CHATTERINO_HAVE_PLUGINS
     PluginController *const plugins{};
 #endif
@@ -230,7 +233,8 @@ public:
     FfzEmotes *getFfzEmotes() override;
     SeventvEmotes *getSeventvEmotes() override;
 
-    pajlada::Signals::NoArgSignal streamerModeChanged;
+    ILinkResolver *getLinkResolver() override;
+    IStreamerMode *getStreamerMode() override;
 
 private:
     void addSingleton(Singleton *singleton);

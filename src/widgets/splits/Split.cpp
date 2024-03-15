@@ -334,7 +334,7 @@ Split::Split(QWidget *parent)
         },
         this->signalHolder_);
 
-    this->header_->updateModerationModeIcon();
+    this->header_->updateIcons();
     this->overlay_->hide();
 
     this->setSizePolicy(QSizePolicy::MinimumExpanding,
@@ -817,7 +817,7 @@ void Split::joinChannelInNewTab(ChannelPtr channel)
 
 void Split::refreshModerationMode()
 {
-    this->header_->updateModerationModeIcon();
+    this->header_->updateIcons();
     this->view_->queueLayout();
 }
 
@@ -869,7 +869,7 @@ void Split::setChannel(IndirectChannel newChannel)
     if (tc != nullptr)
     {
         this->usermodeChangedConnection_ = tc->userStateChanged.connect([this] {
-            this->header_->updateModerationModeIcon();
+            this->header_->updateIcons();
             this->header_->updateRoomModes();
         });
 
@@ -885,18 +885,9 @@ void Split::setChannel(IndirectChannel newChannel)
             });
         });
 
-    this->header_->updateModerationModeIcon();
+    this->header_->updateIcons();
     this->header_->updateChannelText();
     this->header_->updateRoomModes();
-
-    if (newChannel.getType() == Channel::Type::Twitch)
-    {
-        this->header_->setChattersButtonVisible(true);
-    }
-    else
-    {
-        this->header_->setChattersButtonVisible(false);
-    }
 
     this->channelSignalHolder_.managedConnect(
         this->channel_.get()->displayNameChanged, [this] {

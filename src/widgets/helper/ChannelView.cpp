@@ -19,19 +19,20 @@
 #include "messages/MessageElement.hpp"
 #include "messages/MessageThread.hpp"
 #include "providers/colors/ColorProvider.hpp"
-#include "providers/LinkResolver.hpp"
+#include "providers/links/LinkInfo.hpp"
+#include "providers/links/LinkResolver.hpp"
 #include "providers/twitch/TwitchAccount.hpp"
 #include "providers/twitch/TwitchChannel.hpp"
 #include "providers/twitch/TwitchIrcServer.hpp"
 #include "singletons/Resources.hpp"
 #include "singletons/Settings.hpp"
+#include "singletons/StreamerMode.hpp"
 #include "singletons/Theme.hpp"
 #include "singletons/WindowManager.hpp"
 #include "util/Clipboard.hpp"
 #include "util/DistanceBetweenPoints.hpp"
 #include "util/Helpers.hpp"
 #include "util/IncognitoBrowser.hpp"
-#include "util/StreamerMode.hpp"
 #include "util/Twitch.hpp"
 #include "widgets/dialogs/ReplyThreadPopup.hpp"
 #include "widgets/dialogs/SettingsDialog.hpp"
@@ -86,25 +87,31 @@ void addEmoteContextMenuItems(QMenu *menu, const Emote &emote,
     auto *copyMenu = new QMenu(menu);
     copyAction->setMenu(copyMenu);
 
-    // Add copy and open links for 1x, 2x, 3x
-    auto addImageLink = [&](const ImagePtr &image, char scale) {
+    // Scale of the smallest image
+    std::optional<qreal> baseScale;
+    // Add copy and open links for images
+    auto addImageLink = [&](const ImagePtr &image) {
         if (!image->isEmpty())
         {
-            copyMenu->addAction("&" + QString(scale) + "x link",
-                                [url = image->url()] {
-                                    crossPlatformCopy(url.string);
-                                });
-            openMenu->addAction("&" + QString(scale) + "x link",
-                                [url = image->url()] {
-                                    QDesktopServices::openUrl(QUrl(url.string));
-                                });
+            if (!baseScale)
+            {
+                baseScale = image->scale();
+            }
+
+            auto factor =
+                QString::number(static_cast<int>(*baseScale / image->scale()));
+            copyMenu->addAction("&" + factor + "x link", [url = image->url()] {
+                crossPlatformCopy(url.string);
+            });
+            openMenu->addAction("&" + factor + "x link", [url = image->url()] {
+                QDesktopServices::openUrl(QUrl(url.string));
+            });
         }
     };
 
-    addImageLink(emote.images.getImage1(), '1');
-    addImageLink(emote.images.getImage2(), '2');
-    addImageLink(emote.images.getImage3(), '3');
-    addImageLink(emote.images.getImage4(), '4');
+    addImageLink(emote.images.getImage1());
+    addImageLink(emote.images.getImage2());
+    addImageLink(emote.images.getImage3());
 
     // Copy and open emote page link
     auto addPageLink = [&](const QString &name) {
@@ -524,10 +531,10 @@ void ChannelView::pause(PauseReason reason, std::optional<uint> msecs)
 
 void ChannelView::unpause(PauseReason reason)
 {
-    /// Remove the value from the map
-    this->pauses_.erase(reason);
-
-    this->updatePauses();
+    if (this->pauses_.erase(reason) > 0)
+    {
+        this->updatePauses();
+    }
 }
 
 void ChannelView::updatePauses()
@@ -617,7 +624,7 @@ void ChannelView::scaleChangedEvent(float scale)
                      0.01, this->logicalDpiX() * this->devicePixelRatioF());
 #endif
         this->goToBottom_->getLabel().setFont(
-            getFonts()->getFont(FontStyle::UiMedium, factor));
+            getIApp()->getFonts()->getFont(FontStyle::UiMedium, factor));
     }
 }
 
@@ -1765,8 +1772,6 @@ void ChannelView::leaveEvent(QEvent * /*event*/)
     this->tooltipWidget_->hide();
 
     this->unpause(PauseReason::Mouse);
-
-    this->queueLayout();
 }
 
 void ChannelView::mouseMoveEvent(QMouseEvent *event)
@@ -1905,7 +1910,7 @@ void ChannelView::mouseMoveEvent(QMouseEvent *event)
                         {
                             // First entry gets a large image and full description
                             entries.push_back({showThumbnail
-                                                   ? emote->images.getImage(4.0)
+                                                   ? emote->images.getImage(3.0)
                                                    : nullptr,
                                                emoteTooltips[i]});
                         }
@@ -1942,55 +1947,16 @@ void ChannelView::mouseMoveEvent(QMouseEvent *event)
         }
         else
         {
-            if (element->getTooltip() == "No link info loaded")
-            {
-                std::weak_ptr<MessageLayout> weakLayout = layout;
-                LinkResolver::getLinkInfo(
-                    element->getLink().value, nullptr,
-                    [weakLayout, element](QString tooltipText,
-                                          Link originalLink,
-                                          ImagePtr thumbnail) {
-                        auto shared = weakLayout.lock();
-                        if (!shared)
-                        {
-                            return;
-                        }
-                        element->setTooltip(tooltipText);
-                        element->setThumbnail(thumbnail);
-                    });
-            }
             auto thumbnailSize = getSettings()->thumbnailSize;
-            if (thumbnailSize == 0)
+            auto *linkElement = dynamic_cast<LinkElement *>(element);
+            if (linkElement)
             {
-                // "Show thumbnails" is set to "Off", show text only
-                this->tooltipWidget_->setOne({nullptr, element->getTooltip()});
-            }
-            else
-            {
-                const auto shouldHideThumbnail =
-                    isInStreamerMode() &&
-                    getSettings()->streamerModeHideLinkThumbnails &&
-                    element->getThumbnail() != nullptr &&
-                    !element->getThumbnail()->url().string.isEmpty();
-                auto thumb =
-                    shouldHideThumbnail
-                        ? Image::fromResourcePixmap(getResources().streamerMode)
-                        : element->getThumbnail();
-
-                if (element->getThumbnailType() ==
-                    MessageElement::ThumbnailType::Link_Thumbnail)
+                if (linkElement->linkInfo()->isPending())
                 {
-                    this->tooltipWidget_->setOne({
-                        std::move(thumb),
-                        element->getTooltip(),
-                        thumbnailSize,
-                        thumbnailSize,
-                    });
+                    getIApp()->getLinkResolver()->resolve(
+                        linkElement->linkInfo());
                 }
-                else
-                {
-                    this->tooltipWidget_->setOne({std::move(thumb), ""});
-                }
+                this->setLinkInfoTooltip(linkElement->linkInfo());
             }
         }
 
@@ -3106,6 +3072,66 @@ bool ChannelView::canReplyToMessages() const
     }
 
     return true;
+}
+
+void ChannelView::setLinkInfoTooltip(LinkInfo *info)
+{
+    assert(info);
+
+    auto thumbnailSize = getSettings()->thumbnailSize;
+
+    ImagePtr thumbnail;
+    if (info->hasThumbnail() && thumbnailSize > 0)
+    {
+        if (getIApp()->getStreamerMode()->isEnabled() &&
+            getSettings()->streamerModeHideLinkThumbnails)
+        {
+            thumbnail = Image::fromResourcePixmap(getResources().streamerMode);
+        }
+        else
+        {
+            thumbnail = info->thumbnail();
+        }
+    }
+
+    this->tooltipWidget_->setOne({
+        .image = thumbnail,
+        .text = info->tooltip(),
+        .customWidth = thumbnailSize,
+        .customHeight = thumbnailSize,
+    });
+
+    if (info->isLoaded())
+    {
+        this->pendingLinkInfo_.clear();
+        return;  // Either resolved or errored (can't change anymore)
+    }
+
+    // listen to changes
+
+    if (this->pendingLinkInfo_.data() == info)
+    {
+        return;  // same info - already registered
+    }
+
+    if (this->pendingLinkInfo_)
+    {
+        QObject::disconnect(this->pendingLinkInfo_.data(),
+                            &LinkInfo::stateChanged, this, nullptr);
+    }
+    QObject::connect(info, &LinkInfo::stateChanged, this,
+                     &ChannelView::pendingLinkInfoStateChanged);
+    this->pendingLinkInfo_ = info;
+}
+
+void ChannelView::pendingLinkInfoStateChanged()
+{
+    if (!this->pendingLinkInfo_)
+    {
+        return;
+    }
+    this->setLinkInfoTooltip(this->pendingLinkInfo_.data());
+    this->tooltipWidget_->applyLastBoundsCheck();
 }
 
 }  // namespace chatterino

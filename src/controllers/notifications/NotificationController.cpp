@@ -9,6 +9,7 @@
 #include "providers/twitch/TwitchIrcServer.hpp"
 #include "providers/twitch/TwitchMessageBuilder.hpp"
 #include "singletons/Settings.hpp"
+#include "singletons/StreamerMode.hpp"
 #include "singletons/Toasts.hpp"
 #include "singletons/WindowManager.hpp"
 #include "util/Helpers.hpp"
@@ -186,14 +187,15 @@ void NotificationController::checkStream(bool live, QString channelName)
         getIApp()->getToasts()->sendChannelNotification(channelName, QString(),
                                                         Platform::Twitch);
     }
+    bool inStreamerMode = getIApp()->getStreamerMode()->isEnabled();
     if (getSettings()->notificationPlaySound &&
-        !(isInStreamerMode() &&
+        !(inStreamerMode &&
           getSettings()->streamerModeSuppressLiveNotifications))
     {
         getIApp()->getNotifications()->playSound();
     }
     if (getSettings()->notificationFlashTaskbar &&
-        !(isInStreamerMode() &&
+        !(inStreamerMode &&
           getSettings()->streamerModeSuppressLiveNotifications))
     {
         getIApp()->getWindows()->sendAlert();
@@ -227,7 +229,8 @@ void NotificationController::removeFakeChannel(const QString channelName)
         {
             const auto &s = snapshot[i];
 
-            if (s->messageText == liveMessageSearchText)
+            if (QString::compare(s->messageText, liveMessageSearchText,
+                                 Qt::CaseInsensitive) == 0)
             {
                 s->flags.set(MessageFlag::Disabled);
                 break;

@@ -17,7 +17,6 @@
 #include "util/FuzzyConvert.hpp"
 #include "util/Helpers.hpp"
 #include "util/IncognitoBrowser.hpp"
-#include "util/StreamerMode.hpp"
 #include "widgets/BaseWindow.hpp"
 #include "widgets/settingspages/GeneralPageView.hpp"
 #include "widgets/splits/SplitInput.hpp"
@@ -167,17 +166,17 @@ void GeneralPage::initLayout(GeneralPageView &layout)
     }
 
     layout.addDropdown<QString>(
-        "Font", {"Segoe UI", "Arial", "Choose..."},
-        getIApp()->getFonts()->chatFontFamily,
+        "Font", {"Segoe UI", "Arial", "Choose..."}, s.chatFontFamily,
         [](auto val) {
             return val;
         },
         [this](auto args) {
             return this->getFont(args);
-        });
+        },
+        true, "", true);
     layout.addDropdown<int>(
         "Font size", {"9pt", "10pt", "12pt", "14pt", "16pt", "20pt"},
-        getIApp()->getFonts()->chatFontSize,
+        s.chatFontSize,
         [](auto val) {
             return QString::number(val) + "pt";
         },
@@ -549,7 +548,7 @@ void GeneralPage::initLayout(GeneralPageView &layout)
     layout.addCheckbox("Use experimental smarter emote completion.",
                        s.useSmartEmoteCompletion);
     layout.addDropdown<float>(
-        "Size", {"0.5x", "0.75x", "Default", "1.25x", "1.5x", "2x", "3x", "4x"},
+        "Size", {"0.5x", "0.75x", "Default", "1.25x", "1.5x", "2x"},
         s.emoteScale,
         [](auto val) {
             if (val == 1)
@@ -1065,6 +1064,11 @@ void GeneralPage::initLayout(GeneralPageView &layout)
                        "Find mentions of users in chat without the @ prefix.");
     layout.addCheckbox("Show username autocompletion popup menu",
                        s.showUsernameCompletionMenu);
+    layout.addCheckbox(
+        "Always include broadcaster in user completions",
+        s.alwaysIncludeBroadcasterInUserCompletions, false,
+        "This will ensure a broadcaster is always easy to ping, even if they "
+        "don't have chat open or have typed recently.");
     const QStringList usernameDisplayModes = {"Username", "Localized name",
                                               "Username and localized name"};
 
@@ -1271,6 +1275,13 @@ void GeneralPage::initLayout(GeneralPageView &layout)
     helixTimegateModerators->setMinimumWidth(
         helixTimegateModerators->minimumSizeHint().width());
 
+    layout.addDropdownEnumClass<ChatSendProtocol>(
+        "Chat send protocol", magic_enum::enum_names<ChatSendProtocol>(),
+        s.chatSendProtocol,
+        "'Helix' will use Twitch's Helix API to send message. 'IRC' will use "
+        "IRC to send messages.",
+        {});
+
     layout.addCheckbox(
         "Show send message button", s.showSendButton, false,
         "Show a Send button next to each split input that can be "
@@ -1315,22 +1326,19 @@ QString GeneralPage::getFont(const DropdownArgs &args) const
 {
     if (args.combobox->currentIndex() == args.combobox->count() - 1)
     {
-        args.combobox->setCurrentIndex(0);
         args.combobox->setEditText("Choosing...");
-        QFontDialog dialog(
-            getIApp()->getFonts()->getFont(FontStyle::ChatMedium, 1.));
 
         auto ok = bool();
-        auto font = dialog.getFont(&ok, this->window());
+        auto previousFont =
+            getIApp()->getFonts()->getFont(FontStyle::ChatMedium, 1.);
+        auto font = QFontDialog::getFont(&ok, previousFont, this->window());
 
         if (ok)
         {
             return font.family();
         }
-        else
-        {
-            return args.combobox->itemText(0);
-        }
+
+        return previousFont.family();
     }
     return args.value;
 }

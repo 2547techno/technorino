@@ -1,11 +1,11 @@
 #pragma once
-#include "providers/twitch/TwitchChannel.hpp"
-
-#include <optional>
 #ifdef CHATTERINO_HAVE_PLUGINS
 #    include "common/Channel.hpp"
 #    include "controllers/plugins/LuaUtilities.hpp"
 #    include "controllers/plugins/PluginController.hpp"
+#    include "providers/twitch/TwitchChannel.hpp"
+
+#    include <optional>
 
 namespace chatterino::lua::api {
 // NOLINTBEGIN(readability-identifier-naming)
@@ -271,5 +271,6 @@ struct LuaStreamStatus {
 namespace chatterino::lua {
 StackIdx push(lua_State *L, const api::LuaRoomModes &modes);
 StackIdx push(lua_State *L, const api::LuaStreamStatus &status);
+StackIdx push(lua_State *L, ChannelPtr chn);
 }  // namespace chatterino::lua
 #endif

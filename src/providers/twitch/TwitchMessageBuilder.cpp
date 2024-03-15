@@ -613,9 +613,10 @@ MessagePtr TwitchMessageBuilder::build()
         this->stylizeUsername(this->userName, this->message());
 
     this->message().messageText = this->originalMessage_;
-    this->message().searchText = stylizedUsername + " " +
-                                 this->message().localizedName + " " +
-                                 this->userName + ": " + this->originalMessage_;
+    this->message().searchText =
+        stylizedUsername + " " + this->message().localizedName + " " +
+        this->userName + ": " + this->originalMessage_ + " " +
+        this->message().searchText;
 
     // highlights
     this->parseHighlights();
@@ -1503,6 +1504,18 @@ void TwitchMessageBuilder::appendFfzBadges()
         this->emplace<FfzBadgeElement>(
             badge.emote, MessageElementFlag::BadgeFfz, badge.color);
     }
+
+    if (this->twitchChannel == nullptr)
+    {
+        return;
+    }
+
+    for (const auto &badge :
+         this->twitchChannel->ffzChannelBadges(this->userId_))
+    {
+        this->emplace<FfzBadgeElement>(
+            badge.emote, MessageElementFlag::BadgeFfz, badge.color);
+    }
 }
 
 void TwitchMessageBuilder::appendSeventvBadges()
@@ -2053,6 +2066,7 @@ std::pair<MessagePtr, MessagePtr> TwitchMessageBuilder::makeAutomodMessage(
     builder.message().flags.set(MessageFlag::PubSub);
     builder.message().flags.set(MessageFlag::Timeout);
     builder.message().flags.set(MessageFlag::AutoMod);
+    builder.message().flags.set(MessageFlag::AutoModOffendingMessageHeader);
 
     // AutoMod shield badge
     builder.emplace<BadgeElement>(makeAutoModBadge(),

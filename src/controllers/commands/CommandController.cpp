@@ -393,6 +393,8 @@ void CommandController::initialize(Settings &, const Paths &paths)
 
 #ifndef NDEBUG
     this->registerCommand("/fakemsg", &commands::injectFakeMessage);
+    this->registerCommand("/debug-update-to-no-stream",
+                          &commands::injectStreamUpdateNoStream);
 #endif
 
     this->registerCommand("/copy", &commands::copyToClipboard);

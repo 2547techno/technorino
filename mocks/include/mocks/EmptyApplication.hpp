@@ -5,6 +5,8 @@
 #include "singletons/Paths.hpp"
 #include "singletons/Updates.hpp"
 
+#include <QTemporaryDir>
+
 namespace chatterino::mock {
 
 class EmptyApplication : public IApplication
@@ -200,6 +202,15 @@ public:
         return nullptr;
     }
 
+#ifdef CHATTERINO_HAVE_PLUGINS
+    PluginController *getPlugins() override
+    {
+        assert(false && "EmptyApplication::getPlugins was called without "
+                        "being initialized");
+        return nullptr;
+    }
+#endif
+
     Updates &getUpdates() override
     {
         return this->updates_;
@@ -226,7 +237,22 @@ public:
         return nullptr;
     }
 
-private:
+    ILinkResolver *getLinkResolver() override
+    {
+        assert(false && "EmptyApplication::getLinkResolver was called without "
+                        "being initialized");
+        return nullptr;
+    }
+
+    IStreamerMode *getStreamerMode() override
+    {
+        assert(false && "EmptyApplication::getStreamerMode was called without "
+                        "being initialized");
+        return nullptr;
+    }
+
+protected:
+    QTemporaryDir settingsDir;
     Paths paths_;
     Args args_;
     Updates updates_;

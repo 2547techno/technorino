@@ -47,9 +47,10 @@ TooltipWidget::TooltipWidget(BaseWidget *parent)
     this->setLayout(this->vLayout_);
     this->currentStyle_ = TooltipStyle::Vertical;
 
-    this->connections_.managedConnect(getFonts()->fontChanged, [this] {
-        this->updateFont();
-    });
+    this->connections_.managedConnect(getIApp()->getFonts()->fontChanged,
+                                      [this] {
+                                          this->updateFont();
+                                      });
     this->updateFont();
 
     auto *windows = getIApp()->getWindows();
@@ -90,6 +91,7 @@ TooltipWidget::TooltipWidget(BaseWidget *parent)
             if (needSizeAdjustment)
             {
                 this->adjustSize();
+                this->applyLastBoundsCheck();
             }
         });
 }
@@ -298,8 +300,8 @@ void TooltipWidget::scaleChangedEvent(float)
 
 void TooltipWidget::updateFont()
 {
-    this->setFont(
-        getFonts()->getFont(FontStyle::ChatMediumSmall, this->scale()));
+    this->setFont(getIApp()->getFonts()->getFont(FontStyle::ChatMediumSmall,
+                                                 this->scale()));
 }
 
 void TooltipWidget::setWordWrap(bool wrap)

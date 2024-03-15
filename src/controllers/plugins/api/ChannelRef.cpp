@@ -74,11 +74,13 @@ ChannelPtr ChannelRef::getOrError(lua_State *L, bool expiredOk)
     if (lua_isuserdata(L, lua_gettop(L)) == 0)
     {
         luaL_error(
-            L, "Called c2.Channel method with a non Channel 'self' argument.");
+            L, "Called c2.Channel method with a non-userdata 'self' argument");
         return nullptr;
     }
-    auto *data = WeakPtrUserData<UserData::Type::Channel, Channel>::from(
-        lua_touserdata(L, lua_gettop(L)));
+    // luaL_checkudata is no-return if check fails
+    auto *checked = luaL_checkudata(L, lua_gettop(L), "c2.Channel");
+    auto *data =
+        WeakPtrUserData<UserData::Type::Channel, Channel>::from(checked);
     if (data == nullptr)
     {
         luaL_error(L,
@@ -297,16 +299,7 @@ int ChannelRef::get_by_name(lua_State *L)
         return 1;
     }
     auto chn = getApp()->twitch->getChannelOrEmpty(name);
-    if (chn->isEmpty())
-    {
-        lua_pushnil(L);
-        return 1;
-    }
-    // pushes onto stack
-    WeakPtrUserData<UserData::Type::Channel, Channel>::create(
-        L, chn->weak_from_this());
-    luaL_getmetatable(L, "c2.Channel");
-    lua_setmetatable(L, -2);
+    lua::push(L, chn);
     return 1;
 }
 
@@ -330,16 +323,8 @@ int ChannelRef::get_by_twitch_id(lua_State *L)
         return 1;
     }
     auto chn = getApp()->twitch->getChannelOrEmptyByID(id);
-    if (chn->isEmpty())
-    {
-        lua_pushnil(L);
-        return 1;
-    }
-    // pushes onto stack
-    WeakPtrUserData<UserData::Type::Channel, Channel>::create(
-        L, chn->weak_from_this());
-    luaL_getmetatable(L, "c2.Channel");
-    lua_setmetatable(L, -2);
+
+    lua::push(L, chn);
     return 1;
 }
 
@@ -388,6 +373,22 @@ StackIdx push(lua_State *L, const api::LuaStreamStatus &status)
     PUSH(game_id);
 #    undef PUSH
     return out;
+}
+
+StackIdx push(lua_State *L, ChannelPtr chn)
+{
+    using namespace chatterino::lua::api;
+
+    if (chn->isEmpty())
+    {
+        lua_pushnil(L);
+        return lua_gettop(L);
+    }
+    WeakPtrUserData<UserData::Type::Channel, Channel>::create(
+        L, chn->weak_from_this());
+    luaL_getmetatable(L, "c2.Channel");
+    lua_setmetatable(L, -2);
+    return lua_gettop(L);
 }
 
 }  // namespace chatterino::lua

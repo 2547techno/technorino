@@ -4,6 +4,7 @@
 #include "messages/ImageSet.hpp"
 #include "messages/Link.hpp"
 #include "messages/MessageColor.hpp"
+#include "providers/links/LinkInfo.hpp"
 #include "singletons/Fonts.hpp"
 
 #include <pajlada/signals/signalholder.hpp>
@@ -136,10 +137,9 @@ enum class MessageElementFlag : int64_t {
     BoldUsername = (1LL << 27),
     NonBoldUsername = (1LL << 28),
 
-    // for links
-    LowercaseLink = (1LL << 29),
-    OriginalLink = (1LL << 30),
-
+    // used to check if links should be lowercased
+    LowercaseLinks = (1LL << 29),
+    // Unused = (1LL << 30)
     // Unused: (1LL << 31)
 
     // for elements of the message reply
@@ -160,16 +160,6 @@ using MessageElementFlags = FlagsEnum<MessageElementFlag>;
 class MessageElement
 {
 public:
-    enum UpdateFlags : char {
-        Update_Text = 1,
-        Update_Emotes = 2,
-        Update_Images = 4,
-        Update_All = Update_Text | Update_Emotes | Update_Images
-    };
-    enum ThumbnailType : char {
-        Link_Thumbnail = 1,
-    };
-
     virtual ~MessageElement();
 
     MessageElement(const MessageElement &) = delete;
@@ -179,29 +169,20 @@ public:
     MessageElement &operator=(MessageElement &&) = delete;
 
     MessageElement *setLink(const Link &link);
-    MessageElement *setText(const QString &text);
     MessageElement *setTooltip(const QString &tooltip);
-    MessageElement *setThumbnailType(const ThumbnailType type);
-    MessageElement *setThumbnail(const ImagePtr &thumbnail);
 
     MessageElement *setTrailingSpace(bool value);
     const QString &getTooltip() const;
-    const ImagePtr &getThumbnail() const;
-    const ThumbnailType &getThumbnailType() const;
 
-    const QString &getText() const;
-    const Link &getLink() const;
+    virtual Link getLink() const;
     bool hasTrailingSpace() const;
     MessageElementFlags getFlags() const;
     void addFlags(MessageElementFlags flags);
-    MessageElement *updateLink();
 
     virtual void addToContainer(MessageLayoutContainer &container,
                                 MessageElementFlags flags) = 0;
 
     virtual std::unique_ptr<MessageElement> clone() const = 0;
-
-    pajlada::Signals::NoArgSignal linkChanged;
 
 protected:
     MessageElement(MessageElementFlags flags);
@@ -210,29 +191,9 @@ protected:
     void cloneFrom(const MessageElement &source);
 
 private:
-    QString text_;
     Link link_;
     QString tooltip_;
-    ImagePtr thumbnail_;
-    ThumbnailType thumbnailType_{};
     MessageElementFlags flags_;
-};
-
-// used when layout element doesn't have a creator
-class EmptyElement : public MessageElement
-{
-public:
-    EmptyElement();
-
-    void addToContainer(MessageLayoutContainer &container,
-                        MessageElementFlags flags) override;
-
-    std::unique_ptr<MessageElement> clone() const override;
-
-    static EmptyElement &instance();
-
-private:
-    ImagePtr image_;
 };
 
 // contains a simple image
@@ -272,15 +233,10 @@ private:
 class TextElement : public MessageElement
 {
 public:
-    struct Word {
-        QString text;
-        int width = -1;
-    };
-
     TextElement(const QString &text, MessageElementFlags flags,
                 const MessageColor &color = MessageColor::Text,
                 FontStyle style = FontStyle::ChatMedium);
-    TextElement(std::vector<Word> &&words, MessageElementFlags flags,
+    TextElement(QStringList &&words, MessageElementFlags flags,
                 const MessageColor &color = MessageColor::Text,
                 FontStyle style = FontStyle::ChatMedium);
     ~TextElement() override = default;
@@ -288,18 +244,19 @@ public:
     MessageColor color() const;
     FontStyle style() const;
 
-    const std::vector<Word> &words() const;
+    QStringList words() const;
 
     void addToContainer(MessageLayoutContainer &container,
                         MessageElementFlags flags) override;
 
     std::unique_ptr<MessageElement> clone() const override;
 
+protected:
+    QStringList words_;
+
 private:
     MessageColor color_;
     FontStyle style_;
-
-    std::vector<Word> words_;
 };
 
 // contains a text that will be truncated to one line
@@ -325,6 +282,42 @@ private:
         int width = -1;
     };
     std::vector<Word> words_;
+};
+
+class LinkElement : public TextElement
+{
+public:
+    struct Parsed {
+        QString lowercase;
+        QString original;
+    };
+
+    LinkElement(const Parsed &parsed, MessageElementFlags flags,
+                const MessageColor &color = MessageColor::Text,
+                FontStyle style = FontStyle::ChatMedium);
+    ~LinkElement() override = default;
+    LinkElement(const LinkElement &) = delete;
+    LinkElement(LinkElement &&) = delete;
+    LinkElement &operator=(const LinkElement &) = delete;
+    LinkElement &operator=(LinkElement &&) = delete;
+
+    void addToContainer(MessageLayoutContainer &container,
+                        MessageElementFlags flags) override;
+
+    Link getLink() const override;
+
+    [[nodiscard]] LinkInfo *linkInfo()
+    {
+        return &this->linkInfo_;
+    }
+
+    std::unique_ptr<MessageElement> clone() const override;
+
+private:
+    LinkInfo linkInfo_;
+    // these are implicitly shared
+    QStringList lowercase_;
+    QStringList original_;
 };
 
 // contains emote data and will pick the emote based on :

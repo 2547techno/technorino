@@ -19,6 +19,7 @@
 #include "providers/bttv/BttvEmotes.hpp"
 #include "providers/bttv/BttvLiveUpdates.hpp"
 #include "providers/bttv/liveupdates/BttvLiveUpdateMessages.hpp"
+#include "providers/ffz/FfzBadges.hpp"
 #include "providers/ffz/FfzEmotes.hpp"
 #include "providers/recentmessages/Api.hpp"
 #include "providers/seventv/eventapi/Dispatch.hpp"
@@ -35,6 +36,7 @@
 #include "providers/twitch/TwitchMessageBuilder.hpp"
 #include "singletons/Emotes.hpp"
 #include "singletons/Settings.hpp"
+#include "singletons/StreamerMode.hpp"
 #include "singletons/Toasts.hpp"
 #include "singletons/WindowManager.hpp"
 #include "util/Helpers.hpp"
@@ -74,6 +76,9 @@ namespace {
 
     // Maximum number of chatters to fetch when refreshing chatters
     constexpr auto MAX_CHATTERS_TO_FETCH = 5000;
+
+    // From Twitch docs - expected size for a badge (1x)
+    constexpr QSize BASE_BADGE_SIZE(18, 18);
 }  // namespace
 
 TwitchChannel::TwitchChannel(const QString &name, bool isWatching)
@@ -167,17 +172,19 @@ TwitchChannel::TwitchChannel(const QString &name, bool isWatching)
             MessageBuilder builder;
             TwitchMessageBuilder::liveSystemMessage(this->getDisplayName(),
                                                     &builder);
+            builder.message().id = this->roomId();
             this->addMessage(builder.release());
 
             // Message in /live channel
             MessageBuilder builder2;
             TwitchMessageBuilder::liveMessage(this->getDisplayName(),
                                               &builder2);
+            builder2.message().id = this->roomId();
             getApp()->twitch->liveChannel->addMessage(builder2.release());
 
             // Notify on all channels with a ping sound
             if (getSettings()->notificationOnAnyChannel &&
-                !(isInStreamerMode() &&
+                !(getIApp()->getStreamerMode()->isEnabled() &&
                   getSettings()->streamerModeSuppressLiveNotifications))
             {
                 getIApp()->getNotifications()->playSound();
@@ -200,14 +207,12 @@ TwitchChannel::TwitchChannel(const QString &name, bool isWatching)
 
             // MSVC hates this code if the parens are not there
             int end = (std::max)(0, snapshotLength - 200);
-            auto liveMessageSearchText =
-                QString("%1 is live!").arg(this->getDisplayName());
 
             for (int i = snapshotLength - 1; i >= end; --i)
             {
                 const auto &s = snapshot[i];
 
-                if (s->messageText == liveMessageSearchText)
+                if (s->id == this->roomId())
                 {
                     s->flags.set(MessageFlag::Disabled);
                     break;
@@ -334,6 +339,14 @@ void TwitchChannel::refreshFFZChannelEmotes(bool manualRefresh)
             {
                 this->ffzCustomVipBadge_.set(
                     std::forward<decltype(vipBadge)>(vipBadge));
+            }
+        },
+        [this, weak = weakOf<Channel>(this)](auto &&channelBadges) {
+            if (auto shared = weak.lock())
+            {
+                this->tgFfzChannelBadges_.guard();
+                this->ffzChannelBadges_ =
+                    std::forward<decltype(channelBadges)>(channelBadges);
             }
         },
         manualRefresh);
@@ -474,6 +487,15 @@ void TwitchChannel::updateStreamStatus(
 
             status->rerun = false;
             status->streamType = stream.type;
+            for (const auto &tag : stream.tags)
+            {
+                if (QString::compare(tag, "Rerun", Qt::CaseInsensitive) == 0)
+                {
+                    status->rerun = true;
+                    status->streamType = "rerun";
+                    break;
+                }
+            }
         }
         if (this->setLive(true))
         {
@@ -798,6 +820,11 @@ void TwitchChannel::setRoomModes(const RoomModes &newRoomModes)
 bool TwitchChannel::isLive() const
 {
     return this->streamStatus_.accessConst()->live;
+}
+
+bool TwitchChannel::isRerun() const
+{
+    return this->streamStatus_.accessConst()->rerun;
 }
 
 SharedAccessGuard<const TwitchChannel::StreamStatus>
@@ -1154,6 +1181,11 @@ bool TwitchChannel::setLive(bool newLiveStatus)
         return false;
     }
     guard->live = newLiveStatus;
+    if (!newLiveStatus)
+    {
+        // A rerun is just a fancy livestream
+        guard->rerun = false;
+    }
 
     return true;
 }
@@ -1446,9 +1478,12 @@ void TwitchChannel::refreshBadges()
                         .name = EmoteName{},
                         .images =
                             ImageSet{
-                                Image::fromUrl(version.imageURL1x, 1),
-                                Image::fromUrl(version.imageURL2x, .5),
-                                Image::fromUrl(version.imageURL4x, .25),
+                                Image::fromUrl(version.imageURL1x, 1,
+                                               BASE_BADGE_SIZE),
+                                Image::fromUrl(version.imageURL2x, .5,
+                                               BASE_BADGE_SIZE * 2),
+                                Image::fromUrl(version.imageURL4x, .25,
+                                               BASE_BADGE_SIZE * 4),
                             },
                         .tooltip = Tooltip{version.title},
                         .homePage = version.clickURL,
@@ -1523,25 +1558,25 @@ void TwitchChannel::refreshCheerEmotes()
                     // Combine the prefix (e.g. BibleThump) with the tier (1, 100 etc.)
                     auto emoteTooltip =
                         set.prefix + tier.id + "<br>Twitch Cheer Emote";
+                    auto makeImageSet = [](const HelixCheermoteImage &image) {
+                        return ImageSet{
+                            Image::fromUrl(image.imageURL1x, 1.0,
+                                           BASE_BADGE_SIZE),
+                            Image::fromUrl(image.imageURL2x, 0.5,
+                                           BASE_BADGE_SIZE * 2),
+                            Image::fromUrl(image.imageURL4x, 0.25,
+                                           BASE_BADGE_SIZE * 4),
+                        };
+                    };
                     cheerEmote.animatedEmote = std::make_shared<Emote>(Emote{
                         .name = EmoteName{"cheer emote"},
-                        .images =
-                            ImageSet{
-                                tier.darkAnimated.imageURL1x,
-                                tier.darkAnimated.imageURL2x,
-                                tier.darkAnimated.imageURL4x,
-                            },
+                        .images = makeImageSet(tier.darkAnimated),
                         .tooltip = Tooltip{emoteTooltip},
                         .homePage = Url{},
                     });
                     cheerEmote.staticEmote = std::make_shared<Emote>(Emote{
                         .name = EmoteName{"cheer emote"},
-                        .images =
-                            ImageSet{
-                                tier.darkStatic.imageURL1x,
-                                tier.darkStatic.imageURL2x,
-                                tier.darkStatic.imageURL4x,
-                            },
+                        .images = makeImageSet(tier.darkStatic),
                         .tooltip = Tooltip{emoteTooltip},
                         .homePage = Url{},
                     });
@@ -1696,6 +1731,33 @@ std::optional<EmotePtr> TwitchChannel::twitchBadge(const QString &set,
     return std::nullopt;
 }
 
+std::vector<FfzBadges::Badge> TwitchChannel::ffzChannelBadges(
+    const QString &userID) const
+{
+    this->tgFfzChannelBadges_.guard();
+
+    auto it = this->ffzChannelBadges_.find(userID);
+    if (it == this->ffzChannelBadges_.end())
+    {
+        return {};
+    }
+
+    std::vector<FfzBadges::Badge> badges;
+
+    const auto *ffzBadges = getIApp()->getFfzBadges();
+
+    for (const auto &badgeID : it->second)
+    {
+        auto badge = ffzBadges->getBadge(badgeID);
+        if (badge.has_value())
+        {
+            badges.emplace_back(*badge);
+        }
+    }
+
+    return badges;
+}
+
 std::optional<EmotePtr> TwitchChannel::ffzCustomModBadge() const
 {
     return this->ffzCustomModBadge_.get();
@@ -1836,7 +1898,7 @@ void TwitchChannel::upsertPersonalSeventvEmotes(
     /// or, if they're zero-width, to a layered emote element.
     const auto upsertWords = [&](MessageElementVec &elements,
                                  TextElement *textElement) {
-        std::vector<TextElement::Word> words;
+        QStringList words;
 
         /// Appends a text element with the pending @a words
         /// and clears the vector.
@@ -1900,7 +1962,7 @@ void TwitchChannel::upsertPersonalSeventvEmotes(
         // Find all words that match a personal emote and replace them with emotes
         for (const auto &word : textElement->words())
         {
-            auto emoteIt = emoteMap->find(EmoteName{word.text});
+            auto emoteIt = emoteMap->find(EmoteName{word});
             if (emoteIt == emoteMap->end())
             {
                 words.emplace_back(word);
@@ -1936,9 +1998,10 @@ void TwitchChannel::upsertPersonalSeventvEmotes(
             [&](auto &&element) {
                 auto *elementPtr = element.get();
                 auto *textElement = dynamic_cast<TextElement *>(elementPtr);
+                auto *linkElement = dynamic_cast<LinkElement *>(elementPtr);
 
                 // Check if this contains the message text
-                if (textElement != nullptr &&
+                if (textElement && !linkElement &&
                     textElement->getFlags().has(MessageElementFlag::Text))
                 {
                     upsertWords(elements, textElement);
