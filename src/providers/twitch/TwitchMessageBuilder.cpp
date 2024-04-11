@@ -942,8 +942,10 @@ void TwitchMessageBuilder::parseThread()
             ->setLink({Link::ViewThread, this->thread_->rootId()});
 
         this->emplace<TextElement>(
-                "@" + usernameText + ":", MessageElementFlag::RepliedMessage,
-                threadRoot->usernameColor, FontStyle::ChatMediumSmall)
+                "@" + usernameText +
+                    (threadRoot->flags.has(MessageFlag::Action) ? "" : ":"),
+                MessageElementFlag::RepliedMessage, threadRoot->usernameColor,
+                FontStyle::ChatMediumSmall)
             ->setLink({Link::UserInfo, threadRoot->displayName});
 
         MessageColor color = MessageColor::Text;
@@ -1680,6 +1682,8 @@ void TwitchMessageBuilder::appendChannelPointRewardMessage(
     builder->message().messageText = textList.join(" ");
     builder->message().searchText = textList.join(" ");
     builder->message().loginName = reward.user.login;
+
+    builder->message().reward = std::make_shared<ChannelPointReward>(reward);
 }
 
 void TwitchMessageBuilder::liveMessage(const QString &channelName,

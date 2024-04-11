@@ -8,11 +8,12 @@
 #include <pajlada/signals/scoped-connection.hpp>
 #include <pajlada/signals/signal.hpp>
 #include <QMovie>
-#include <widgets/helper/EffectLabel.hpp>
+#include <QPixmap>
 
 #include <chrono>
 
 class QCheckBox;
+class QMovie;
 
 namespace chatterino {
 
@@ -105,7 +106,12 @@ private:
 
         EffectLabel2 *stvUser = nullptr;
         EffectLabel2 *usercardLabel = nullptr;
+        EffectLabel2 *switchAvatars = nullptr;
     } ui_;
+
+    QMovie *seventvAvatar_ = nullptr;
+    bool isTwitchAvatarShown_ = true;
+    QPixmap avatarPixmap_;
 
     class TimeoutWidget : public BaseWidget
     {
