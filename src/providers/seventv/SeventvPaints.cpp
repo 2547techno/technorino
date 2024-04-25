@@ -181,7 +181,8 @@ void SeventvPaints::assignPaintToUser(const QString &paintID,
         bool changed = false;
         if (it == this->paintMap_.end())
         {
-            this->paintMap_.emplace(userName.string.toStdString(), paintIt->second);
+            this->paintMap_.emplace(userName.string.toStdString(),
+                                    paintIt->second);
             changed = true;
         }
         else if (it->second != paintIt->second)
