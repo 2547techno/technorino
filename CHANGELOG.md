@@ -17,6 +17,8 @@
 - Minor: Use external API for /mods command in non-broadcaster channels
 - Minor: Use external API for /vips command in non-broadcaster channels
 
+## 2.5.1
+
 - Bugfix: Fixed links without a protocol not being clickable. (#5345)
 
 ## 2.5.0
