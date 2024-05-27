@@ -309,6 +309,17 @@ std::pair<std::queue<RawImageData>, QString> ImageUploader::getImages(
                 images.push({file.readAll(), "gif", localPath});
                 file.close();
             }
+			else{
+				QFile file(localPath);
+                bool isOkay = file.open(QIODevice::ReadOnly);
+                if (!isOkay)
+                {
+                    return {{}, "Failed to open file :("};
+                }
+                // file.readAll() => might be a bit big but it /should/ work
+                images.push({file.readAll(), mime.preferredSuffix(),localPath});
+                file.close();
+				}
         }
 
         return {images, {}};
