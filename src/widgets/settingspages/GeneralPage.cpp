@@ -1156,7 +1156,7 @@ void GeneralPage::initLayout(GeneralPageView &layout)
                        s.loadTwitchMessageHistoryOnConnect);
     // TODO: Change phrasing to use better english once we can tag settings, right now it's kept as history instead of historical so that the setting shows up when the user searches for history
     layout.addIntInput("Max number of history messages to load on connect",
-                       s.twitchMessageHistoryLimit, 10, 800, 10);
+                       s.twitchMessageHistoryLimit, 10, 1000, 10);
 
     layout.addIntInput("Split message scrollback limit (requires restart)",
                        s.scrollbackSplitLimit, 100, 100000, 100);
