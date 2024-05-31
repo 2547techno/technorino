@@ -434,7 +434,8 @@ std::ostream &operator<<(std::ostream &os, const HighlightResult &result)
        << (result.customSoundUrl
                ? result.customSoundUrl->toString().toStdString()
                : "")
-       << ")" << ", "
+       << ")"
+       << ", "
        << "Color: " << (result.color ? result.color->name().toStdString() : "")
        << ", "
        << "Show in mentions: " << (result.showInMentions ? "Yes" : "No");
