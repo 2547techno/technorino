@@ -20,6 +20,7 @@
 - Minor: /founders command
 - Minor: Auto-detach "watching tab" with technorino extension
 - Minor: Use external API for /mods command in non-broadcaster channels
+- Minor: Increase history message limit
 - Minor: Use external API for /vips command in non-broadcaster channels
 - Bugfix: If a network request errors with 200 OK, Qt's error code is now reported instead of the HTTP status. (#5378)
 - Dev: Use Qt's high DPI scaling. (#4868, #5400)
