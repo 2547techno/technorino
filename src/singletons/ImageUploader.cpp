@@ -311,14 +311,15 @@ std::pair<std::queue<RawImageData>, QString> ImageUploader::getImages(
             }
             else
             {
-		QFile file(localPath);
+                QFile file(localPath);
                 bool isOkay = file.open(QIODevice::ReadOnly);
                 if (!isOkay)
                 {
                     return {{}, "Failed to open file :("};
                 }
                 // file.readAll() => might be a bit big but it /should/ work
-                images.push({file.readAll(), mime.preferredSuffix(),localPath});
+                images.push(
+                    {file.readAll(), mime.preferredSuffix(), localPath});
                 file.close();
             }
         }
