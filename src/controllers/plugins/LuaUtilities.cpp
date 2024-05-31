@@ -41,8 +41,7 @@ void stackDump(lua_State *L, const QString &tag)
         {
             qCDebug(chatterinoLua)
                 << "At" << i << "is a" << lua_typename(L, typeint) << "("
-                << typeint << ")"
-                << "its length is " << lua_rawlen(L, i);
+                << typeint << ")" << "its length is " << lua_rawlen(L, i);
         }
         else
         {
