@@ -11,7 +11,7 @@ env:
   QT_QPA_PLATFORM: minimal
   # Last known good conan version
   # 2.0.3 has a bug on Windows (conan-io/conan#13606)
-  CONAN_VERSION: 2.0.2
+  CONAN_VERSION: 2.4.0
 
 concurrency:
   group: test-windows-${{ github.ref }}
@@ -24,7 +24,7 @@ jobs:
     strategy:
       matrix:
         os: [windows-latest]
-        qt-version: [5.15.2, 6.7.1]
+        qt-version: [6.7.1]
         plugins: [false]
         skip-artifact: [false]
         skip-crashpad: [false]
@@ -104,6 +104,12 @@ jobs:
               -b missing `
               --output-folder=. `
               -o with_openssl3="$Env:C2_USE_OPENSSL3"
+
+      # The Windows runners currently use an older version of the CRT
+      - name: Install CRT
+        run: |
+          mkdir -Force build-test/bin
+          cp "$((ls $Env:VCToolsRedistDir/onecore/x64 -Filter '*.CRT')[0].FullName)/*" build-test/bin
 
       - name: Build
         run: |
