@@ -25,7 +25,8 @@ public:
 
     virtual void sendRawMessage(const QString &rawMessage) = 0;
 
-    virtual ChannelPtr getOrAddChannel(const QString &dirtyChannelName, bool isWatching = false) = 0;
+    virtual ChannelPtr getOrAddChannel(const QString &dirtyChannelName,
+                                       bool isWatching = false) = 0;
     virtual ChannelPtr getChannelOrEmpty(const QString &dirtyChannelName) = 0;
 
     virtual void addFakeMessage(const QString &data) = 0;
