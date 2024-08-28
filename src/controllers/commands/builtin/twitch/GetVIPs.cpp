@@ -95,7 +95,9 @@ QString getVIPs(const CommandContext &ctx)
                     return;
                 }
 
-                auto messagePrefix = QString("The VIPs of this channel are");
+                auto messagePrefix =
+                    QString("The VIPs (%1) of this channel are")
+                        .arg(vipList.size());
 
                 // TODO: sort results?
 
@@ -141,7 +143,9 @@ QString getVIPs(const CommandContext &ctx)
 
                 channel->addMessage(
                     MessageBuilder::makeListOfUsersMessage(
-                        "The VIPs of this channel are", vips, twitchChannel),
+                        QString("The VIPs (%1) of this channel are")
+                            .arg(vips.size()),
+                        vips, twitchChannel),
                     MessageContext::Original);
             },
             [channel{ctx.channel}]() {
