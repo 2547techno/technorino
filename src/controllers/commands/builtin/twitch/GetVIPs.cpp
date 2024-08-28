@@ -8,8 +8,6 @@
 #include "providers/twitch/api/Helix.hpp"
 #include "providers/twitch/TwitchAccount.hpp"
 #include "providers/twitch/TwitchChannel.hpp"
-#include "providers/twitch/TwitchMessageBuilder.hpp"
-#include "util/Twitch.hpp"
 
 namespace {
 
@@ -78,13 +76,13 @@ QString getVIPs(const CommandContext &ctx)
 
     if (ctx.twitchChannel == nullptr)
     {
-        ctx.channel->addMessage(makeSystemMessage(
-            "The /vips command only works in Twitch channels."));
+        ctx.channel->addSystemMessage(
+            "The /vips command only works in Twitch channels.");
         return "";
     }
 
-    auto currentUser = getIApp()->getAccounts()->twitch.getCurrent();
-    if (currentUser->isAnon())
+    auto currentUser = getApp()->getAccounts()->twitch.getCurrent();
+    if (ctx.twitchChannel->isBroadcaster())
     {
         getHelix()->getChannelVIPs(
             ctx.twitchChannel->roomId(),
@@ -92,23 +90,22 @@ QString getVIPs(const CommandContext &ctx)
                 const std::vector<HelixVip> &vipList) {
                 if (vipList.empty())
                 {
-                    channel->addMessage(makeSystemMessage(
-                        "This channel does not have any VIPs."));
+                    channel->addSystemMessage(
+                        "This channel does not have any VIPs.");
                     return;
                 }
 
                 auto messagePrefix = QString("The VIPs of this channel are");
 
                 // TODO: sort results?
-                MessageBuilder builder;
-                TwitchMessageBuilder::listOfUsersSystemMessage(
-                    messagePrefix, vipList, twitchChannel, &builder);
 
-                channel->addMessage(builder.release());
+                channel->addMessage(MessageBuilder::makeListOfUsersMessage(
+                                        messagePrefix, vipList, twitchChannel),
+                                    MessageContext::Original);
             },
             [channel{ctx.channel}](auto error, auto message) {
                 auto errorMessage = formatGetVIPsError(error, message);
-                channel->addMessage(makeSystemMessage(errorMessage));
+                channel->addSystemMessage(errorMessage);
             });
     }
     else
@@ -120,8 +117,8 @@ QString getVIPs(const CommandContext &ctx)
              target](auto result) {
                 if (result.isEmpty())
                 {
-                    channel->addMessage(makeSystemMessage(
-                        "This channel does not have any VIPs."));
+                    channel->addSystemMessage(
+                        "This channel does not have any VIPs.");
                     return;
                 }
 
@@ -142,15 +139,13 @@ QString getVIPs(const CommandContext &ctx)
                     vips.push_back(vip);
                 }
 
-                MessageBuilder builder;
-                TwitchMessageBuilder::listOfUsersSystemMessage(
-                    "The VIPs of this channel are", vips, twitchChannel,
-                    &builder);
-                channel->addMessage(builder.release());
+                channel->addMessage(
+                    MessageBuilder::makeListOfUsersMessage(
+                        "The VIPs of this channel are", vips, twitchChannel),
+                    MessageContext::Original);
             },
             [channel{ctx.channel}]() {
-                channel->addMessage(
-                    makeSystemMessage("Could not get VIPs list!"));
+                channel->addSystemMessage("Could not get VIPs list!");
             });
     }
 
