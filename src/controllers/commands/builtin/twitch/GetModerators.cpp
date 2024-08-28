@@ -79,10 +79,12 @@ QString getModerators(const CommandContext &ctx)
                 }
                 // TODO: sort results?
 
-                channel->addMessage(MessageBuilder::makeListOfUsersMessage(
-                                        "The moderators of this channel are",
-                                        result, twitchChannel),
-                                    MessageContext::Original);
+                channel->addMessage(
+                    MessageBuilder::makeListOfUsersMessage(
+                        QString("The moderators (%1) of this channel are")
+                            .arg(result.size()),
+                        result, twitchChannel),
+                    MessageContext::Original);
             },
             [channel{ctx.channel}](auto error, auto message) {
                 auto errorMessage = formatModsError(error, message);
@@ -120,10 +122,12 @@ QString getModerators(const CommandContext &ctx)
                     mods.push_back(moderator);
                 }
 
-                channel->addMessage(MessageBuilder::makeListOfUsersMessage(
-                                        "The moderators of this channel are",
-                                        mods, twitchChannel),
-                                    MessageContext::Original);
+                channel->addMessage(
+                    MessageBuilder::makeListOfUsersMessage(
+                        QString("The moderators (%1) of this channel are")
+                            .arg(mods.size()),
+                        mods, twitchChannel),
+                    MessageContext::Original);
             },
             [channel{ctx.channel}]() {
                 channel->addSystemMessage("Could not get moderators list!");
