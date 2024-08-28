@@ -6,7 +6,6 @@
 #include "providers/IvrApi.hpp"
 #include "providers/twitch/api/Helix.hpp"
 #include "providers/twitch/TwitchChannel.hpp"
-#include "providers/twitch/TwitchMessageBuilder.hpp"
 
 namespace {
 
@@ -61,8 +60,8 @@ QString getModerators(const CommandContext &ctx)
 
     if (ctx.twitchChannel == nullptr)
     {
-        ctx.channel->addMessage(makeSystemMessage(
-            "The /mods command only works in Twitch Channels."));
+        ctx.channel->addSystemMessage(
+            "The /mods command only works in Twitch Channels.");
         return "";
     }
 
@@ -74,22 +73,20 @@ QString getModerators(const CommandContext &ctx)
              twitchChannel{ctx.twitchChannel}](auto result) {
                 if (result.empty())
                 {
-                    channel->addMessage(makeSystemMessage(
-                        "This channel does not have any moderators."));
+                    channel->addSystemMessage(
+                        "This channel does not have any moderators.");
                     return;
                 }
                 // TODO: sort results?
 
-                MessageBuilder builder;
-                TwitchMessageBuilder::listOfUsersSystemMessage(
-                    "The moderators of this channel are", result, twitchChannel,
-                    &builder);
-                channel->addMessage(builder.release());
+                channel->addMessage(MessageBuilder::makeListOfUsersMessage(
+                                        "The moderators of this channel are",
+                                        result, twitchChannel),
+                                    MessageContext::Original);
             },
-            [channel{ctx.channel}, formatModsError{formatModsError}](
-                auto error, auto message) {
+            [channel{ctx.channel}](auto error, auto message) {
                 auto errorMessage = formatModsError(error, message);
-                channel->addMessage(makeSystemMessage(errorMessage));
+                channel->addSystemMessage(errorMessage);
             });
     }
     else
@@ -101,8 +98,8 @@ QString getModerators(const CommandContext &ctx)
              target](auto result) {
                 if (result.isEmpty())
                 {
-                    channel->addMessage(makeSystemMessage(
-                        "This channel does not have any moderators."));
+                    channel->addSystemMessage(
+                        "This channel does not have any moderators.");
                     return;
                 }
 
@@ -123,15 +120,13 @@ QString getModerators(const CommandContext &ctx)
                     mods.push_back(moderator);
                 }
 
-                MessageBuilder builder;
-                TwitchMessageBuilder::listOfUsersSystemMessage(
-                    "The moderators of this channel are", mods, twitchChannel,
-                    &builder);
-                channel->addMessage(builder.release());
+                channel->addMessage(MessageBuilder::makeListOfUsersMessage(
+                                        "The moderators of this channel are",
+                                        mods, twitchChannel),
+                                    MessageContext::Original);
             },
             [channel{ctx.channel}]() {
-                channel->addMessage(
-                    makeSystemMessage("Could not get moderators list!"));
+                channel->addSystemMessage("Could not get moderators list!");
             });
     }
     return "";

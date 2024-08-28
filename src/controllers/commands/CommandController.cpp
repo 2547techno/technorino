@@ -35,14 +35,11 @@
 #include "messages/MessageBuilder.hpp"
 #include "messages/MessageElement.hpp"
 #include "messages/MessageThread.hpp"
-#include "providers/irc/IrcChannel2.hpp"
-#include "providers/irc/IrcServer.hpp"
 #include "providers/IvrApi.hpp"
 #include "providers/twitch/api/Helix.hpp"
 #include "providers/twitch/TwitchAccount.hpp"
 #include "providers/twitch/TwitchChannel.hpp"
 #include "providers/twitch/TwitchCommon.hpp"
-#include "providers/twitch/TwitchMessageBuilder.hpp"
 #include "singletons/Emotes.hpp"
 #include "singletons/Paths.hpp"
 #include "util/CombinePath.hpp"
@@ -128,7 +125,7 @@ const std::unordered_map<QString, VariableReplacer> COMMAND_VARS{
             (void)(channel);  //unused
             (void)(message);  //unused
             auto uid =
-                getIApp()->getAccounts()->twitch.getCurrent()->getUserId();
+                getApp()->getAccounts()->twitch.getCurrent()->getUserId();
             return uid.isEmpty() ? altText : uid;
         },
     },
@@ -138,7 +135,7 @@ const std::unordered_map<QString, VariableReplacer> COMMAND_VARS{
             (void)(channel);  //unused
             (void)(message);  //unused
             auto name =
-                getIApp()->getAccounts()->twitch.getCurrent()->getUserName();
+                getApp()->getAccounts()->twitch.getCurrent()->getUserName();
             return name.isEmpty() ? altText : name;
         },
     },
@@ -270,7 +267,7 @@ const std::unordered_map<QString, VariableReplacer> COMMAND_VARS{
 
 namespace chatterino {
 
-void CommandController::initialize(Settings &, const Paths &paths)
+CommandController::CommandController(const Paths &paths)
 {
     // Update commands map when the vector of commands has been updated
     auto addFirstMatchToMap = [this](auto args) {
@@ -445,8 +442,8 @@ void CommandController::initialize(Settings &, const Paths &paths)
 
             if (twitchChannel == nullptr)
             {
-                channel->addMessage(makeSystemMessage(
-                    "The /founders command only works in Twitch Channels"));
+                channel->addSystemMessage(
+                    "The /founders command only works in Twitch Channels");
                 return "";
             }
 
@@ -477,15 +474,14 @@ void CommandController::initialize(Settings &, const Paths &paths)
                         founders.push_back(founder);
                     }
 
-                    MessageBuilder builder;
-                    TwitchMessageBuilder::listOfUsersSystemMessage(
-                        QString("The founders of %1 are").arg(target), founders,
-                        twitchChannel, &builder);
-                    channel->addMessage(builder.release());
+                    channel->addMessage(
+                        MessageBuilder::makeListOfUsersMessage(
+                            QString("The founders of %1 are").arg(target),
+                            founders, twitchChannel),
+                        MessageContext::Original);
                 },
                 [channel]() {
-                    channel->addMessage(
-                        makeSystemMessage("Could not get founders list!"));
+                    channel->addSystemMessage("Could not get founders list!");
                 });
             return "";
         });
@@ -515,6 +511,8 @@ void CommandController::initialize(Settings &, const Paths &paths)
     this->registerCommand("/debug-force-image-unload",
                           &commands::forceImageUnload);
 
+    this->registerCommand("/debug-test", &commands::debugTest);
+
     this->registerCommand("/shield", &commands::shieldModeOn);
     this->registerCommand("/shieldoff", &commands::shieldModeOff);
 
@@ -541,7 +539,7 @@ QString CommandController::execCommand(const QString &textNoEmoji,
                                        ChannelPtr channel, bool dryRun)
 {
     QString text =
-        getIApp()->getEmotes()->getEmojis()->replaceShortCodes(textNoEmoji);
+        getApp()->getEmotes()->getEmojis()->replaceShortCodes(textNoEmoji);
     QStringList words = text.split(' ', Qt::SkipEmptyParts);
 
     if (words.length() == 0)
@@ -556,7 +554,7 @@ QString CommandController::execCommand(const QString &textNoEmoji,
         const auto it = this->userCommands_.find(commandName);
         if (it != this->userCommands_.end())
         {
-            text = getIApp()->getEmotes()->getEmojis()->replaceShortCodes(
+            text = getApp()->getEmotes()->getEmojis()->replaceShortCodes(
                 this->execCustomCommand(words, it.value(), dryRun, channel));
 
             words = text.split(' ', Qt::SkipEmptyParts);
@@ -610,8 +608,7 @@ QString CommandController::execCommand(const QString &textNoEmoji,
 
     if (!dryRun && channel->getType() == Channel::Type::TwitchWhispers)
     {
-        channel->addMessage(
-            makeSystemMessage("Use /w <username> <message> to whisper"));
+        channel->addSystemMessage("Use /w <username> <message> to whisper");
         return "";
     }
 
@@ -627,7 +624,7 @@ bool CommandController::registerPluginCommand(const QString &commandName)
     }
 
     this->commands_[commandName] = [commandName](const CommandContext &ctx) {
-        return getIApp()->getPlugins()->tryExecPluginCommand(commandName, ctx);
+        return getApp()->getPlugins()->tryExecPluginCommand(commandName, ctx);
     };
     this->pluginCommands_.append(commandName);
     return true;
