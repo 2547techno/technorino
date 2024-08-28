@@ -476,7 +476,9 @@ CommandController::CommandController(const Paths &paths)
 
                     channel->addMessage(
                         MessageBuilder::makeListOfUsersMessage(
-                            QString("The founders of %1 are").arg(target),
+                            QString("The founders (%1) of %2 are")
+                                .arg(founders.size())
+                                .arg(target),
                             founders, twitchChannel),
                         MessageContext::Original);
                 },
