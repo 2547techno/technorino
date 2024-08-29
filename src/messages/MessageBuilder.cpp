@@ -2473,7 +2473,7 @@ void MessageBuilder::addTextOrEmoji(const QString &string_)
             return;
         }
     }
-    else if (string.startsWith('#'))
+    else if (string.startsWith('#') && string.size() > 1)
     {
         qCDebug(chatterinoTwitch) << "#channel: " << string;
 
