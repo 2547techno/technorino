@@ -17,6 +17,7 @@
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
+#include <QRegularExpression>
 
 namespace chatterino {
 
@@ -368,6 +369,13 @@ std::shared_ptr<Channel> Channel::getEmpty()
 {
     static std::shared_ptr<Channel> channel(new Channel("", Type::None));
     return channel;
+}
+
+bool Channel::isValidChannelName(QString channelName)
+{
+    QRegularExpression re("[0-9a-z][0-9a-z_]{1,24}",
+                          QRegularExpression::CaseInsensitiveOption);
+    return re.match(channelName).hasMatch();
 }
 
 void Channel::onConnected()

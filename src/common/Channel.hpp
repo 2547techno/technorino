@@ -120,6 +120,7 @@ public:
     virtual QString getCurrentStreamID() const;
 
     static std::shared_ptr<Channel> getEmpty();
+    static bool isValidChannelName(QString channelName);
 
     TabCompletionModel *completionModel;
     QDate lastDate_;
