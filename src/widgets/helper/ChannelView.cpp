@@ -2881,9 +2881,11 @@ void ChannelView::handleLinkClick(QMouseEvent *event, const Link &link,
                                        SettingsDialogPreference::Accounts);
         }
         break;
+        case Link::JumpToOrCreateChannel:
         case Link::JumpToChannel: {
             // Get all currently open pages
             QList<SplitContainer *> openPages;
+            bool found = false;
 
             auto &nb = getApp()->getWindows()->getMainWindow().getNotebook();
             for (int i = 0; i < nb.getPageCount(); ++i)
@@ -2911,8 +2913,21 @@ void ChannelView::handleLinkClick(QMouseEvent *event, const Link &link,
 
                     Split *split = *it;
                     page->setSelected(split);
+                    found = true;
                     break;
                 }
+            }
+
+            if (!found && link.type == Link::JumpToOrCreateChannel)
+            {
+                ChannelPtr channel =
+                    getApp()->getTwitch()->getOrAddChannel(link.value);
+                auto &nb =
+                    getApp()->getWindows()->getMainWindow().getNotebook();
+                SplitContainer *container = nb.addPage(true);
+                auto *split = new Split(container);
+                split->setChannel(channel);
+                container->insertSplit(split);
             }
         }
         break;

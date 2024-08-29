@@ -2473,6 +2473,18 @@ void MessageBuilder::addTextOrEmoji(const QString &string_)
             return;
         }
     }
+    else if (string.startsWith('#'))
+    {
+        qCDebug(chatterinoTwitch) << "#channel: " << string;
+
+        QString channelName = string.sliced(1);
+
+        Link link(Link::JumpToOrCreateChannel, channelName);
+        this->emplace<TextElement>(string, MessageElementFlag::Text,
+                                   MessageColor::Link)
+            ->setLink(link);
+        return;
+    }
 
     if (this->twitchChannel != nullptr && getSettings()->findAllUsernames)
     {
