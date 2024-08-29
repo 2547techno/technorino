@@ -2477,7 +2477,7 @@ void MessageBuilder::addTextOrEmoji(const QString &string_)
     {
         qCDebug(chatterinoTwitch) << "#channel: " << string;
 
-        QString channelName = string.sliced(1);
+        QString channelName = string.sliced(1).toLower();
 
         Link link(Link::JumpToOrCreateChannel, channelName);
         this->emplace<TextElement>(string, MessageElementFlag::Text,
