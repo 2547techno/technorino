@@ -25,6 +25,7 @@
 - Minor: Increase history message limit
 - Minor: Use external API for /vips command in non-broadcaster channels
 - Minor: Allow uploading non image files
+- Minor: Add clickable #channel text to navigate to or open channel
 - Minor: Added the ability for `/ban`, `/timeout`, `/unban`, and `/untimeout` to specify multiple channels to duplicate the action to. Example: `/timeout --channel id:11148817 --channel testaccount_420 forsen 7m game complaining`. (#5402)
 - Minor: The size of the emote popup is now saved. (#5415)
 - Minor: Added the ability to duplicate tabs. (#5277)
