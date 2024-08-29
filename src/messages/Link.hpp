@@ -21,6 +21,7 @@ public:
         AutoModDeny,
         OpenAccountsPage,
         JumpToChannel,
+        JumpToOrCreateChannel,
         Reconnect,
         CopyToClipboard,
         ReplyToMessage,
