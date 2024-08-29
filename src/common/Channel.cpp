@@ -373,7 +373,7 @@ std::shared_ptr<Channel> Channel::getEmpty()
 
 bool Channel::isValidChannelName(QString channelName)
 {
-    QRegularExpression re("[0-9a-z][0-9a-z_]{1,24}",
+    QRegularExpression re("^[0-9a-z][0-9a-z_]{0,24}$",
                           QRegularExpression::CaseInsensitiveOption);
     return re.match(channelName).hasMatch();
 }
