@@ -901,6 +901,11 @@ ChannelPtr ChannelView::channel()
     return this->channel_;
 }
 
+ChannelPtr ChannelView::underlyingChannel() const
+{
+    return this->underlyingChannel_;
+}
+
 bool ChannelView::showScrollbarHighlights() const
 {
     return this->channel_->getType() != Channel::Type::TwitchMentions;
@@ -979,6 +984,11 @@ void ChannelView::setChannel(const ChannelPtr &underlyingChannel)
                          });
             this->channel_->fillInMissingMessages(filtered);
         });
+
+    this->channelConnections_.managedConnect(underlyingChannel->messagesCleared,
+                                             [this]() {
+                                                 this->clearMessages();
+                                             });
 
     // Copy over messages from the backing channel to the filtered one
     // and the ui.

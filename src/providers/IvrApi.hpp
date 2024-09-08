@@ -1,7 +1,6 @@
 #pragma once
 
 #include "common/network/NetworkRequest.hpp"
-#include "providers/twitch/TwitchEmotes.hpp"
 
 #include <QJsonArray>
 #include <QJsonObject>
@@ -76,45 +75,6 @@ struct IvrResolve {
     }
 };
 
-struct IvrEmoteSet {
-    const QString setId;
-    const QString displayName;
-    const QString login;
-    const QString channelId;
-    const QString tier;
-    const QJsonArray emotes;
-
-    IvrEmoteSet(const QJsonObject &root)
-        : setId(root.value("setID").toString())
-        , displayName(root.value("channelName").toString())
-        , login(root.value("channelLogin").toString())
-        , channelId(root.value("channelID").toString())
-        , tier(root.value("tier").toString())
-        , emotes(root.value("emoteList").toArray())
-
-    {
-    }
-};
-
-struct IvrEmote {
-    const QString code;
-    const QString id;
-    const QString setId;
-    const QString url;
-    const QString emoteType;
-    const QString imageType;
-
-    explicit IvrEmote(const QJsonObject &root)
-        : code(root.value("code").toString())
-        , id(root.value("id").toString())
-        , setId(root.value("setID").toString())
-        , url(TWITCH_EMOTE_TEMPLATE.arg(this->id, u"3.0"))
-        , emoteType(root.value("type").toString())
-        , imageType(root.value("assetType").toString())
-    {
-    }
-};
-
 struct IvrModVip {
     const QJsonArray mods;
     const QJsonArray vips;
@@ -138,11 +98,6 @@ public:
     void getUserRoles(QString userName,
                       ResultCallback<IvrResolve> resultCallback,
                       IvrFailureCallback failureCallback);
-
-    // https://api.ivr.fi/v2/docs/static/index.html#/Twitch/get_twitch_emotes_sets
-    void getBulkEmoteSets(QString emoteSetList,
-                          ResultCallback<QJsonArray> successCallback,
-                          IvrFailureCallback failureCallback);
 
     // https://api.ivr.fi/v2/docs/static/index.html#/Twitch/get_twitch_founders__login_
     void getFounders(QString channelName,
