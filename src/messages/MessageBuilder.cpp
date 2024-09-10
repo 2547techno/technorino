@@ -76,6 +76,23 @@ const QSet<QString> zeroWidthEmotes{
     "ReinDeer", "CandyCane", "cvMask",   "cvHazmat",
 };
 
+bool isAbnormalNonce(const QString &nonce)
+{
+    // matches /[0-9a-f]{32}/
+    if (nonce.size() != 32)
+    {
+        return true;
+    }
+    for (const auto letter : nonce)
+    {
+        if (('0' > letter || letter > '9') && ('a' > letter || letter > 'f'))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 struct HypeChatPaidLevel {
     std::chrono::seconds duration;
     uint8_t numeric;
@@ -1293,6 +1310,38 @@ MessagePtr MessageBuilder::build()
             this->appendChannelPointRewardMessage(
                 *reward, this->channel->isMod(),
                 this->channel->isBroadcaster());
+        }
+    }
+
+    if (this->tags.contains("client-nonce") &&
+        getSettings()->nonceFuckeryEnabled)
+    {
+        QString nonceString = this->tags["client-nonce"].toString();
+        auto isAbnormal = isAbnormalNonce(nonceString);
+        if (isAbnormal && getSettings()->abnormalNonceDetection)
+        {
+            auto link = linkparser::parse(nonceString);
+
+            this->emplace<TimestampElement>();
+            this->emplace<TextElement>(
+                "Abnormal nonce:", MessageElementFlag::ChannelPointReward,
+                MessageColor::System);
+            if (link)
+            {
+                this->addLink(*link, nonceString);
+            }
+            else
+            {
+                this->emplace<TextElement>(
+                    nonceString, MessageElementFlag::ChannelPointReward,
+                    MessageColor::Text);
+            }
+            this->emplace<LinebreakElement>(
+                MessageElementFlag::ChannelPointReward);
+        }
+        else if (!isAbnormal)
+        {
+            this->message().flags.set(MessageFlag::WebchatDetected);
         }
     }
 
