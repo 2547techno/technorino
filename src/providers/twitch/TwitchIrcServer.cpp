@@ -1460,7 +1460,23 @@ void TwitchIrcServer::disconnect()
 void TwitchIrcServer::sendMessage(const QString &channelName,
                                   const QString &message)
 {
-    this->sendRawMessage("PRIVMSG #" + channelName + " :" + message);
+    if (getSettings()->fakeWebChat)
+    {
+        std::ostringstream stream;
+        for (int i = 0; i < 4; i++)
+        {
+            qint64 nonce = this->generator.generate();
+            stream << std::setfill('0') << std::setw(sizeof(qint64)) << std::hex
+                   << nonce;
+        }
+        QString hex = QString::fromStdString(stream.str());
+        this->sendRawMessage("@client-nonce=" + hex + " PRIVMSG #" +
+                             channelName + " :" + message);
+    }
+    else
+    {
+        this->sendRawMessage("PRIVMSG #" + channelName + " :" + message);
+    }
 }
 
 void TwitchIrcServer::sendRawMessage(const QString &rawMessage)

@@ -9,6 +9,7 @@
 #include <IrcMessage>
 #include <pajlada/signals/signal.hpp>
 #include <pajlada/signals/signalholder.hpp>
+#include <QRandomGenerator>
 
 #include <chrono>
 #include <functional>
@@ -203,6 +204,8 @@ private:
     std::queue<std::chrono::steady_clock::time_point> lastMessageMod_;
     std::chrono::steady_clock::time_point lastErrorTimeSpeed_;
     std::chrono::steady_clock::time_point lastErrorTimeAmount_;
+
+    QRandomGenerator generator;
 };
 
 }  // namespace chatterino
