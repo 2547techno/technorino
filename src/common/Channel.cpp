@@ -40,6 +40,11 @@ Channel::Channel(const QString &name, Type type, bool watching)
 
 Channel::~Channel()
 {
+    auto *app = tryGetApp();
+    if (app)
+    {
+        app->getChatLogger()->closeChannel(this->name_, this->platform_);
+    }
     this->destroyed.invoke();
 }
 
