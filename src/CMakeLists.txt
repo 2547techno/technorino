@@ -365,6 +365,13 @@ set(SOURCE_FILES
         providers/liveupdates/BasicPubSubManager.hpp
         providers/liveupdates/BasicPubSubWebsocket.hpp
 
+        providers/pronouns/Pronouns.cpp
+        providers/pronouns/Pronouns.hpp
+        providers/pronouns/UserPronouns.cpp
+        providers/pronouns/UserPronouns.hpp
+        providers/pronouns/alejo/PronounsAlejoApi.cpp
+        providers/pronouns/alejo/PronounsAlejoApi.hpp
+
         providers/recentmessages/Api.cpp
         providers/recentmessages/Api.hpp
         providers/recentmessages/Impl.cpp
@@ -1008,7 +1015,7 @@ if (APPLE AND BUILD_APP)
     set_target_properties(${EXECUTABLE_PROJECT}
         PROPERTIES
         MACOSX_BUNDLE_BUNDLE_NAME "Chatterino"
-        MACOSX_BUNDLE_GUI_IDENTIFIER "com.chatterino"
+        MACOSX_BUNDLE_GUI_IDENTIFIER "app.7tv.chatterino7"
         MACOSX_BUNDLE_LONG_VERSION_STRING "${PROJECT_VERSION}"
         MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
         MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
