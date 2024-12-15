@@ -204,7 +204,7 @@ void Notebook::duplicatePage(QWidget *page)
     {
         newTabPosition = tabPosition + 1;
     }
-    auto newTabHighlightState = item->tab->highlightState();
+
     QString newTabTitle = "";
     if (item->tab->hasCustomTitle())
     {
@@ -213,7 +213,7 @@ void Notebook::duplicatePage(QWidget *page)
 
     auto *tab =
         this->addPageAt(newContainer, newTabPosition, newTabTitle, false);
-    tab->setHighlightState(newTabHighlightState);
+    tab->copyHighlightStateAndSourcesFrom(item->tab);
 
     newContainer->setTab(tab);
 }
@@ -1631,6 +1631,22 @@ void SplitNotebook::select(QWidget *page, bool focusPage)
     }
 
     this->Notebook::select(page, focusPage);
+}
+
+void SplitNotebook::forEachSplit(const std::function<void(Split *)> &cb)
+{
+    for (const auto &item : this->items())
+    {
+        auto *page = dynamic_cast<SplitContainer *>(item.page);
+        if (!page)
+        {
+            continue;
+        }
+        for (auto *split : page->getSplits())
+        {
+            cb(split);
+        }
+    }
 }
 
 }  // namespace chatterino

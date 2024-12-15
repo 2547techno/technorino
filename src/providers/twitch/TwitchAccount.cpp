@@ -176,6 +176,17 @@ void TwitchAccount::unblockUser(const QString &userId, const QObject *caller,
         std::move(onFailure));
 }
 
+void TwitchAccount::blockUserLocally(const QString &userID)
+{
+    assertInGuiThread();
+    assert(getApp()->isTest());
+
+    TwitchUser blockedUser;
+    blockedUser.id = userID;
+    this->ignores_.insert(blockedUser);
+    this->ignoresUserIds_.insert(blockedUser.id);
+}
+
 const std::unordered_set<TwitchUser> &TwitchAccount::blocks() const
 {
     assertInGuiThread();
@@ -371,6 +382,12 @@ SharedAccessGuard<std::shared_ptr<const EmoteMap>> TwitchAccount::accessEmotes()
     return this->emotes_.accessConst();
 }
 
+void TwitchAccount::setEmotes(std::shared_ptr<const EmoteMap> emotes)
+{
+    assert(getApp()->isTest());
+    *this->emotes_.access() = std::move(emotes);
+}
+
 std::optional<EmotePtr> TwitchAccount::twitchEmote(const EmoteName &name) const
 {
     auto emotes = this->emotes_.accessConst();
@@ -406,7 +423,7 @@ void TwitchAccount::reloadEmotes(void *caller)
         auto meta = getTwitchEmoteSetMeta(emote);
 
         auto emotePtr = twitchEmotes->getOrCreateEmote(id, name);
-        if (!emoteMap->try_emplace(name, emotePtr).second)
+        if (!emoteMap->try_emplace(emotePtr->name, emotePtr).second)
         {
             // if the emote already exists, we don't want to add it to a set as
             // those are assumed to be disjoint

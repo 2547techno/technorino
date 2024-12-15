@@ -70,6 +70,16 @@ using WinToastLib::WinToast;
 using WinToastLib::WinToastTemplate;
 #endif
 
+Toasts::~Toasts()
+{
+#ifdef Q_OS_WIN
+    if (this->initialized_)
+    {
+        WinToast::instance()->clear();
+    }
+#endif
+}
+
 bool Toasts::isEnabled()
 {
 #ifdef Q_OS_WIN

@@ -2,6 +2,7 @@
 
 #include "Application.hpp"
 #include "common/Channel.hpp"
+#include "common/Literals.hpp"
 #include "common/network/NetworkRequest.hpp"
 #include "common/network/NetworkResult.hpp"
 #include "common/QLogging.hpp"
@@ -39,6 +40,8 @@
 #include <QCheckBox>
 #include <QDesktopServices>
 #include <QFile>
+#include <QMessageBox>
+#include <QMetaEnum>
 #include <QMovie>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
@@ -155,6 +158,8 @@ QString hashSevenTVUrl(const QString &url)
 
 namespace chatterino {
 
+using namespace literals;
+
 UserInfoPopup::UserInfoPopup(bool closeAutomatically, Split *split)
     : DraggablePopup(closeAutomatically, split)
     , split_(split)
@@ -233,11 +238,13 @@ UserInfoPopup::UserInfoPopup(bool closeAutomatically, Split *split)
 
                  const auto &timeoutButtons =
                      getSettings()->timeoutButtons.getValue();
-                 if (timeoutButtons.size() < buttonNum || 0 >= buttonNum)
+                 if (static_cast<int>(timeoutButtons.size()) < buttonNum ||
+                     0 >= buttonNum)
                  {
                      return QString("Invalid argument for execModeratorAction: "
                                     "%1. Integer out of usable range: [1, %2]")
-                         .arg(buttonNum, timeoutButtons.size() - 1);
+                         .arg(buttonNum,
+                              static_cast<int>(timeoutButtons.size()) - 1);
                  }
                  const auto &button = timeoutButtons.at(buttonNum - 1);
                  msg = QString("/timeout %1 %2")
@@ -690,57 +697,72 @@ void UserInfoPopup::installEvents()
                 return;
             }
 
-            switch (newState)
+            if (newState == Qt::Unchecked)
             {
-                case Qt::CheckState::Unchecked: {
-                    this->ui_.block->setEnabled(false);
+                this->ui_.block->setEnabled(false);
 
-                    getApp()->getAccounts()->twitch.getCurrent()->unblockUser(
-                        this->userId_, this,
-                        [this, reenableBlockCheckbox, currentUser] {
-                            this->channel_->addSystemMessage(
-                                QString("You successfully unblocked user %1")
-                                    .arg(this->userName_));
-                            reenableBlockCheckbox();
-                        },
-                        [this, reenableBlockCheckbox] {
-                            this->channel_->addSystemMessage(
-                                QString(
-                                    "User %1 couldn't be unblocked, an unknown "
+                getApp()->getAccounts()->twitch.getCurrent()->unblockUser(
+                    this->userId_, this,
+                    [this, reenableBlockCheckbox, currentUser] {
+                        this->channel_->addSystemMessage(
+                            QString("You successfully unblocked user %1")
+                                .arg(this->userName_));
+                        reenableBlockCheckbox();
+                    },
+                    [this, reenableBlockCheckbox] {
+                        this->channel_->addSystemMessage(
+                            QString("User %1 couldn't be unblocked, an unknown "
                                     "error occurred!")
-                                    .arg(this->userName_));
-                            reenableBlockCheckbox();
-                        });
-                }
-                break;
-
-                case Qt::CheckState::PartiallyChecked: {
-                    // We deliberately ignore this state
-                }
-                break;
-
-                case Qt::CheckState::Checked: {
-                    this->ui_.block->setEnabled(false);
-
-                    getApp()->getAccounts()->twitch.getCurrent()->blockUser(
-                        this->userId_, this,
-                        [this, reenableBlockCheckbox, currentUser] {
-                            this->channel_->addSystemMessage(
-                                QString("You successfully blocked user %1")
-                                    .arg(this->userName_));
-                            reenableBlockCheckbox();
-                        },
-                        [this, reenableBlockCheckbox] {
-                            this->channel_->addSystemMessage(
-                                QString(
-                                    "User %1 couldn't be blocked, an unknown "
-                                    "error occurred!")
-                                    .arg(this->userName_));
-                            reenableBlockCheckbox();
-                        });
-                }
-                break;
+                                .arg(this->userName_));
+                        reenableBlockCheckbox();
+                    });
+                return;
             }
+
+            if (newState == Qt::Checked)
+            {
+                this->ui_.block->setEnabled(false);
+
+                bool wasPinned = this->ensurePinned();
+                auto btn = QMessageBox::warning(
+                    this, u"Blocking " % this->userName_,
+                    u"Blocking %1 can cause unintended side-effects like unfollowing.\n\n"_s
+                    "Are you sure you want to block %1?".arg(this->userName_),
+                    QMessageBox::Yes | QMessageBox::Cancel,
+                    QMessageBox::Cancel);
+                if (wasPinned)
+                {
+                    this->togglePinned();
+                }
+                if (btn != QMessageBox::Yes)
+                {
+                    reenableBlockCheckbox();
+                    QSignalBlocker blocker(this->ui_.block);
+                    this->ui_.block->setCheckState(Qt::Unchecked);
+                    return;
+                }
+
+                getApp()->getAccounts()->twitch.getCurrent()->blockUser(
+                    this->userId_, this,
+                    [this, reenableBlockCheckbox, currentUser] {
+                        this->channel_->addSystemMessage(
+                            QString("You successfully blocked user %1")
+                                .arg(this->userName_));
+                        reenableBlockCheckbox();
+                    },
+                    [this, reenableBlockCheckbox] {
+                        this->channel_->addSystemMessage(
+                            QString("User %1 couldn't be blocked, an "
+                                    "unknown error occurred!")
+                                .arg(this->userName_));
+                        reenableBlockCheckbox();
+                    });
+                return;
+            }
+
+            qCWarning(chatterinoWidget)
+                << "Unexpected check-state when blocking" << this->userName_
+                << QMetaEnum::fromType<Qt::CheckState>().valueToKey(newState);
         });
 
     // ignore highlights
@@ -759,9 +781,10 @@ void UserInfoPopup::installEvents()
             {
                 const auto &vector = getSettings()->blacklistedUsers.raw();
 
-                for (int i = 0; i < vector.size(); i++)
+                for (int i = 0; i < static_cast<int>(vector.size()); i++)
                 {
-                    if (this->userName_ == vector[i].getPattern())
+                    if (this->userName_ ==
+                        vector[static_cast<size_t>(i)].getPattern())
                     {
                         getSettings()->blacklistedUsers.removeAt(i);
                         i--;
@@ -908,6 +931,8 @@ void UserInfoPopup::updateUserData()
         if (this->userName_.isEmpty())
         {
             this->userName_ = user.login;
+            this->ui_.nameLabel->setText(user.login);
+
             // Ensure recent messages are shown
             this->updateLatestMessages();
         }
@@ -968,9 +993,9 @@ void UserInfoPopup::updateUserData()
         // get ignoreHighlights state
         bool isIgnoringHighlights = false;
         const auto &vector = getSettings()->blacklistedUsers.raw();
-        for (int i = 0; i < vector.size(); i++)
+        for (const auto &user : vector)
         {
-            if (this->userName_ == vector[i].getPattern())
+            if (this->userName_ == user.getPattern())
             {
                 isIgnoringHighlights = true;
                 break;
@@ -1207,7 +1232,10 @@ void UserInfoPopup::loadSevenTVAvatar(const HelixUser &user)
             {
                 return;
             }
-            url.prepend("https:");
+            if (!url.startsWith(u"https:"))
+            {
+                url.prepend(u"https:");
+            }
 
             // We're implementing custom caching here,
             // because we need the cached file path.

@@ -1,11 +1,24 @@
 #include "util/Helpers.hpp"
 
+#include "Application.hpp"
 #include "providers/twitch/TwitchCommon.hpp"
 
 #include <QDirIterator>
 #include <QLocale>
 #include <QRegularExpression>
 #include <QUuid>
+
+namespace {
+
+const QString ZERO_WIDTH_JOINER = QStringLiteral("\u200D");
+
+// Note: \U requires /utf-8 for MSVC
+// See https://mm2pl.github.io/emoji_rfc.pdf
+const QRegularExpression ESCAPE_TAG_REGEX(
+    QStringLiteral("(?<!\U000E0002)\U000E0002"),
+    QRegularExpression::UseUnicodePropertiesOption);
+
+}  // namespace
 
 namespace chatterino {
 
@@ -113,7 +126,7 @@ namespace helpers::detail {
 }  // namespace helpers::detail
 using namespace helpers::detail;
 
-bool startsWithOrContains(const QString &str1, const QString &str2,
+bool startsWithOrContains(QStringView str1, QStringView str2,
                           Qt::CaseSensitivity caseSensitivity, bool startsWith)
 {
     if (startsWith)
@@ -281,6 +294,24 @@ bool compareEmoteStrings(const QString &a, const QString &b)
     }
 
     return k < 0;
+}
+
+QString unescapeZeroWidthJoiner(QString escaped)
+{
+    escaped.replace(ESCAPE_TAG_REGEX, ZERO_WIDTH_JOINER);
+    return escaped;
+}
+
+QLocale getSystemLocale()
+{
+#ifdef CHATTERINO_WITH_TESTS
+    if (getApp()->isTest())
+    {
+        return {QLocale::English};
+    }
+#endif
+
+    return QLocale::system();
 }
 
 }  // namespace chatterino

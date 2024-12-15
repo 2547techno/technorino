@@ -9,6 +9,7 @@
 
 #include <magic_enum/magic_enum.hpp>
 #include <QJsonDocument>
+#include <QStringBuilder>
 
 namespace {
 
@@ -1908,7 +1909,7 @@ void Helix::updateChatSettings(
 
 void Helix::onFetchChattersSuccess(
     std::shared_ptr<HelixChatters> finalChatters, QString broadcasterID,
-    QString moderatorID, int maxChattersToFetch,
+    QString moderatorID, size_t maxChattersToFetch,
     ResultCallback<HelixChatters> successCallback,
     FailureCallback<HelixGetChattersError, QString> failureCallback,
     HelixChatters chatters)
@@ -2021,7 +2022,7 @@ void Helix::fetchChatters(
 
 void Helix::onFetchModeratorsSuccess(
     std::shared_ptr<std::vector<HelixModerator>> finalModerators,
-    QString broadcasterID, int maxModeratorsToFetch,
+    QString broadcasterID, size_t maxModeratorsToFetch,
     ResultCallback<std::vector<HelixModerator>> successCallback,
     FailureCallback<HelixGetModeratorsError, QString> failureCallback,
     HelixModerators moderators)
@@ -2458,7 +2459,7 @@ void Helix::sendWhisper(
 
 // https://dev.twitch.tv/docs/api/reference#get-chatters
 void Helix::getChatters(
-    QString broadcasterID, QString moderatorID, int maxChattersToFetch,
+    QString broadcasterID, QString moderatorID, size_t maxChattersToFetch,
     ResultCallback<HelixChatters> successCallback,
     FailureCallback<HelixGetChattersError, QString> failureCallback)
 {
@@ -3015,8 +3016,13 @@ void Helix::sendChatMessage(
             }
 
             const auto obj = result.parseJson();
-            auto message =
-                obj["message"].toString(u"Twitch internal server error"_s);
+            auto message = obj["message"].toString();
+
+            if (message.isEmpty())
+            {
+                message = u"Twitch internal server error (" %
+                          result.formatError() % ')';
+            }
 
             switch (*result.status())
             {
@@ -3132,7 +3138,7 @@ void Helix::getUserEmotes(
 }
 
 void Helix::getFollowedChannel(
-    QString userID, QString broadcasterID,
+    QString userID, QString broadcasterID, const QObject *caller,
     ResultCallback<std::optional<HelixFollowedChannel>> successCallback,
     FailureCallback<QString> failureCallback)
 {
@@ -3141,6 +3147,7 @@ void Helix::getFollowedChannel(
                       {u"user_id"_s, userID},
                       {u"broadcaster_id"_s, broadcasterID},
                   })
+        .caller(caller)
         .onSuccess([successCallback](auto result) {
             if (result.status() != 200)
             {

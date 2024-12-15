@@ -69,6 +69,13 @@ enum class ChatSendProtocol : int {
     Helix = 2,
 };
 
+enum class ShowModerationState : int {
+    // Always show this moderation-related item
+    Always = 0,
+    // Never show this moderation-related item
+    Never = 1,
+};
+
 enum StreamerModeSetting {
     Disabled = 0,
     Enabled = 1,
@@ -171,6 +178,8 @@ public:
     BoolSetting enableSmoothScrollingNewMessages = {
         "/appearance/smoothScrollingNewMessages", false};
     BoolSetting displaySevenTVPaints = {"/misc/displaySevenTVPaints", true};
+    BoolSetting displaySevenTVPaintShadows = {
+        "/misc/displaySevenTVPaintShadows", true};
     BoolSetting boldUsernames = {"/appearance/messages/boldUsernames", true};
     BoolSetting colorUsernames = {"/appearance/messages/colorUsernames", true};
     BoolSetting findAllUsernames = {"/appearance/messages/findAllUsernames",
@@ -186,6 +195,18 @@ public:
                                           -0.5f};
     // BoolSetting useCustomWindowFrame = {"/appearance/useCustomWindowFrame",
     // false};
+
+    IntSetting overlayBackgroundOpacity = {
+        "/appearance/overlay/backgroundOpacity", 50};
+    BoolSetting enableOverlayShadow = {"/appearance/overlay/shadow", true};
+    IntSetting overlayShadowOpacity = {"/appearance/overlay/shadowOpacity",
+                                       255};
+    QStringSetting overlayShadowColor = {"/appearance/overlay/shadowColor",
+                                         "#000"};
+    // These should be floats, but there's no good input UI for them
+    IntSetting overlayShadowOffsetX = {"/appearance/overlay/shadowOffsetX", 2};
+    IntSetting overlayShadowOffsetY = {"/appearance/overlay/shadowOffsetY", 2};
+    IntSetting overlayShadowRadius = {"/appearance/overlay/shadowRadius", 8};
 
     // Badges
     BoolSetting showBadgesGlobalAuthority = {
@@ -204,6 +225,22 @@ public:
     BoolSetting useCustomFfzVipBadges = {
         "/appearance/badges/useCustomFfzVipBadges", true};
     BoolSetting showBadgesSevenTV = {"/appearance/badges/seventv", true};
+    BoolSetting animateSevenTVBadges = {"/appearance/badges/animateSeventv",
+                                        true};
+    QSizeSetting lastPopupSize = {
+        "/appearance/lastPopup/size",
+        {300, 500},
+    };
+
+    // Scrollbar
+    BoolSetting hideScrollbarThumb = {
+        "/appearance/scrollbar/hideThumb",
+        false,
+    };
+    BoolSetting hideScrollbarHighlights = {
+        "/appearance/scrollbar/hideHighlights",
+        false,
+    };
 
     /// Behaviour
     BoolSetting allowDuplicateMessages = {"/behaviour/allowDuplicateMessages",
@@ -266,9 +303,6 @@ public:
     BoolSetting mentionUsersWithComma = {"/behaviour/mentionUsersWithComma",
                                          true};
 
-    /// Commands
-    BoolSetting allowCommandsAtEnd = {"/commands/allowCommandsAtEnd", false};
-
     /// Emotes
     BoolSetting scaleEmotesByLineHeight = {"/emotes/scaleEmotesByLineHeight",
                                            false};
@@ -328,6 +362,10 @@ public:
         "/streamerMode/supressLiveNotifications", false};
     BoolSetting streamerModeSuppressInlineWhispers = {
         "/streamerMode/suppressInlineWhispers", true};
+    BoolSetting streamerModeHideBlockedTermText = {
+        "/streamerMode/hideBlockedTermText",
+        true,
+    };
 
     /// Ignored Phrases
     QStringSetting ignoredPhraseReplace = {"/ignore/ignoredPhraseReplace",
@@ -343,6 +381,10 @@ public:
     IntSetting timeoutStackStyle = {
         "/moderation/timeoutStackStyle",
         static_cast<int>(TimeoutStackStyle::Default)};
+    EnumStringSetting<ShowModerationState> showBlockedTermAutomodMessages = {
+        "/moderation/showBlockedTermAutomodMessages",
+        ShowModerationState::Always,
+    };
 
     /// Highlighting
     //    BoolSetting enableHighlights = {"/highlighting/enabled", true};
@@ -547,6 +589,7 @@ public:
 
     IntSetting startUpNotification = {"/misc/startUpNotification", 0};
     QStringSetting currentVersion = {"/misc/currentVersion", ""};
+    IntSetting overlayKnowledgeLevel = {"/misc/overlayKnowledgeLevel", 0};
 
     BoolSetting loadTwitchMessageHistoryOnConnect = {
         "/misc/twitch/loadMessageHistoryOnConnect", true};
