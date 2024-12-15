@@ -3,7 +3,12 @@
 #include "util/QMagicEnum.hpp"
 
 #include <pajlada/settings.hpp>
+#include <QSize>
 #include <QString>
+
+#include <memory>
+#include <string>
+#include <type_traits>
 
 namespace chatterino {
 
@@ -55,6 +60,7 @@ using DoubleSetting = ChatterinoSetting<double>;
 using IntSetting = ChatterinoSetting<int>;
 using StringSetting = ChatterinoSetting<std::string>;
 using QStringSetting = ChatterinoSetting<QString>;
+using QSizeSetting = ChatterinoSetting<QSize>;
 
 template <typename Enum>
 class EnumSetting
@@ -71,7 +77,6 @@ public:
         _registerSetting(this->getData());
     }
 
-    template <typename T2>
     EnumSetting<Enum> &operator=(Enum newValue)
     {
         this->setValue(Underlying(newValue));
@@ -146,6 +151,9 @@ struct IsChatterinoSettingT : std::false_type {
 };
 template <typename T>
 struct IsChatterinoSettingT<ChatterinoSetting<T>> : std::true_type {
+};
+template <typename T>
+struct IsChatterinoSettingT<EnumStringSetting<T>> : std::true_type {
 };
 
 template <typename T>

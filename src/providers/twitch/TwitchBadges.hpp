@@ -45,8 +45,10 @@ public:
 
     void loadTwitchBadges();
 
+    /// Loads the badges shipped with Chatterino (twitch-badges.json)
+    void loadLocalBadges();
+
 private:
-    void parseTwitchBadges(QJsonObject root);
     void loaded();
     void loadEmoteImage(const QString &name, const ImagePtr &image,
                         BadgeIconCallback &&callback);

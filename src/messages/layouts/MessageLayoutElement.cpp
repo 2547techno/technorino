@@ -421,12 +421,13 @@ TextLayoutElement::TextLayoutElement(MessageElement &_creator, QString &_text,
                                      const QSize &_size, QColor _color,
                                      FontStyle _style,
                                      MessageColor::Type messageColor,
-                                     float _scale)
+                                     float _scale, float dpr)
     : MessageLayoutElement(_creator, _size)
     , color_(_color)
     , style_(_style)
     , messageColor_(messageColor)
     , scale_(_scale)
+    , dpr_(dpr)
 {
     this->setText(_text);
 }
@@ -476,11 +477,9 @@ void TextLayoutElement::paint(QPainter &painter,
 
         auto paintPixmap =
             paint->getPixmap(this->getText(), font, this->color_,
-                             this->getRect().size(), this->scale_);
+                             this->getRect().size(), this->scale_, this->dpr_);
 
-        painter.drawPixmap(QRect(this->getRect().x(), this->getRect().y(),
-                                 paintPixmap.width(), paintPixmap.height()),
-                           paintPixmap);
+        painter.drawPixmap(this->getRect().topLeft(), paintPixmap);
     }
     else
     {
@@ -516,7 +515,7 @@ bool TextLayoutElement::paintAnimated(QPainter &painter, const int yOffset)
 
         const auto paintPixmap =
             paint->getPixmap(this->getText(), font, this->color_,
-                             this->getRect().size(), this->scale_);
+                             this->getRect().size(), this->scale_, this->dpr_);
 
         auto rect = this->getRect();
         rect.moveTop(rect.y() + yOffset);
@@ -580,9 +579,10 @@ int TextLayoutElement::getXFromIndex(size_t index)
     else if (index < static_cast<size_t>(this->getText().size()))
     {
         int x = 0;
-        for (int i = 0; i < index; i++)
+        for (size_t i = 0; i < index; i++)
         {
-            x += metrics.horizontalAdvance(this->getText()[i]);
+            x += metrics.horizontalAdvance(
+                this->getText()[static_cast<QString::size_type>(i)]);
         }
         return x + this->getRect().left();
     }
@@ -621,7 +621,7 @@ void TextIconLayoutElement::paint(QPainter &painter,
 
     QFont font = app->getFonts()->getFont(FontStyle::Tiny, this->scale);
 
-    painter.setPen(messageColors.system);
+    painter.setPen(messageColors.systemText);
     painter.setFont(font);
 
     QTextOption option;

@@ -10,6 +10,7 @@ concurrency:
 
 jobs:
   review:
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-clang-tidy') }}
     name: "clang-tidy ${{ matrix.os }}, Qt ${{ matrix.qt-version }})"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -29,7 +30,7 @@ jobs:
 
       - name: Install Qt6
         if: startsWith(matrix.qt-version, '6.')
-        uses: jurplel/install-qt-action@v4.0.0
+        uses: jurplel/install-qt-action@v4.1.1
         with:
           cache: true
           cache-key-prefix: ${{ runner.os }}-QtCache-${{ matrix.qt-version }}-v2
@@ -40,7 +41,7 @@ jobs:
 
       - name: clang-tidy review
         timeout-minutes: 20
-        uses: ZedThree/clang-tidy-review@v0.19.0
+        uses: ZedThree/clang-tidy-review@v0.20.1
         with:
           build_dir: build-clang-tidy
           config_file: ".clang-tidy"
@@ -62,4 +63,4 @@ jobs:
             libxkbcommon-x11-0, libxcb-xkb-dev, libxcb-cursor0
 
       - name: clang-tidy-review upload
-        uses: ZedThree/clang-tidy-review/upload@v0.19.0
+        uses: ZedThree/clang-tidy-review/upload@v0.20.1

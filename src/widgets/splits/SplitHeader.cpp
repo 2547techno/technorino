@@ -42,7 +42,7 @@ namespace {
 using namespace chatterino;
 
 // 5 minutes
-constexpr const uint64_t THUMBNAIL_MAX_AGE_MS = 5ULL * 60 * 1000;
+constexpr const qint64 THUMBNAIL_MAX_AGE_MS = 5LL * 60 * 1000;
 
 auto formatRoomModeUnclean(
     const SharedAccessGuard<const TwitchChannel::RoomModes> &modes) -> QString
@@ -390,6 +390,9 @@ std::unique_ptr<QMenu> SplitHeader::createMainMenu()
     menu->addAction(
         "Popup", this->split_, &Split::popup,
         h->getDisplaySequence(HotkeyCategory::Window, "popup", {{"split"}}));
+    menu->addAction(
+        "Popup overlay", this->split_, &Split::showOverlayWindow,
+        h->getDisplaySequence(HotkeyCategory::Split, "popupOverlay"));
     menu->addAction(
         "Search", this->split_,
         [this] {
