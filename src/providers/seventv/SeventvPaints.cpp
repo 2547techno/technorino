@@ -1,6 +1,7 @@
 #include "providers/seventv/SeventvPaints.hpp"
 
 #include "Application.hpp"
+#include "common/Literals.hpp"
 #include "common/network/NetworkRequest.hpp"
 #include "common/network/NetworkResult.hpp"
 #include "common/Outcome.hpp"
@@ -10,12 +11,14 @@
 #include "providers/seventv/paints/RadialGradientPaint.hpp"
 #include "providers/seventv/paints/UrlPaint.hpp"
 #include "singletons/WindowManager.hpp"
+#include "util/DebugCount.hpp"
 #include "util/PostToThread.hpp"
 
 #include <QUrlQuery>
 
 namespace {
 using namespace chatterino;
+using namespace literals;
 
 QColor rgbaToQColor(const uint32_t color)
 {
@@ -130,17 +133,14 @@ std::optional<std::shared_ptr<Paint>> parsePaint(const QJsonObject &paintJson)
 
 namespace chatterino {
 
-SeventvPaints::SeventvPaints()
-{
-    this->loadSeventvPaints();
-}
+SeventvPaints::SeventvPaints() = default;
 
 std::optional<std::shared_ptr<Paint>> SeventvPaints::getPaint(
     const QString &userName) const
 {
     std::shared_lock lock(this->mutex_);
 
-    const auto it = this->paintMap_.find(userName.toStdString());
+    const auto it = this->paintMap_.find(userName);
     if (it != this->paintMap_.end())
     {
         return it->second;
@@ -154,8 +154,7 @@ void SeventvPaints::addPaint(const QJsonObject &paintJson)
 
     std::unique_lock lock(this->mutex_);
 
-    if (this->knownPaints_.find(paintID.toStdString()) !=
-        this->knownPaints_.end())
+    if (this->knownPaints_.find(paintID) != this->knownPaints_.end())
     {
         return;
     }
@@ -166,7 +165,8 @@ void SeventvPaints::addPaint(const QJsonObject &paintJson)
         return;
     }
 
-    this->knownPaints_[paintID.toStdString()] = *paint;
+    DebugCount::increase(u"7TV Paints"_s);
+    this->knownPaints_[paintID] = *paint;
 }
 
 void SeventvPaints::assignPaintToUser(const QString &paintID,
@@ -174,15 +174,15 @@ void SeventvPaints::assignPaintToUser(const QString &paintID,
 {
     std::unique_lock lock(this->mutex_);
 
-    const auto paintIt = this->knownPaints_.find(paintID.toStdString());
+    const auto paintIt = this->knownPaints_.find(paintID);
     if (paintIt != this->knownPaints_.end())
     {
-        auto it = this->paintMap_.find(userName.string.toStdString());
+        auto it = this->paintMap_.find(userName.string);
         bool changed = false;
         if (it == this->paintMap_.end())
         {
-            this->paintMap_.emplace(userName.string.toStdString(),
-                                    paintIt->second);
+            this->paintMap_.emplace(userName.string, paintIt->second);
+            DebugCount::increase(u"7TV Paint Assignments"_s);
             changed = true;
         }
         else if (it->second != paintIt->second)
@@ -205,52 +205,12 @@ void SeventvPaints::clearPaintFromUser(const QString &paintID,
 {
     std::unique_lock lock(this->mutex_);
 
-    const auto it = this->paintMap_.find(userName.string.toStdString());
+    const auto it = this->paintMap_.find(userName.string);
     if (it != this->paintMap_.end() && it->second->id == paintID)
     {
-        this->paintMap_.erase(userName.string.toStdString());
+        this->paintMap_.erase(userName.string);
+        DebugCount::decrease(u"7TV Paint Assignments"_s);
     }
-}
-
-void SeventvPaints::loadSeventvPaints()
-{
-    static QUrl url("https://7tv.io/v2/cosmetics");
-
-    static QUrlQuery urlQuery;
-    // valid user_identifier values: "object_id", "twitch_id", "login"
-    urlQuery.addQueryItem("user_identifier", "login");
-
-    url.setQuery(urlQuery);
-
-    NetworkRequest(url)
-        .onSuccess([this](const auto &result) -> Outcome {
-            auto root = result.parseJson();
-
-            std::unique_lock lock(this->mutex_);
-
-            for (const auto paintValueRef : root.value("paints").toArray())
-            {
-                const auto paintJson = paintValueRef.toObject();
-
-                std::optional<std::shared_ptr<Paint>> paint =
-                    parsePaint(paintJson);
-                if (!paint)
-                {
-                    continue;
-                }
-
-                this->knownPaints_[paintJson["id"].toString().toStdString()] =
-                    *paint;
-
-                for (const auto userJson : paintJson["users"].toArray())
-                {
-                    this->paintMap_[userJson.toString().toStdString()] = *paint;
-                }
-            }
-
-            return Success;
-        })
-        .execute();
 }
 
 }  // namespace chatterino

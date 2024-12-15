@@ -49,10 +49,10 @@ public:
 
 private:
     // emoteSetID => emoteSet
-    std::unordered_map<std::string, Atomic<std::shared_ptr<const EmoteMap>>>
+    std::unordered_map<QString, Atomic<std::shared_ptr<const EmoteMap>>>
         emoteSets_;
     // userID => emoteSetID
-    std::unordered_map<std::string, QList<QString>> userEmoteSets_;
+    std::unordered_map<QString, QList<QString>> userEmoteSets_;
 
     bool enabled_ = true;
     pajlada::Signals::SignalHolder signalHolder_;
