@@ -2076,6 +2076,7 @@ std::pair<MessagePtrMut, HighlightAlert> MessageBuilder::makeIrcMessage(
     }
 
     builder.appendChannelName(channel);
+    builder->serverReceivedTime = calculateMessageTime(ircMessage);
 
     if (tags.contains("client-nonce") && getSettings()->nonceFuckeryEnabled)
     {
@@ -2085,7 +2086,8 @@ std::pair<MessagePtrMut, HighlightAlert> MessageBuilder::makeIrcMessage(
         {
             auto link = linkparser::parse(nonceString);
 
-            builder.emplace<TimestampElement>();
+            builder.emplace<TimestampElement>(
+                builder->serverReceivedTime.time());
             builder.emplace<TextElement>(
                 "Abnormal nonce:", MessageElementFlag::ChannelPointReward,
                 MessageColor::System);
@@ -2138,7 +2140,6 @@ std::pair<MessagePtrMut, HighlightAlert> MessageBuilder::makeIrcMessage(
     builder.parseThread(content, tags, channel, thread, parent);
 
     // timestamp
-    builder->serverReceivedTime = calculateMessageTime(ircMessage);
     builder.emplace<TimestampElement>(builder->serverReceivedTime.time());
 
     bool shouldAddModerationElements = [&] {
