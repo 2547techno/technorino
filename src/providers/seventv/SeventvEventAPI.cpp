@@ -347,8 +347,13 @@ void SeventvEventAPI::onEmoteSetUpdate(const Dispatch &dispatch)
 
     if (this->lastPersonalEmoteAssignment_->emoteSetID == dispatch.id)
     {
+        auto *app = tryGetApp();
+        if (!app)
+        {
+            return;
+        }
         auto emoteSet =
-            getApp()->getSeventvPersonalEmotes()->getEmoteSetByID(dispatch.id);
+            app->getSeventvPersonalEmotes()->getEmoteSetByID(dispatch.id);
         if (emoteSet)
         {
             qCDebug(chatterinoSeventvEventAPI) << "Flushed last emote set";
@@ -400,7 +405,13 @@ void SeventvEventAPI::onUserUpdate(const Dispatch &dispatch)
 // NOLINTBEGIN(readability-convert-member-functions-to-static)
 void SeventvEventAPI::onCosmeticCreate(const CosmeticCreateDispatch &cosmetic)
 {
-    auto *badges = getApp()->getSeventvBadges();
+    auto *app = tryGetApp();
+    if (!app)
+    {
+        return;  // shutting down
+    }
+
+    auto *badges = app->getSeventvBadges();
     switch (cosmetic.kind)
     {
         case CosmeticKind::Badge: {
@@ -408,7 +419,7 @@ void SeventvEventAPI::onCosmeticCreate(const CosmeticCreateDispatch &cosmetic)
         }
         break;
         case CosmeticKind::Paint: {
-            getApp()->getSeventvPaints()->addPaint(cosmetic.data);
+            app->getSeventvPaints()->addPaint(cosmetic.data);
         }
         break;
         default:
@@ -419,7 +430,13 @@ void SeventvEventAPI::onCosmeticCreate(const CosmeticCreateDispatch &cosmetic)
 void SeventvEventAPI::onEntitlementCreate(
     const EntitlementCreateDeleteDispatch &entitlement)
 {
-    auto *badges = getApp()->getSeventvBadges();
+    auto *app = tryGetApp();
+    if (!app)
+    {
+        return;  // shutting down
+    }
+
+    auto *badges = app->getSeventvBadges();
     switch (entitlement.kind)
     {
         case CosmeticKind::Badge: {
@@ -428,7 +445,7 @@ void SeventvEventAPI::onEntitlementCreate(
         }
         break;
         case CosmeticKind::Paint: {
-            getApp()->getSeventvPaints()->assignPaintToUser(
+            app->getSeventvPaints()->assignPaintToUser(
                 entitlement.refID, UserName{entitlement.userName});
         }
         break;
@@ -437,7 +454,7 @@ void SeventvEventAPI::onEntitlementCreate(
                 << "Assign user" << entitlement.userID << "to emote set"
                 << entitlement.refID;
             if (auto set =
-                    getApp()->getSeventvPersonalEmotes()->assignUserToEmoteSet(
+                    app->getSeventvPersonalEmotes()->assignUserToEmoteSet(
                         entitlement.refID, entitlement.userID))
             {
                 if ((*set)->empty())
@@ -468,7 +485,13 @@ void SeventvEventAPI::onEntitlementCreate(
 void SeventvEventAPI::onEntitlementDelete(
     const EntitlementCreateDeleteDispatch &entitlement)
 {
-    auto *badges = getApp()->getSeventvBadges();
+    auto *app = tryGetApp();
+    if (!app)
+    {
+        return;  // shutting down
+    }
+
+    auto *badges = app->getSeventvBadges();
     switch (entitlement.kind)
     {
         case CosmeticKind::Badge: {
@@ -477,7 +500,7 @@ void SeventvEventAPI::onEntitlementDelete(
         }
         break;
         case CosmeticKind::Paint: {
-            getApp()->getSeventvPaints()->clearPaintFromUser(
+            app->getSeventvPaints()->clearPaintFromUser(
                 entitlement.refID, UserName{entitlement.userName});
         }
         break;
@@ -488,8 +511,6 @@ void SeventvEventAPI::onEntitlementDelete(
 
 void SeventvEventAPI::onEmoteSetCreate(const Dispatch &dispatch)
 {
-    // We're using `Application::instance` instead of getApp(), because we're not in the GUI thread.
-    // `seventvBadges` and `seventvPaints` do their own locking.
     EmoteSetCreateDispatch createDispatch(dispatch.body["object"].toObject());
     if (!createDispatch.validate())
     {
@@ -498,12 +519,18 @@ void SeventvEventAPI::onEmoteSetCreate(const Dispatch &dispatch)
         return;
     }
 
+    auto *app = tryGetApp();
+    if (!app)
+    {
+        return;  // shutting down
+    }
+
     // other flags are "immutable" and "privileged"
     if (createDispatch.isPersonalOrCommercial)
     {
         qCDebug(chatterinoSeventvEventAPI)
             << "Create emote set" << createDispatch.emoteSetID;
-        getApp()->getSeventvPersonalEmotes()->createEmoteSet(
+        app->getSeventvPersonalEmotes()->createEmoteSet(
             createDispatch.emoteSetID);
     }
     else
