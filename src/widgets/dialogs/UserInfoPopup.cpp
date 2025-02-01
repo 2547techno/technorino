@@ -326,7 +326,7 @@ UserInfoPopup::UserInfoPopup(bool closeAutomatically, Split *split)
                         menu->addAction(
                             "Open RaccAttack profile in browser", [username] {
                                 QDesktopServices::openUrl(
-                                    QUrl("https://emotes.raccatta.cc/twitch/" +
+                                    QUrl("https://emotes.awoo.nl/twitch/" +
                                          username));
                             });
 
