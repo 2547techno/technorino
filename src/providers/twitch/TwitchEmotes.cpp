@@ -468,7 +468,7 @@ EmotePtr TwitchEmotes::getOrCreateEmote(const EmoteId &id,
                                baseSize * (1.0 / emote3xScaleFactor)),
             },
             Tooltip{name.toHtmlEscaped() + "<br>Twitch Emote"},
-            Url{QString("https://emotes.raccatta.cc/twitch/emote/%1")
+            Url{QString("https://emotes.awoo.nl/twitch/emote/%1")
                     .arg(id.string)},
         });
     }
