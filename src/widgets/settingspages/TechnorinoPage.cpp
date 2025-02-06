@@ -108,8 +108,9 @@ void TechnorinoPage::initLayout(GeneralPageView &layout)
     layout.addTitle("Chat");
     layout.addCheckbox("Show placeholder in text input box (requires restart)",
                        s.showTextInputPlaceholder);
-
     layout.addCheckbox("Gray-out recent messages", s.grayOutRecents, false,
+                       "Gray-out recent messages");
+    layout.addCheckbox("Convert #text to channel links", s.channelLinks, false,
                        "Gray-out recent messages");
 
     layout.addTitle("Miscellaneous");
