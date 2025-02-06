@@ -24,6 +24,8 @@
 #include "widgets/settingspages/PluginsPage.hpp"
 #include "widgets/settingspages/TechnorinoPage.hpp"
 
+#include <QDateTime>
+#include <QDebug>
 #include <QDialogButtonBox>
 #include <QFile>
 #include <QLineEdit>
@@ -232,11 +234,22 @@ void SettingsDialog::addTabs()
     this->ui_.tabContainer->setSpacing(0);
     this->ui_.tabContainer->setContentsMargins(0, 20, 0, 20);
 
+    QDate today = QDateTime::currentDateTime().date();
+    QString technorinoIconPath = ":/settings/technorino.png";
+
+    if (today.month() == 12 && today.day() == 25)
+    {
+        technorinoIconPath = ":/settings/technorino_christmas.png";
+    }
+    else if (today.month() == 10 && today.day() == 31)
+    {
+        technorinoIconPath = ":/settings/technorino_halloween.png";
+    }
     // Constructors are wrapped in std::function to remove some strain from first time loading.
 
     // clang-format off
     this->addTab([]{return new GeneralPage;},          "General",        ":/settings/about.svg", SettingsTabId::General);
-    this->addTab([]{return new TechnorinoPage;},          "Technorino",        ":/settings/technorino.png", SettingsTabId::Technorino);
+    this->addTab([]{return new TechnorinoPage;},          "Technorino",        technorinoIconPath, SettingsTabId::Technorino);
     this->ui_.tabContainer->addSpacing(16);
     this->addTab([]{return new AccountsPage;},         "Accounts",       ":/settings/accounts.svg", SettingsTabId::Accounts);
     this->addTab([]{return new NicknamesPage;},        "Nicknames",      ":/settings/accounts.svg");
