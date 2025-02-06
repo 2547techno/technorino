@@ -2412,7 +2412,8 @@ void MessageBuilder::addTextOrEmote(TextState &state, QString string)
             return;
         }
     }
-    else if (string.startsWith('#') && string.size() > 1)
+    else if (getSettings()->channelLinks && string.startsWith('#') &&
+             string.size() > 1)
     {
         QString channelName = string.sliced(1).toLower();
 
