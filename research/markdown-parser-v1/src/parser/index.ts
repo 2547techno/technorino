@@ -49,43 +49,56 @@ export type MatchResponse<T = ASTNode> =
           endCursor: number;
       };
 
-export function normalizeTextNodes(nodes: ASTNode[]) {
+export function normalizeTextNodes(nodes: ASTNode[]): ASTNode[] {
+    let currentTextNode: TextASTNode | undefined;
+    function combineTextNode(node: TextASTNode) {
+        if (!currentTextNode) {
+            currentTextNode = {
+                type: "text",
+                data: "",
+            };
+        }
+        currentTextNode.data += node.data;
+    }
+
     const out: ASTNode[] = [];
 
-    let i = 0;
-    while (i < nodes.length) {
-        if (nodes[i].type === "text") {
-            const outStr = [(nodes[i] as TextASTNode).data];
-            let j = 1;
-            while (nodes[i + j]?.type === "text") {
-                outStr.push((nodes[i + j] as TextASTNode).data);
-                j++;
-            }
-            out.push({
-                type: "text",
-                data: outStr.join(""),
-            });
-            i += outStr.length - 1;
+    for (let node of nodes) {
+        if (node.type === "text") {
+            combineTextNode(node);
         } else {
-            out.push(nodes[i]);
+            if (currentTextNode) {
+                out.push(currentTextNode);
+                currentTextNode = undefined;
+            }
+
+            if (node.type === "link") {
+                const link: LinkASTNode = {
+                    type: "link",
+                    data: {
+                        text: normalizeTextNodes(node.data.text),
+                        url: normalizeTextNodes(node.data.url),
+                    },
+                };
+                out.push(link);
+            } else {
+                const _node:
+                    | BoldASTNode
+                    | ItalicASTNode
+                    | StrikethroughASTNode
+                    | CodeASTNode = {
+                    type: node.type,
+                    data: normalizeTextNodes(node.data),
+                };
+
+                out.push(_node);
+            }
         }
-        i++;
     }
+
+    if (currentTextNode) {
+        out.push(currentTextNode);
+    }
+
     return out;
 }
-
-export function normalize(nodes: ASTNode[]) {
-    const out: ASTNode[] = [];
-
-    for (const node of nodes) {
-    }
-}
-
-/**
- * f
- * o
- * o
- * *
- * a
- * f
- */

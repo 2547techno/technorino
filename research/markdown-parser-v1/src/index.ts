@@ -1139,3 +1139,237 @@ describe("grammar parser", () => {
         });
     });
 });
+
+describe("normalize", () => {
+    const markdown: AcceptTest[] = [
+        {
+            input: "foo bar *foo bar* foo bar ",
+            nodes: [
+                ...createTextNodes("foo bar ", true),
+                {
+                    type: "italic",
+                    data: createTextNodes("foo bar", true),
+                },
+                ...createTextNodes(" foo bar ", true),
+            ],
+        },
+        {
+            input: "foo **bar ba** *fo* oobar `ba`",
+            nodes: [
+                ...createTextNodes("foo ", true),
+                {
+                    type: "bold",
+                    data: createTextNodes("bar ba", true),
+                },
+                ...createTextNodes(" ", true),
+                {
+                    type: "italic",
+                    data: createTextNodes("fo", true),
+                },
+                ...createTextNodes(" oobar ", true),
+                {
+                    type: "code",
+                    data: createTextNodes("ba", true),
+                },
+            ],
+        },
+        {
+            input: "lk sdkljfsld kafl ksdf l kasdf",
+            nodes: createTextNodes("lk sdkljfsld kafl ksdf l kasdf", true),
+        },
+        { input: "foobar", nodes: createTextNodes("foobar", true) },
+        { input: " ", nodes: createTextNodes(" ", true) },
+        {
+            input: "skdfjl  ",
+            nodes: createTextNodes("skdfjl  ", true),
+        },
+        {
+            input: "  aslkdf",
+            nodes: createTextNodes("  aslkdf", true),
+        },
+        {
+            input: "** foo**",
+            nodes: createTextNodes("** foo**", true),
+        },
+        {
+            input: "**foo **",
+            nodes: createTextNodes("**foo **", true),
+        },
+        {
+            input: "** **",
+            nodes: createTextNodes("** **", true),
+        },
+        {
+            input: "****",
+            nodes: createTextNodes("****", true),
+        },
+        {
+            input: "**a",
+            nodes: createTextNodes("**a", true),
+        },
+        {
+            input: "**",
+            nodes: createTextNodes("**", true),
+        },
+        {
+            input: "*a",
+            nodes: createTextNodes("*a", true),
+        },
+        {
+            input: "__ foo__",
+            nodes: createTextNodes("__ foo__", true),
+        },
+        {
+            input: "__foo __",
+            nodes: createTextNodes("__foo __", true),
+        },
+        {
+            input: "__ __",
+            nodes: createTextNodes("__ __", true),
+        },
+        {
+            input: "____",
+            nodes: createTextNodes("____", true),
+        },
+        {
+            input: "__a",
+            nodes: createTextNodes("__a", true),
+        },
+        {
+            input: "__",
+            nodes: createTextNodes("__", true),
+        },
+        {
+            input: "_a",
+            nodes: createTextNodes("_a", true),
+        },
+        {
+            input: "* foo*",
+            nodes: createTextNodes("* foo*", true),
+        },
+        {
+            input: "*foo *",
+            nodes: createTextNodes("*foo *", true),
+        },
+        {
+            input: "* *",
+            nodes: createTextNodes("* *", true),
+        },
+        {
+            input: "**",
+            nodes: createTextNodes("**", true),
+        },
+        {
+            input: "*a",
+            nodes: createTextNodes("*a", true),
+        },
+        {
+            input: "*",
+            nodes: createTextNodes("*", true),
+        },
+        {
+            input: "**a",
+            nodes: createTextNodes("**a", true),
+        },
+        {
+            input: "_ foo_",
+            nodes: createTextNodes("_ foo_", true),
+        },
+        {
+            input: "_foo _",
+            nodes: createTextNodes("_foo _", true),
+        },
+        {
+            input: "_ _",
+            nodes: createTextNodes("_ _", true),
+        },
+        {
+            input: "__",
+            nodes: createTextNodes("__", true),
+        },
+        {
+            input: "_a",
+            nodes: createTextNodes("_a", true),
+        },
+        {
+            input: "_",
+            nodes: createTextNodes("_", true),
+        },
+        {
+            input: "__a",
+            nodes: createTextNodes("__a", true),
+        },
+        {
+            input: "~ foo~",
+            nodes: createTextNodes("~ foo~", true),
+        },
+        {
+            input: "~foo ~",
+            nodes: createTextNodes("~foo ~", true),
+        },
+        {
+            input: "~ ~",
+            nodes: createTextNodes("~ ~", true),
+        },
+        {
+            input: "~",
+            nodes: createTextNodes("~", true),
+        },
+        {
+            input: "~a",
+            nodes: createTextNodes("~a", true),
+        },
+        {
+            input: "~",
+            nodes: createTextNodes("~", true),
+        },
+        {
+            input: "~~a",
+            nodes: createTextNodes("~~a", true),
+        },
+        {
+            input: "``",
+            nodes: createTextNodes("``", true),
+        },
+        {
+            input: "~~a~~",
+            nodes: [
+                ...createTextNodes("~", true),
+                {
+                    type: "strikethrough",
+                    data: createTextNodes("a", true),
+                },
+                ...createTextNodes("~", true),
+            ],
+        },
+        {
+            input: "foobar __foo *bar* baz__ baz",
+            nodes: [
+                ...createTextNodes("foobar __foo ", true),
+                {
+                    type: "italic",
+                    data: createTextNodes("bar", true),
+                },
+                ...createTextNodes(" baz__ baz", true),
+            ],
+        },
+    ];
+
+    markdown.forEach(({ input, nodes }) => {
+        it(input, () => {
+            assertAst(matchMarkdown, input, nodes, true);
+        });
+    });
+});
+
+// import util from "node:util";
+
+// const match = matchMarkdown(0, tokenize("foo1 bar *foo2 bar* foo3 bar"));
+// console.log(match.accepted);
+// if (match.accepted) {
+//     console.log(
+//         util.inspect(normalizeTextNodes(match.nodes), {
+//             depth: null,
+//         })
+//     );
+// }
