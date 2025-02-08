@@ -1204,20 +1204,6 @@ void MessageBuilder::append(std::unique_ptr<MessageElement> element)
     this->message().elements.push_back(std::move(element));
 }
 
-void MessageBuilder::appendQueue(std::unique_ptr<MessageElement> element)
-{
-    this->messageElementQueue_.push_back(std::move(element));
-}
-
-void MessageBuilder::commitQueue()
-{
-    for (auto &element : this->messageElementQueue_)
-    {
-        this->append(std::move(element));
-    }
-    this->messageElementQueue_.clear();
-}
-
 void MessageBuilder::addLink(const linkparser::Parsed &parsedLink,
                              const QString &source)
 {
@@ -2926,7 +2912,6 @@ void MessageBuilder::addWords(
     // cursor currently indicates what character index we're currently operating in the full list of words
     int cursor = 0;
     auto currentTwitchEmoteIt = twitchEmotes.begin();
-    this->queueEnabled = true;
 
     for (auto word : words)
     {
@@ -3014,8 +2999,6 @@ void MessageBuilder::addWords(
 
         cursor += word.size() + 1;
     }
-    this->queueEnabled = false;
-    this->commitQueue();
 }
 
 void MessageBuilder::appendTwitchBadges(const QVariantMap &tags,

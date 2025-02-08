@@ -156,9 +156,6 @@ public:
 
     void append(std::unique_ptr<MessageElement> element);
 
-    void appendQueue(std::unique_ptr<MessageElement> element);
-    void commitQueue();
-
     void addLink(const linkparser::Parsed &parsedLink, const QString &source);
 
     template <typename T, typename... Args>
@@ -169,14 +166,7 @@ public:
 
         auto unique = std::make_unique<T>(std::forward<Args>(args)...);
         auto pointer = unique.get();
-        if (queueEnabled)
-        {
-            this->appendQueue(std::move(unique));
-        }
-        else
-        {
-            this->append(std::move(unique));
-        }
+        this->append(std::move(unique));
         return pointer;
     }
 
@@ -358,8 +348,6 @@ private:
                                         const Channel *channel);
 
     std::shared_ptr<Message> message_;
-    std::vector<std::unique_ptr<MessageElement>> messageElementQueue_;
-    bool queueEnabled = false;
     MessageColor textColor_ = MessageColor::Text;
 
     QColor usernameColor_ = {153, 153, 153};
