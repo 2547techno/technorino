@@ -1,0 +1,12 @@
+
+This is an initial markdown parser.
+
+Supports:
+- bold (both asterix and underline versions)
+- italic (both asterix and underline versions)
+- code
+- strikethrough
+- links
+
+Does not support:
+- recursive styles
