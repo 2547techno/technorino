@@ -131,6 +131,7 @@
                 },
                 {
                     "emote": {
+                        "homePage": "https://emotes.awoo.nl/twitch/emote/25",
                         "images": {
                             "1x": "https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/1.0",
                             "2x": "https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/2.0",
@@ -197,6 +198,7 @@
                 },
                 {
                     "emote": {
+                        "homePage": "https://emotes.awoo.nl/twitch/emote/25",
                         "images": {
                             "1x": "https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/1.0",
                             "2x": "https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/2.0",
@@ -251,6 +253,7 @@
             "searchText": "pajlada  pajlada: Kappa 😂 Kappa ",
             "serverReceivedTime": "2022-09-03T11:27:03Z",
             "timeoutUser": "",
+            "userID": "11148817",
             "usernameColor": "#ffcc44ff"
         }
     ]

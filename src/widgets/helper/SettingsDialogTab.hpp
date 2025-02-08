@@ -19,6 +19,7 @@ enum class SettingsTabId {
     Accounts,
     Moderation,
     About,
+    Technorino
 };
 
 class SettingsDialogTab : public BaseWidget
@@ -37,7 +38,7 @@ public:
 
     const QString &name() const;
 
-signals:
+Q_SIGNALS:
     void selectedChanged(bool);
 
 private:

@@ -426,8 +426,8 @@ QString TwitchEmotes::cleanUpEmoteCode(const QString &dirtyEmoteCode)
     cleanCode.detach();
 
     static QMap<QString, QString> emoteNameReplacements{
-        {"[oO](_|\\.)[oO]", "O_o"}, {"\\&gt\\;\\(", "&gt;("},
-        {"\\&lt\\;3", "&lt;3"},     {"\\:-?(o|O)", ":O"},
+        {"[oO](_|\\.)[oO]", "O_o"}, {"\\&gt\\;\\(", ">("},
+        {"\\&lt\\;3", "<3"},        {"\\:-?(o|O)", ":O"},
         {"\\:-?(p|P)", ":P"},       {"\\:-?[\\\\/]", ":/"},
         {"\\:-?[z|Z|\\|]", ":Z"},   {"\\:-?\\(", ":("},
         {"\\:-?\\)", ":)"},         {"\\:-?D", ":D"},
@@ -468,7 +468,7 @@ EmotePtr TwitchEmotes::getOrCreateEmote(const EmoteId &id,
                                baseSize * (1.0 / emote3xScaleFactor)),
             },
             Tooltip{name.toHtmlEscaped() + "<br>Twitch Emote"},
-            Url{QString("https://emotes.raccatta.cc/twitch/emote/%1")
+            Url{QString("https://emotes.awoo.nl/twitch/emote/%1")
                     .arg(id.string)},
         });
     }

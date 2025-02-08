@@ -168,6 +168,7 @@ public:
     BoolSetting alternateMessages = {
         "/appearance/messages/alternateMessageBackground", false};
     BoolSetting grayOutRecents = {"/appearance/messages/gratOutRecents", true};
+    BoolSetting channelLinks = {"/appearance/messages/channelLinks", false};
     FloatSetting boldScale = {"/appearance/boldScale", 63};
     BoolSetting showTabCloseButton = {"/appearance/showTabCloseButton", true};
     BoolSetting showTabLive = {"/appearance/showTabLiveButton", true};
@@ -667,6 +668,10 @@ public:
     EnumStringSetting<SoundBackend> soundBackend = {
         "/sound/backend",
         SoundBackend::Miniaudio,
+    };
+    BoolSetting enableExperimentalEventSub = {
+        "/eventsub/enableExperimental",
+        false,
     };
 
 private:

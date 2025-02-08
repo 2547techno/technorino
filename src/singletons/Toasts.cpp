@@ -57,7 +57,7 @@ private:
     QFile file_;
     QNetworkReply *reply_{};
 
-signals:
+Q_SIGNALS:
     void downloadComplete();
 };
 
@@ -204,6 +204,10 @@ public:
     {
     }
 
+    void toastActivated(const char *response) const override
+    {
+    }
+
     void toastFailed() const override
     {
     }
@@ -310,7 +314,7 @@ AvatarDownloader::AvatarDownloader(const QString &avatarURL,
         {
             this->file_.close();
         }
-        emit downloadComplete();
+        downloadComplete();
         this->deleteLater();
     });
 }

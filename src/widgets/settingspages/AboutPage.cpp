@@ -132,6 +132,9 @@ AboutPage::AboutPage()
             addLicense(form.getElement(), "expected-lite",
                        "https://github.com/martinmoene/expected-lite",
                        ":/licenses/expected-lite.txt");
+            addLicense(form.getElement(), "Howard Hinnant's date.h",
+                       "https://github.com/HowardHinnant/date",
+                       ":/licenses/howard-hinnant-date.txt");
         }
 
         // Attributions
@@ -146,7 +149,7 @@ AboutPage::AboutPage()
             l.emplace<QLabel>("Google emojis provided by <a href=\"https://google.com\">Google</a>")->setOpenExternalLinks(true);
             l.emplace<QLabel>("Emoji datasource provided by <a href=\"https://www.iamcal.com/\">Cal Henderson</a> "
                               "(<a href=\"https://github.com/iamcal/emoji-data/blob/master/LICENSE\">show license</a>)")->setOpenExternalLinks(true);
-            l.emplace<QLabel>("Twitch emote data provided by <a href=\"https://emotes.raccatta.cc/\">emotes.raccatta.cc</a>")->setOpenExternalLinks(true);
+            l.emplace<QLabel>("Twitch emote data provided by <a href=\"https://emotes.awoo.nl/\">emotes.awoo.nl</a>")->setOpenExternalLinks(true);
             // clang-format on
         }
 

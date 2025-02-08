@@ -156,6 +156,7 @@
                 },
                 {
                     "emote": {
+                        "homePage": "https://emotes.awoo.nl/twitch/emote/1902",
                         "images": {
                             "1x": "https://static-cdn.jtvnw.net/emoticons/v2/1902/default/dark/1.0",
                             "2x": "https://static-cdn.jtvnw.net/emoticons/v2/1902/default/dark/2.0",
@@ -299,6 +300,7 @@
             "searchText": "nerixyz  nerixyz: c Keepo FFZEmote 😭 d ",
             "serverReceivedTime": "2024-09-18T20:16:33Z",
             "timeoutUser": "",
+            "userID": "129546453",
             "usernameColor": "#ffff0000"
         }
     ],

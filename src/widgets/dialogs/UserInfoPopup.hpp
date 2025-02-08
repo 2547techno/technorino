@@ -55,10 +55,12 @@ private:
 
     void loadSevenTVUser(const HelixUser &user);
     void loadSevenTVAvatar(const HelixUser &user);
-    void setSevenTVAvatar(const QString &filename);
+    void setSevenTVAvatar(const QString &filename, const QByteArray &format);
 
     void saveCacheAvatar(const QByteArray &avatar,
                          const QString &filename) const;
+
+    void updateAvatarUrl();
 
     bool isMod_{};
     bool isBroadcaster_{};
@@ -69,6 +71,8 @@ private:
     QString userId_;
     QString avatarUrl_;
     QString stvUserId_ = "";
+    QString helixAvatarUrl_;
+    QString seventvAvatarUrl_;
 
     // The channel the popup was opened from (e.g. /mentions or #forsen). Can be a special channel.
     ChannelPtr channel_;

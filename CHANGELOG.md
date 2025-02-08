@@ -2,6 +2,47 @@
 
 ## Unversioned
 
+- Minor: `/clear` messages are now stacked like timeouts. (#5806)
+- Minor: Treat all browsers starting with `firefox` as a Firefox browser. (#5805)
+- Minor: Remove incognito browser support for `opera/launcher` (this should no longer be a thing). (#5805)
+- Minor: Remove incognito browser support for `iexplore`, because internet explorer is EOL. (#5810)
+- Minor: When (re-)connecting, visible channels are now joined first. (#5850)
+- Minor: Added the ability to filter on messages by the author's user ID (example: `author.user_id == "22484632"`). (#5862)
+- Minor: Improved error messaging of the `/clip` command. (#5879)
+- Bugfix: Fixed a potential way to escape the Lua Plugin sandbox. (#5846)
+- Bugfix: Fixed a crash relating to Lua HTTP. (#5800)
+- Bugfix: Fixed a crash that could occur on Linux and macOS when clicking "Install" from the update prompt. (#5818)
+- Bugfix: Fixed missing word wrap in update popup. (#5811)
+- Bugfix: Fixed tabs not scaling to the default scale when changing the scale from a non-default value. (#5794)
+- Bugfix: Closing a usercard will no longer cause stop-logging messages to be generated in channel logs. (#5828)
+- Bugfix: Fixed tabs not scaling to the default scale when changing the scale from a non-default value. (#5794, #5833)
+- Bugfix: Fixed deleted messages not immediately disappearing when "Hide deleted messages" is enabled. (#5844, #5854)
+- Bugfix: Fixed announcements not showing up in mentions tab. (#5857)
+- Bugfix: Fixed the reply button showing for inline whispers and announcements. (#5863)
+- Bugfix: Fixed suspicious user treatment update messages not being searchable. (#5865)
+- Bugfix: Ensure miniaudio backend exits even if it doesn't exit cleanly. (#5896)
+- Dev: Add initial experimental EventSub support. (#5837, #5895)
+- Dev: Highlight checks now use non-capturing groups for the boundaries. (#5784)
+- Dev: Removed unused PubSub whisper code. (#5898)
+- Dev: Updated Conan dependencies. (#5776)
+- Dev: Disable QT keywords (i.e. `emit`, `slots`, and `signals`). (#5882)
+- Dev: Replaced usage of `parseTime` with `serverReceivedTime` for clearchat messages. (#5824, #5855)
+- Dev: Support Boost 1.87. (#5832)
+- Dev: Words from `TextElement`s are now combined where possible. (#5847)
+- Dev: Fixed assertion failure when closing the edit-hotkey dialog. (#5869)
+- Dev: Updated `qtkeychain` to 0.15.0. (#5871)
+
+## 2.5.2
+
+- Bugfix: Fixed a crash in the 7TV EventApi when closing Chatterino. (#5768)
+- Bugfix: Fixed scrollbar highlights being visible in overlay windows. (#5769)
+- Bugfix: Make macos fonts look the same as v2.5.1. (#5775)
+- Bugfix: Fixed 7TV usernames messing with Qt's HTML (#5780)
+- Bugfix: Fixed BTTV emotes occasionally showing the wrong author. (#5783)
+- Bugfix: Fixed some Twitch emotes containing HTML entities. (#5786)
+- Bugfix: Fixed the same blocked term showing up more than once. (#5789)
+- Dev: Hard-code Boost 1.86.0 in macos CI builders. (#5774)
+
 ## 2.5.2-beta.1
 
 - Major: Add option to show pronouns in user card. (#5442, #5583)
