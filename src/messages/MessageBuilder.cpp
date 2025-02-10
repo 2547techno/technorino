@@ -9,6 +9,7 @@
 #include "controllers/ignores/IgnoreController.hpp"
 #include "controllers/ignores/IgnorePhrase.hpp"
 #include "controllers/userdata/UserDataController.hpp"
+#include "messages/ast/Parser.hpp"
 #include "messages/Emote.hpp"
 #include "messages/Image.hpp"
 #include "messages/Message.hpp"
@@ -36,6 +37,7 @@
 #include "providers/twitch/TwitchIrcServer.hpp"
 #include "providers/twitch/TwitchUsers.hpp"
 #include "singletons/Emotes.hpp"
+#include "singletons/Fonts.hpp"
 #include "singletons/Resources.hpp"
 #include "singletons/Settings.hpp"
 #include "singletons/StreamerMode.hpp"
@@ -49,6 +51,7 @@
 #include "widgets/Window.hpp"
 
 #include <boost/variant.hpp>
+#include <boost/variant/detail/apply_visitor_binary.hpp>
 #include <QApplication>
 #include <QColor>
 #include <QDateTime>
@@ -60,6 +63,7 @@
 #include <algorithm>
 #include <chrono>
 #include <unordered_set>
+#include <variant>
 
 using namespace chatterino::literals;
 
@@ -1205,7 +1209,7 @@ void MessageBuilder::append(std::unique_ptr<MessageElement> element)
 }
 
 void MessageBuilder::addLink(const linkparser::Parsed &parsedLink,
-                             const QString &source)
+                             const QString &source, bool skipTrailing)
 {
     QString lowercaseLinkString;
     QString origLink = parsedLink.link.toString();
@@ -1226,7 +1230,7 @@ void MessageBuilder::addLink(const linkparser::Parsed &parsedLink,
 
     auto textColor = MessageColor(MessageColor::Link);
 
-    if (parsedLink.hasPrefix(source))
+    if (!skipTrailing && parsedLink.hasPrefix(source))
     {
         this->emplace<TextElement>(parsedLink.prefix(source).toString(),
                                    MessageElementFlag::Text, this->textColor_)
@@ -1236,7 +1240,7 @@ void MessageBuilder::addLink(const linkparser::Parsed &parsedLink,
         LinkElement::Parsed{.lowercase = lowercaseLinkString,
                             .original = origLink},
         fullUrl, MessageElementFlag::Text, textColor);
-    if (parsedLink.hasSuffix(source))
+    if (!skipTrailing && parsedLink.hasSuffix(source))
     {
         el->setTrailingSpace(false);
         this->emplace<TextElement>(parsedLink.suffix(source).toString(),
@@ -1258,10 +1262,11 @@ bool MessageBuilder::isIgnored(const QString &originalMessage,
 }
 
 void MessageBuilder::appendOrEmplaceText(const QString &text,
-                                         MessageColor color)
+                                         MessageColor color, FontStyle style)
 {
     auto fallback = [&] {
-        this->emplace<TextElement>(text, MessageElementFlag::Text, color);
+        this->emplace<TextElement>(text, MessageElementFlag::Text, color,
+                                   style);
     };
     if (this->message_->elements.empty())
     {
@@ -1272,6 +1277,7 @@ void MessageBuilder::appendOrEmplaceText(const QString &text,
     auto *back =
         dynamic_cast<TextElement *>(this->message_->elements.back().get());
     if (!back ||                                         //
+        back->fontStyle() != style ||                    //
         dynamic_cast<MentionElement *>(back) ||          //
         dynamic_cast<LinkElement *>(back) ||             //
         !back->hasTrailingSpace() ||                     //
@@ -2290,10 +2296,61 @@ std::pair<MessagePtrMut, HighlightAlert> MessageBuilder::makeIrcMessage(
         });
     twitchEmotes.erase(uniqueEmotes.begin(), uniqueEmotes.end());
 
-    // words
-    QStringList splits = content.split(' ');
+    bool traditionalParsing = true;
+    if (getSettings()->markdownParsing)
+    {
+        // parse
+        QString message = content;
+        auto tokens = ast::lex(message);
+        {
+            QDebug dbg = qDebug().nospace().noquote();
+            dbg << "[";
+            for (auto token : tokens)
+            {
+                dbg << ast::stringifyToken(token);
+                dbg << ", ";
+            }
+            dbg << "]";
+        }
 
-    builder.addWords(splits, twitchEmotes, textState);
+        QVector<ast::ASTNode> ast;
+        try
+        {
+            ast::MatchResponse response = ast::matchMarkdown(0, tokens);
+            if (response.accepted)
+            {
+                traditionalParsing = false;
+                ast = ast::normalizeTextNodes(response.nodes);
+            }
+        }
+        catch (const std::exception &e)
+        {
+            traditionalParsing = true;
+            qWarning() << "Exception parsing message:" << e.what();
+        }
+
+        if (!traditionalParsing)
+        {
+            QDebug dbg = qDebug().nospace().noquote();
+            dbg << "[";
+            for (auto node : ast)
+            {
+                dbg << ast::stringifyNode(node);
+                dbg << ", ";
+            }
+            dbg << "]";
+
+            builder.addWordsFromAstNodes(ast, twitchEmotes, textState);
+        }
+    }
+
+    if (traditionalParsing)
+    {
+        // words
+        QStringList splits = content.split(' ');
+
+        builder.addWords(splits, twitchEmotes, textState);
+    }
 
     QString stylizedUsername =
         stylizeUsername(builder->loginName, builder.message());
@@ -2349,7 +2406,8 @@ void MessageBuilder::addEmoji(const EmotePtr &emote)
     this->emplace<EmoteElement>(emote, MessageElementFlag::EmojiAll);
 }
 
-void MessageBuilder::addTextOrEmote(TextState &state, QString string)
+void MessageBuilder::addTextOrEmote(TextState &state, QString string,
+                                    FontStyle style)
 {
     if (state.hasBits && this->tryAppendCheermote(state, string))
     {
@@ -2458,7 +2516,7 @@ void MessageBuilder::addTextOrEmote(TextState &state, QString string)
         }
     }
 
-    this->appendOrEmplaceText(string, textColor);
+    this->appendOrEmplaceText(string, textColor, style);
 }
 
 bool MessageBuilder::isEmpty() const
@@ -2905,9 +2963,85 @@ Outcome MessageBuilder::tryAppendEmote(TwitchChannel *twitchChannel,
     return Success;
 }
 
+void MessageBuilder::addWordsFromAstNodes(
+    QVector<ast::ASTNode> nodes,
+    const std::vector<TwitchEmoteOccurrence> &twitchEmotes, TextState &state,
+    FontStyle style)
+{
+    for (auto node : nodes)
+    {
+        std::visit(
+            variant::Overloaded{
+                [&](ast::TextASTNode node) {
+                    QStringList splits = node.data.split(' ');
+                    this->addWords(splits, twitchEmotes, state, style);
+                },
+                [&](ast::LinkASTNode node) {
+                    QString textStr;
+                    QString linkStr;
+
+                    for (auto n : node.text)
+                    {
+                        if (std::holds_alternative<ast::TextASTNode>(n))
+                        {
+                            ast::TextASTNode textNode =
+                                std::get<ast::TextASTNode>(n);
+                            textStr.append(textNode.data);
+                        }
+                    }
+
+                    for (auto n : node.url)
+                    {
+                        if (std::holds_alternative<ast::TextASTNode>(n))
+                        {
+                            ast::TextASTNode textNode =
+                                std::get<ast::TextASTNode>(n);
+                            linkStr.append(textNode.data);
+                        }
+                    }
+
+                    auto link = linkparser::parse(linkStr);
+                    if (link)
+                    {
+                        this->addLink(*link, textStr, true);
+                    }
+                    else
+                    {
+                        QString out;
+                        out.append("[");
+                        out.append(textStr);
+                        out.append("]");
+                        out.append("(");
+                        out.append(linkStr);
+                        out.append(")");
+                        this->addWords(out.split(' '), twitchEmotes, state);
+                    }
+                },
+                [&](ast::ItalicASTNode node) {
+                    this->addWordsFromAstNodes(node.data, twitchEmotes, state,
+                                               FontStyle::ChatMediumItalic);
+                },
+                [&](ast::BoldASTNode node) {
+                    this->addWordsFromAstNodes(node.data, twitchEmotes, state,
+                                               FontStyle::ChatMediumBold);
+                },
+                [&](ast::StrikethroughASTNode node) {
+                    // TODO: impl
+                    this->addWordsFromAstNodes(node.data, twitchEmotes, state);
+                },
+                [&](ast::CodeASTNode node) {
+                    // TODO: impl
+                    this->addWordsFromAstNodes(node.data, twitchEmotes, state);
+                },
+            },
+            node);
+    }
+}
+
 void MessageBuilder::addWords(
     const QStringList &words,
-    const std::vector<TwitchEmoteOccurrence> &twitchEmotes, TextState &state)
+    const std::vector<TwitchEmoteOccurrence> &twitchEmotes, TextState &state,
+    FontStyle style)
 {
     // cursor currently indicates what character index we're currently operating in the full list of words
     int cursor = 0;
@@ -2966,7 +3100,7 @@ void MessageBuilder::addWords(
                                          },
                                          [&](QString text) {
                                              this->addTextOrEmote(
-                                                 state, std::move(text));
+                                                 state, std::move(text), style);
                                          },
                                      },
                                      variant);
@@ -2990,8 +3124,8 @@ void MessageBuilder::addWords(
                                          this->addEmoji(emote);
                                      },
                                      [&](QString text) {
-                                         this->addTextOrEmote(state,
-                                                              std::move(text));
+                                         this->addTextOrEmote(
+                                             state, std::move(text), style);
                                      },
                                  },
                                  variant);

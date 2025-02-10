@@ -2,9 +2,11 @@
 
 #include "common/Aliases.hpp"
 #include "common/Outcome.hpp"
+#include "messages/ast/Parser.hpp"
 #include "messages/MessageColor.hpp"
 #include "messages/MessageFlag.hpp"
 #include "providers/twitch/pubsubmessages/LowTrustUsers.hpp"
+#include "singletons/Fonts.hpp"
 
 #include <IrcMessage>
 #include <QRegularExpression>
@@ -156,7 +158,8 @@ public:
 
     void append(std::unique_ptr<MessageElement> element);
 
-    void addLink(const linkparser::Parsed &parsedLink, const QString &source);
+    void addLink(const linkparser::Parsed &parsedLink, const QString &source,
+                 bool skipTrailing = false);
 
     template <typename T, typename... Args>
     T *emplace(Args &&...args)
@@ -170,7 +173,8 @@ public:
         return pointer;
     }
 
-    void appendOrEmplaceText(const QString &text, MessageColor color);
+    void appendOrEmplaceText(const QString &text, MessageColor color,
+                             FontStyle style = FontStyle::ChatMedium);
     void appendOrEmplaceSystemTextAndUpdate(const QString &text,
                                             QString &toUpdate);
 
@@ -286,7 +290,8 @@ private:
         int bitsLeft = 0;
     };
     void addEmoji(const EmotePtr &emote);
-    void addTextOrEmote(TextState &state, QString string);
+    void addTextOrEmote(TextState &state, QString string,
+                        FontStyle style = FontStyle::ChatMedium);
 
     Outcome tryAppendCheermote(TextState &state, const QString &string);
     Outcome tryAppendEmote(TwitchChannel *twitchChannel, const QString &userID,
@@ -333,9 +338,13 @@ private:
     void appendChannelName(const Channel *channel);
     void appendUsername(const QVariantMap &tags, const MessageParseArgs &args);
 
+    void addWordsFromAstNodes(
+        QVector<ast::ASTNode> nodes,
+        const std::vector<TwitchEmoteOccurrence> &twitchEmotes,
+        TextState &state, FontStyle style = FontStyle::ChatMedium);
     void addWords(const QStringList &words,
                   const std::vector<TwitchEmoteOccurrence> &twitchEmotes,
-                  TextState &state);
+                  TextState &state, FontStyle style = FontStyle::ChatMedium);
 
     void appendTwitchBadges(const QVariantMap &tags,
                             TwitchChannel *twitchChannel);

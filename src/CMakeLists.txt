@@ -315,6 +315,11 @@ set(SOURCE_FILES
         messages/search/SubtierPredicate.cpp
         messages/search/SubtierPredicate.hpp
 
+        messages/ast/Lexer.hpp
+        messages/ast/Lexer.cpp
+        messages/ast/Parser.hpp
+        messages/ast/Parser.cpp
+
         providers/IvrApi.cpp
         providers/IvrApi.hpp
         providers/NetworkConfigurationProvider.cpp
