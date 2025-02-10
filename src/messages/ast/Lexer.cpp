@@ -82,10 +82,7 @@ QString stringifyToken(Token token)
                                   return "CharToken(<space>)";
                               }
 
-                              return std::format("CharToken({})",
-                                                 token.data.toStdString())
-                                  .data();
-                              ;
+                              return QString("CharToken(%s)").arg(token.data);
                           },
                           [](EndToken) -> QString {
                               return "EndToken";

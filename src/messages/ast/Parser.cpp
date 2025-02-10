@@ -590,75 +590,73 @@ QVector<ASTNode> normalizeTextNodes(const QVector<ASTNode> &nodes)
 
 QString stringifyNode(ASTNode node)
 {
-    return std::visit(
-        variant::Overloaded{[](const BoldASTNode &node) -> QString {
-                                QString out = "BoldASTNode([";
-                                for (const auto &node : node.data)
-                                {
-                                    out.append(stringifyNode(node));
-                                    out.append(", ");
-                                }
-                                out.append("])");
-                                return out;
-                            },
-                            [](const ItalicASTNode &node) -> QString {
-                                QString out = "ItalicASTNode([";
-                                for (const auto &node : node.data)
-                                {
-                                    out.append(stringifyNode(node));
-                                    out.append(", ");
-                                }
-                                out.append("])");
-                                return out;
-                            },
-                            [](const StrikethroughASTNode &node) -> QString {
-                                QString out = "StrikethroughASTNode([";
-                                for (const auto &node : node.data)
-                                {
-                                    out.append(stringifyNode(node));
-                                    out.append(", ");
-                                }
-                                out.append("])");
-                                return out;
-                            },
-                            [](const CodeASTNode &node) -> QString {
-                                QString out = "CodeASTNode([";
-                                for (const auto &node : node.data)
-                                {
-                                    out.append(stringifyNode(node));
-                                    out.append(", ");
-                                }
-                                out.append("])");
-                                return out;
-                            },
-                            [](const LinkASTNode &node) -> QString {
-                                QString out = "LinkASTNode(text=[";
-                                for (const auto &node : node.text)
-                                {
-                                    out.append(stringifyNode(node));
-                                    out.append(", ");
-                                }
-                                out.append("], url=[");
-                                for (const auto &node : node.url)
-                                {
-                                    out.append(stringifyNode(node));
-                                    out.append(", ");
-                                }
-                                out.append("])");
-                                return out;
-                            },
-                            [](const TextASTNode &node) -> QString {
-                                // i have no idea why spaces are null characters, but they are...
-                                if (node.data == QChar(0))
-                                {
-                                    return "TextASTNode(<space>)";
-                                }
+    return std::visit(variant::Overloaded{
+                          [](const BoldASTNode &node) -> QString {
+                              QString out = "BoldASTNode([";
+                              for (const auto &node : node.data)
+                              {
+                                  out.append(stringifyNode(node));
+                                  out.append(", ");
+                              }
+                              out.append("])");
+                              return out;
+                          },
+                          [](const ItalicASTNode &node) -> QString {
+                              QString out = "ItalicASTNode([";
+                              for (const auto &node : node.data)
+                              {
+                                  out.append(stringifyNode(node));
+                                  out.append(", ");
+                              }
+                              out.append("])");
+                              return out;
+                          },
+                          [](const StrikethroughASTNode &node) -> QString {
+                              QString out = "StrikethroughASTNode([";
+                              for (const auto &node : node.data)
+                              {
+                                  out.append(stringifyNode(node));
+                                  out.append(", ");
+                              }
+                              out.append("])");
+                              return out;
+                          },
+                          [](const CodeASTNode &node) -> QString {
+                              QString out = "CodeASTNode([";
+                              for (const auto &node : node.data)
+                              {
+                                  out.append(stringifyNode(node));
+                                  out.append(", ");
+                              }
+                              out.append("])");
+                              return out;
+                          },
+                          [](const LinkASTNode &node) -> QString {
+                              QString out = "LinkASTNode(text=[";
+                              for (const auto &node : node.text)
+                              {
+                                  out.append(stringifyNode(node));
+                                  out.append(", ");
+                              }
+                              out.append("], url=[");
+                              for (const auto &node : node.url)
+                              {
+                                  out.append(stringifyNode(node));
+                                  out.append(", ");
+                              }
+                              out.append("])");
+                              return out;
+                          },
+                          [](const TextASTNode &node) -> QString {
+                              // i have no idea why spaces are null characters, but they are...
+                              if (node.data == QChar(0))
+                              {
+                                  return "TextASTNode(<space>)";
+                              }
 
-                                return std::format("TextASTNode({})",
-                                                   node.data.toStdString())
-                                    .data();
-                            }},
-        node);
+                              return QString("TextASTNode(%s)").arg(node.data);
+                          }},
+                      node);
 }
 
 }  // namespace chatterino::ast
