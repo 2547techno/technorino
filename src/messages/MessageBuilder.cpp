@@ -2300,8 +2300,7 @@ std::pair<MessagePtrMut, HighlightAlert> MessageBuilder::makeIrcMessage(
     if (getSettings()->markdownParsing)
     {
         // parse
-        QString message = content;
-        auto tokens = ast::lex(message);
+        auto tokens = ast::lex(content);
         // debug logs
         // {
         //     QDebug dbg = qDebug().nospace().noquote();
