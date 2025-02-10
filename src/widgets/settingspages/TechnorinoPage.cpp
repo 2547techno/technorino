@@ -130,6 +130,7 @@ void TechnorinoPage::initLayout(GeneralPageView &layout)
     layout.addCheckbox("Watching tab live sound", s.watchingTabLiveSound);
     layout.addCheckbox("Auto detach watching tab (~10s timeout)",
                        s.autoDetachLiveTab);
+    layout.addCheckbox("Markdown parsing (Experimental)", s.markdownParsing);
 
     layout.addStretch();
 

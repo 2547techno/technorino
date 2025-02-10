@@ -1,0 +1,26 @@
+(* all chars except space and unescaped style delimiters *)
+boundry_char = 'a' | 'b' | 'c' | ... | '\*' | '\_' | '\~' | '\`' | '\ ';
+
+(* all chars *)
+char = boundry_char | ' ' | '*' | '_' | '~';
+
+(* styles *)
+style = bold | italic | strikethrough | code | link;
+
+bold_asterix = '*', '*', boundry_char, (char*, boundry_char)?, '*', '*';
+bold_underline = '_', '_', boundry_char, (char*, boundry_char)?, '_', '_';
+bold = bold_asterix | bold_underline;
+
+italic_asterix = '*', boundry_char, (char*, boundry_char)?, '*';
+italic_underline = '_', boundry_char, (char*, boundry_char)?, '_';
+italic = italic_asterix | italic_underline;
+
+strikethrough = '~', boundry_char, (char*, boundry_char)?, '~';
+
+code = '`', char+ '`';
+
+link = '[', char+, ']', '(', char+, ')';
+
+(* segments *)
+segment = style | char;
+markdown = segment+, eof;

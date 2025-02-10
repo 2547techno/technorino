@@ -69,6 +69,7 @@
 #include <miniaudio.h>
 #include <QApplication>
 #include <QDesktopServices>
+#include <QFontDatabase>
 
 namespace {
 
@@ -334,6 +335,9 @@ void Application::initialize(Settings &settings, const Paths &paths)
     this->initSeventvEventAPI();
 
     this->streamerMode->start();
+
+    this->monoFontId =
+        QFontDatabase::addApplicationFont(":/fonts/consolas.otf");
 
     this->initialized = true;
 }

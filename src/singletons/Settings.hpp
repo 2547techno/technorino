@@ -573,6 +573,7 @@ public:
         "/external/imageUploader/deletionLink", ""};
 
     /// Misc
+    BoolSetting markdownParsing = {"/misc/markdownParsing", false};
     BoolSetting autoDetachLiveTab = {"/misc/autoDetachLiveTab", false};
     BoolSetting watchingTabLiveSound = {"/misc/watchingTabLiveSound", false};
     BoolSetting useBotLimitsMessage = {"/misc/botLimitsMessage", false};

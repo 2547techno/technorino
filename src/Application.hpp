@@ -118,6 +118,8 @@ public:
     virtual ITwitchUsers *getTwitchUsers() = 0;
     virtual pronouns::Pronouns *getPronouns() = 0;
     virtual eventsub::IController *getEventSub() = 0;
+
+    int monoFontId;
 };
 
 class Application : public IApplication
