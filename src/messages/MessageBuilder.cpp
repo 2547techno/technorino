@@ -3026,8 +3026,8 @@ void MessageBuilder::addWordsFromAstNodes(
                                                FontStyle::ChatMediumBold);
                 },
                 [&](ast::StrikethroughASTNode node) {
-                    // TODO: impl
-                    this->addWordsFromAstNodes(node.data, twitchEmotes, state);
+                    this->addWordsFromAstNodes(node.data, twitchEmotes, state,
+                                               FontStyle::ChatStrikethrough);
                 },
                 [&](ast::CodeASTNode node) {
                     // TODO: coloured box around code?

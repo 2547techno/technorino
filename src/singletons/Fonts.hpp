@@ -20,6 +20,7 @@ enum class FontStyle : uint8_t {
     ChatMediumSmall,
     ChatMedium,
     ChatMono,
+    ChatStrikethrough,
     ChatMediumBold,
     ChatMediumItalic,
     ChatLarge,
