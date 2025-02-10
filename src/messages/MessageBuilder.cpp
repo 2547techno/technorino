@@ -3007,13 +3007,9 @@ void MessageBuilder::addWordsFromAstNodes(
                     }
                     else
                     {
-                        QString out;
-                        out.append("[");
-                        out.append(textStr);
-                        out.append("]");
-                        out.append("(");
-                        out.append(linkStr);
-                        out.append(")");
+                        QString out =
+                            QString("[%s](%s)").arg(textStr).arg(linkStr);
+
                         this->addWords(out.split(' '), twitchEmotes, state);
                     }
                 },
