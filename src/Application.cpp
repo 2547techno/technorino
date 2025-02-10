@@ -339,8 +339,6 @@ void Application::initialize(Settings &settings, const Paths &paths)
     this->monoFontId =
         QFontDatabase::addApplicationFont(":/fonts/consolas.otf");
 
-    qDebug() << "consolas id:" << this->monoFontId;
-
     this->initialized = true;
 }
 

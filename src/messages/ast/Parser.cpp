@@ -557,7 +557,6 @@ QVector<ASTNode> normalizeTextNodes(const QVector<ASTNode> &nodes)
                     },
                     // TODO: generic?
                     [](const BoldASTNode &node) -> ASTNode {
-                        qDebug() << node.data.length();
                         return BoldASTNode{normalizeTextNodes(node.data)};
                     },
                     [](const ItalicASTNode &node) -> ASTNode {

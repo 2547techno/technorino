@@ -159,7 +159,7 @@ public:
     void append(std::unique_ptr<MessageElement> element);
 
     void addLink(const linkparser::Parsed &parsedLink, const QString &source,
-                 bool skipTrailing = false);
+                 const QString &textOverride = QString());
 
     template <typename T, typename... Args>
     T *emplace(Args &&...args)

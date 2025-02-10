@@ -1209,7 +1209,7 @@ void MessageBuilder::append(std::unique_ptr<MessageElement> element)
 }
 
 void MessageBuilder::addLink(const linkparser::Parsed &parsedLink,
-                             const QString &source, bool skipTrailing)
+                             const QString &source, const QString &textOverride)
 {
     QString lowercaseLinkString;
     QString origLink = parsedLink.link.toString();
@@ -1228,9 +1228,15 @@ void MessageBuilder::addLink(const linkparser::Parsed &parsedLink,
     lowercaseLinkString += parsedLink.host.toString().toLower();
     lowercaseLinkString += parsedLink.rest;
 
+    if (!textOverride.isEmpty())
+    {
+        origLink = textOverride;
+        lowercaseLinkString = textOverride;
+    }
+
     auto textColor = MessageColor(MessageColor::Link);
 
-    if (!skipTrailing && parsedLink.hasPrefix(source))
+    if (parsedLink.hasPrefix(source))
     {
         this->emplace<TextElement>(parsedLink.prefix(source).toString(),
                                    MessageElementFlag::Text, this->textColor_)
@@ -1240,7 +1246,7 @@ void MessageBuilder::addLink(const linkparser::Parsed &parsedLink,
         LinkElement::Parsed{.lowercase = lowercaseLinkString,
                             .original = origLink},
         fullUrl, MessageElementFlag::Text, textColor);
-    if (!skipTrailing && parsedLink.hasSuffix(source))
+    if (parsedLink.hasSuffix(source))
     {
         el->setTrailingSpace(false);
         this->emplace<TextElement>(parsedLink.suffix(source).toString(),
@@ -3004,12 +3010,16 @@ void MessageBuilder::addWordsFromAstNodes(
                     auto link = linkparser::parse(linkStr);
                     if (link)
                     {
-                        this->addLink(*link, textStr, true);
+                        this->addLink(*link, linkStr, textStr);
                     }
                     else
                     {
-                        QString out =
-                            QString("[%s](%s)").arg(textStr).arg(linkStr);
+                        // QString::arg doesnt work here and i dont know why
+                        QString out = "[";
+                        out.append(textStr);
+                        out.append("](");
+                        out.append(linkStr);
+                        out.append(")");
 
                         this->addWords(out.split(' '), twitchEmotes, state);
                     }
