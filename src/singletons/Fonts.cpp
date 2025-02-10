@@ -150,7 +150,7 @@ Fonts::FontData Fonts::createFontData(FontStyle type, float scale)
                    data.weight, data.italic);
         font.setStrikeOut(type == FontStyle::ChatMediumStrikethrough);
 
-        return FontData(font);
+        return font;
     }
 
     // normal Ui font (use pt size)

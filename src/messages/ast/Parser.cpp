@@ -69,16 +69,16 @@ MatchResponse matchAny(int i, QVector<Token> *tokens)
 
 MatchResponse matchChar(int i, QVector<Token> *tokens)
 {
-    return std::visit(variant::Overloaded{
-                          [&i](const CharToken &token) -> MatchResponse {
-                              return MatchResponse{
-                                  true, createTextNodes(token.data), i + 1};
-                          },
-                          [](auto) -> MatchResponse {
-                              return MatchResponse{false};
-                          },
-                      },
-                      tokens->value(i, EndToken{}));
+    return std::visit(
+        variant::Overloaded{
+            [&i](const CharToken &token) -> MatchResponse {
+                return MatchResponse{true, createTextNodes(token.data), i + 1};
+            },
+            [](auto) -> MatchResponse {
+                return MatchResponse{false};
+            },
+        },
+        tokens->value(i, EndToken{}));
 }
 
 MatchResponse matchBoundryChar(int i, QVector<Token> *tokens)
