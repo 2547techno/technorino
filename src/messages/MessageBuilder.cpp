@@ -3026,13 +3026,14 @@ void MessageBuilder::addWordsFromAstNodes(
                                                FontStyle::ChatMediumBold);
                 },
                 [&](ast::StrikethroughASTNode node) {
-                    this->addWordsFromAstNodes(node.data, twitchEmotes, state,
-                                               FontStyle::ChatStrikethrough);
+                    this->addWordsFromAstNodes(
+                        node.data, twitchEmotes, state,
+                        FontStyle::ChatMediumStrikethrough);
                 },
                 [&](ast::CodeASTNode node) {
                     // TODO: coloured box around code?
                     this->addWordsFromAstNodes(node.data, twitchEmotes, state,
-                                               FontStyle::ChatMono);
+                                               FontStyle::ChatMediumMono);
                 },
             },
             node);

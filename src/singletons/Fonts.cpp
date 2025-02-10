@@ -125,8 +125,8 @@ Fonts::FontData Fonts::createFontData(FontStyle type, float scale)
             {FontStyle::ChatSmall, {0.6f, false, QFont::Normal}},
             {FontStyle::ChatMediumSmall, {0.8f, false, QFont::Normal}},
             {FontStyle::ChatMedium, {1, false, QFont::Normal}},
-            {FontStyle::ChatMono, {1, false, QFont::Normal}},
-            {FontStyle::ChatStrikethrough, {1, false, QFont::Normal}},
+            {FontStyle::ChatMediumMono, {1, false, QFont::Normal}},
+            {FontStyle::ChatMediumStrikethrough, {1, false, QFont::Normal}},
             {FontStyle::ChatMediumBold,
              {1, false, QFont::Weight(getBoldness())}},
             {FontStyle::ChatMediumItalic, {1, true, QFont::Normal}},
@@ -138,7 +138,7 @@ Fonts::FontData Fonts::createFontData(FontStyle type, float scale)
         auto data = sizeScale[type];
 
         QString family = settings->chatFontFamily.getValue();
-        if (type == FontStyle::ChatMono)
+        if (type == FontStyle::ChatMediumMono)
         {
             family =
                 QFontDatabase::applicationFontFamilies(getApp()->monoFontId)
@@ -148,7 +148,7 @@ Fonts::FontData Fonts::createFontData(FontStyle type, float scale)
         QFont font(family,
                    int(settings->chatFontSize.getValue() * data.scale * scale),
                    data.weight, data.italic);
-        font.setStrikeOut(type == FontStyle::ChatStrikethrough);
+        font.setStrikeOut(type == FontStyle::ChatMediumStrikethrough);
 
         return FontData(font);
     }
