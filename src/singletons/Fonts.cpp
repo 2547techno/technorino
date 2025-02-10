@@ -6,6 +6,9 @@
 #include "singletons/WindowManager.hpp"
 
 #include <QDebug>
+#include <qfont.h>
+#include <qfontdatabase.h>
+#include <QFontDatabase>
 #include <QtGlobal>
 
 namespace {
@@ -122,6 +125,7 @@ Fonts::FontData Fonts::createFontData(FontStyle type, float scale)
             {FontStyle::ChatSmall, {0.6f, false, QFont::Normal}},
             {FontStyle::ChatMediumSmall, {0.8f, false, QFont::Normal}},
             {FontStyle::ChatMedium, {1, false, QFont::Normal}},
+            {FontStyle::ChatMono, {1, false, QFont::Normal}},
             {FontStyle::ChatMediumBold,
              {1, false, QFont::Weight(getBoldness())}},
             {FontStyle::ChatMediumItalic, {1, true, QFont::Normal}},
@@ -131,10 +135,18 @@ Fonts::FontData Fonts::createFontData(FontStyle type, float scale)
         sizeScale[FontStyle::ChatMediumBold] = {1, false,
                                                 QFont::Weight(getBoldness())};
         auto data = sizeScale[type];
-        return FontData(
-            QFont(settings->chatFontFamily.getValue(),
-                  int(settings->chatFontSize.getValue() * data.scale * scale),
-                  data.weight, data.italic));
+
+        QString family = settings->chatFontFamily.getValue();
+        if (type == FontStyle::ChatMono)
+        {
+            family =
+                QFontDatabase::applicationFontFamilies(getApp()->monoFontId)
+                    .at(0);
+        }
+
+        return FontData(QFont(
+            family, int(settings->chatFontSize.getValue() * data.scale * scale),
+            data.weight, data.italic));
     }
 
     // normal Ui font (use pt size)

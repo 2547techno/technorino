@@ -3030,8 +3030,9 @@ void MessageBuilder::addWordsFromAstNodes(
                     this->addWordsFromAstNodes(node.data, twitchEmotes, state);
                 },
                 [&](ast::CodeASTNode node) {
-                    // TODO: impl
-                    this->addWordsFromAstNodes(node.data, twitchEmotes, state);
+                    // TODO: coloured box around code?
+                    this->addWordsFromAstNodes(node.data, twitchEmotes, state,
+                                               FontStyle::ChatMono);
                 },
             },
             node);
