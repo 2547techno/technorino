@@ -2316,7 +2316,7 @@ std::pair<MessagePtrMut, HighlightAlert> MessageBuilder::makeIrcMessage(
         QVector<ast::ASTNode> ast;
         try
         {
-            ast::MatchResponse response = ast::matchMarkdown(0, tokens);
+            ast::MatchResponse response = ast::matchMarkdown(0, &tokens);
             if (response.accepted)
             {
                 traditionalParsing = false;
@@ -2965,7 +2965,7 @@ Outcome MessageBuilder::tryAppendEmote(TwitchChannel *twitchChannel,
 }
 
 void MessageBuilder::addWordsFromAstNodes(
-    QVector<ast::ASTNode> nodes,
+    const QVector<ast::ASTNode> &nodes,
     const std::vector<TwitchEmoteOccurrence> &twitchEmotes, TextState &state,
     FontStyle style)
 {
@@ -2973,11 +2973,11 @@ void MessageBuilder::addWordsFromAstNodes(
     {
         std::visit(
             variant::Overloaded{
-                [&](ast::TextASTNode node) {
+                [&](const ast::TextASTNode &node) {
                     QStringList splits = node.data.split(' ');
                     this->addWords(splits, twitchEmotes, state, style);
                 },
-                [&](ast::LinkASTNode node) {
+                [&](const ast::LinkASTNode &node) {
                     QString textStr;
                     QString linkStr;
 
@@ -3014,20 +3014,20 @@ void MessageBuilder::addWordsFromAstNodes(
                         this->addWords(out.split(' '), twitchEmotes, state);
                     }
                 },
-                [&](ast::ItalicASTNode node) {
+                [&](const ast::ItalicASTNode &node) {
                     this->addWordsFromAstNodes(node.data, twitchEmotes, state,
                                                FontStyle::ChatMediumItalic);
                 },
-                [&](ast::BoldASTNode node) {
+                [&](const ast::BoldASTNode &node) {
                     this->addWordsFromAstNodes(node.data, twitchEmotes, state,
                                                FontStyle::ChatMediumBold);
                 },
-                [&](ast::StrikethroughASTNode node) {
+                [&](const ast::StrikethroughASTNode &node) {
                     this->addWordsFromAstNodes(
                         node.data, twitchEmotes, state,
                         FontStyle::ChatMediumStrikethrough);
                 },
-                [&](ast::CodeASTNode node) {
+                [&](const ast::CodeASTNode &node) {
                     // TODO: coloured box around code?
                     this->addWordsFromAstNodes(node.data, twitchEmotes, state,
                                                FontStyle::ChatMediumMono);

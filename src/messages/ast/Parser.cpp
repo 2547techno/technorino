@@ -2,12 +2,11 @@
 
 #include "util/Variant.hpp"
 
-#include <optional>
 #include <variant>
 
 namespace chatterino::ast {
 
-QVector<ASTNode> createTextNodes(QString str, bool normalize)
+QVector<ASTNode> createTextNodes(const QString &str, bool normalize)
 {
     if (normalize)
     {
@@ -25,9 +24,9 @@ QVector<ASTNode> createTextNodes(QString str, bool normalize)
     return out;
 }
 
-MatchResponse matchAny(int i, QVector<Token> tokens)
+MatchResponse matchAny(int i, QVector<Token> *tokens)
 {
-    Token token = tokens.at(i);
+    Token token = tokens->at(i);
 
     MatchResponse response = std::visit(
         variant::Overloaded{
@@ -55,7 +54,7 @@ MatchResponse matchAny(int i, QVector<Token> tokens)
             [&i](RightParenToken) -> MatchResponse {
                 return MatchResponse({true, createTextNodes(")"), i + 1});
             },
-            [&i](CharToken token) -> MatchResponse {
+            [&i](const CharToken &token) -> MatchResponse {
                 return MatchResponse(
                     {true, createTextNodes(token.data), i + 1});
             },
@@ -68,10 +67,10 @@ MatchResponse matchAny(int i, QVector<Token> tokens)
     return response;
 }
 
-MatchResponse matchChar(int i, QVector<Token> tokens)
+MatchResponse matchChar(int i, QVector<Token> *tokens)
 {
     return std::visit(variant::Overloaded{
-                          [&i](CharToken token) -> MatchResponse {
+                          [&i](const CharToken &token) -> MatchResponse {
                               return MatchResponse{
                                   true, createTextNodes(token.data), i + 1};
                           },
@@ -79,12 +78,12 @@ MatchResponse matchChar(int i, QVector<Token> tokens)
                               return MatchResponse{false};
                           },
                       },
-                      tokens.value(i, EndToken{}));
+                      tokens->value(i, EndToken{}));
 }
 
-MatchResponse matchBoundryChar(int i, QVector<Token> tokens)
+MatchResponse matchBoundryChar(int i, QVector<Token> *tokens)
 {
-    Token token = tokens.value(i, EndToken{});
+    Token token = tokens->value(i, EndToken{});
 
     bool rejected = std::visit(variant::Overloaded{
                                    [](EndToken) -> bool {
@@ -183,13 +182,13 @@ bool boundryStyleTypeEq(Token token, BoundryStyleToken boundryToken)
 }
 
 MatchResponse matchBoundryStyle(BoundryStyleToken tokenType, int numToken,
-                                int i, QVector<Token> tokens)
+                                int i, QVector<Token> *tokens)
 {
     QVector<ASTNode> innerNodes;
 
     if (numToken == 2)
     {
-        if (boundryStyleTypeEq(tokens.at(i), tokenType))
+        if (boundryStyleTypeEq(tokens->at(i), tokenType))
         {
             i++;
         }
@@ -200,12 +199,12 @@ MatchResponse matchBoundryStyle(BoundryStyleToken tokenType, int numToken,
     }
 
     MatchResponse boundryChar = matchBoundryChar(i + 1, tokens);
-    if (boundryStyleTypeEq(tokens.at(i), tokenType) && boundryChar.accepted)
+    if (boundryStyleTypeEq(tokens->at(i), tokenType) && boundryChar.accepted)
     {
         innerNodes.append(boundryChar.nodes);
         i += 2;
 
-        if (boundryStyleTypeEq(tokens.at(i), tokenType))
+        if (boundryStyleTypeEq(tokens->at(i), tokenType))
         {
             if (numToken == 1)
             {
@@ -215,7 +214,7 @@ MatchResponse matchBoundryStyle(BoundryStyleToken tokenType, int numToken,
                     i + 1};
             }
 
-            if (boundryStyleTypeEq(tokens.at(i + 1), tokenType))
+            if (boundryStyleTypeEq(tokens->at(i + 1), tokenType))
             {
                 return MatchResponse{
                     true,
@@ -227,16 +226,16 @@ MatchResponse matchBoundryStyle(BoundryStyleToken tokenType, int numToken,
                 return MatchResponse{false};
             }
         }
-        else if (std::holds_alternative<CharToken>(tokens.at(i)))
+        else if (std::holds_alternative<CharToken>(tokens->at(i)))
         {
             while (true)
             {
                 MatchResponse boundryChar = matchBoundryChar(i, tokens);
                 if (boundryChar.accepted)
                 {
-                    if (boundryStyleTypeEq(tokens.at(i + 1), tokenType) &&
+                    if (boundryStyleTypeEq(tokens->at(i + 1), tokenType) &&
                         (numToken == 2
-                             ? boundryStyleTypeEq(tokens.at(i + 2), tokenType)
+                             ? boundryStyleTypeEq(tokens->at(i + 2), tokenType)
                              : true))
                     {
                         innerNodes.append(boundryChar.nodes);
@@ -269,17 +268,17 @@ MatchResponse matchBoundryStyle(BoundryStyleToken tokenType, int numToken,
     }
 }
 
-MatchResponse matchBoldAsterix(int i, QVector<Token> tokens)
+MatchResponse matchBoldAsterix(int i, QVector<Token> *tokens)
 {
     return matchBoundryStyle(AsterixToken{}, 2, i, tokens);
 }
 
-MatchResponse matchBoldUnderline(int i, QVector<Token> tokens)
+MatchResponse matchBoldUnderline(int i, QVector<Token> *tokens)
 {
     return matchBoundryStyle(UnderlineToken{}, 2, i, tokens);
 }
 
-MatchResponse matchBold(int i, QVector<Token> tokens)
+MatchResponse matchBold(int i, QVector<Token> *tokens)
 {
     MatchResponse boldAsterix = matchBoldAsterix(i, tokens);
     if (boldAsterix.accepted)
@@ -296,17 +295,17 @@ MatchResponse matchBold(int i, QVector<Token> tokens)
     return MatchResponse{false};
 }
 
-MatchResponse matchItalicAsterix(int i, QVector<Token> tokens)
+MatchResponse matchItalicAsterix(int i, QVector<Token> *tokens)
 {
     return matchBoundryStyle(AsterixToken{}, 1, i, tokens);
 }
 
-MatchResponse matchItalicUnderline(int i, QVector<Token> tokens)
+MatchResponse matchItalicUnderline(int i, QVector<Token> *tokens)
 {
     return matchBoundryStyle(UnderlineToken{}, 1, i, tokens);
 }
 
-MatchResponse matchItalic(int i, QVector<Token> tokens)
+MatchResponse matchItalic(int i, QVector<Token> *tokens)
 {
     MatchResponse italicAsterix = matchItalicAsterix(i, tokens);
     if (italicAsterix.accepted)
@@ -323,15 +322,15 @@ MatchResponse matchItalic(int i, QVector<Token> tokens)
     return MatchResponse{false};
 }
 
-MatchResponse matchStrikethrough(int i, QVector<Token> tokens)
+MatchResponse matchStrikethrough(int i, QVector<Token> *tokens)
 {
     return matchBoundryStyle(TildeToken{}, 1, i, tokens);
 }
 
-MatchResponse matchCode(int i, QVector<Token> tokens)
+MatchResponse matchCode(int i, QVector<Token> *tokens)
 {
     QVector<ASTNode> innerNodes;
-    if (std::holds_alternative<TickToken>(tokens.at(i)))
+    if (std::holds_alternative<TickToken>(tokens->at(i)))
     {
         i++;
 
@@ -353,7 +352,7 @@ MatchResponse matchCode(int i, QVector<Token> tokens)
             i++;
         }
 
-        if (std::holds_alternative<TickToken>(tokens.at(i)))
+        if (std::holds_alternative<TickToken>(tokens->at(i)))
         {
             QVector<ASTNode> nodes;
             nodes.append(CodeASTNode{innerNodes});
@@ -363,12 +362,12 @@ MatchResponse matchCode(int i, QVector<Token> tokens)
     return MatchResponse{false};
 }
 
-MatchResponse matchLink(int i, QVector<Token> tokens)
+MatchResponse matchLink(int i, QVector<Token> *tokens)
 {
     QVector<ASTNode> textNodes;
     QVector<ASTNode> urlNodes;
 
-    if (std::holds_alternative<LeftBracketToken>(tokens.at(i)))
+    if (std::holds_alternative<LeftBracketToken>(tokens->at(i)))
     {
         i++;
 
@@ -392,13 +391,13 @@ MatchResponse matchLink(int i, QVector<Token> tokens)
             }
         }
 
-        if (!std::holds_alternative<RightBracketToken>(tokens.at(i)))
+        if (!std::holds_alternative<RightBracketToken>(tokens->at(i)))
         {
             return MatchResponse{false};
         }
         i++;
 
-        if (!std::holds_alternative<LeftParenToken>(tokens.at(i)))
+        if (!std::holds_alternative<LeftParenToken>(tokens->at(i)))
         {
             return MatchResponse{false};
         }
@@ -424,7 +423,7 @@ MatchResponse matchLink(int i, QVector<Token> tokens)
             }
         }
 
-        if (!std::holds_alternative<RightParenToken>(tokens.at(i)))
+        if (!std::holds_alternative<RightParenToken>(tokens->at(i)))
         {
             return MatchResponse{false};
         }
@@ -437,7 +436,7 @@ MatchResponse matchLink(int i, QVector<Token> tokens)
 
     return MatchResponse{false};
 }
-MatchResponse matchStyle(int i, QVector<Token> tokens)
+MatchResponse matchStyle(int i, QVector<Token> *tokens)
 {
     MatchResponse bold = matchBold(i, tokens);
     if (bold.accepted)
@@ -472,7 +471,7 @@ MatchResponse matchStyle(int i, QVector<Token> tokens)
     return MatchResponse{false};
 }
 
-MatchResponse matchSegment(int i, QVector<Token> tokens)
+MatchResponse matchSegment(int i, QVector<Token> *tokens)
 {
     MatchResponse style = matchStyle(i, tokens);
     if (style.accepted)
@@ -489,7 +488,7 @@ MatchResponse matchSegment(int i, QVector<Token> tokens)
     return MatchResponse{false};
 }
 
-MatchResponse matchMarkdown(int i, QVector<Token> tokens)
+MatchResponse matchMarkdown(int i, QVector<Token> *tokens)
 {
     QVector<ASTNode> innerNodes;
 
@@ -515,7 +514,7 @@ MatchResponse matchMarkdown(int i, QVector<Token> tokens)
         }
     }
 
-    if (std::holds_alternative<EndToken>(tokens.at(i)))
+    if (std::holds_alternative<EndToken>(tokens->at(i)))
     {
         return MatchResponse{true, innerNodes, i + 1};
     }
@@ -525,11 +524,11 @@ MatchResponse matchMarkdown(int i, QVector<Token> tokens)
     }
 }
 
-QVector<ASTNode> normalizeTextNodes(QVector<ASTNode> nodes)
+QVector<ASTNode> normalizeTextNodes(const QVector<ASTNode> &nodes)
 {
     TextASTNode currentTextNode;
 
-    auto combineTextNode = [&currentTextNode](TextASTNode node) {
+    auto combineTextNode = [&currentTextNode](const TextASTNode &node) {
         currentTextNode.data.append(node.data);
     };
 
@@ -552,23 +551,23 @@ QVector<ASTNode> normalizeTextNodes(QVector<ASTNode> nodes)
 
             ASTNode normalizedNode = std::visit(
                 variant::Overloaded{
-                    [](LinkASTNode node) -> ASTNode {
+                    [](const LinkASTNode &node) -> ASTNode {
                         return LinkASTNode{normalizeTextNodes(node.text),
                                            normalizeTextNodes(node.url)};
                     },
                     // TODO: generic?
-                    [](BoldASTNode node) -> ASTNode {
+                    [](const BoldASTNode &node) -> ASTNode {
                         qDebug() << node.data.length();
                         return BoldASTNode{normalizeTextNodes(node.data)};
                     },
-                    [](ItalicASTNode node) -> ASTNode {
+                    [](const ItalicASTNode &node) -> ASTNode {
                         return ItalicASTNode{normalizeTextNodes(node.data)};
                     },
-                    [](StrikethroughASTNode node) -> ASTNode {
+                    [](const StrikethroughASTNode &node) -> ASTNode {
                         return StrikethroughASTNode{
                             normalizeTextNodes(node.data)};
                     },
-                    [](CodeASTNode node) -> ASTNode {
+                    [](const CodeASTNode &node) -> ASTNode {
                         return CodeASTNode{normalizeTextNodes(node.data)};
                     },
                     [](TextASTNode node) -> ASTNode {
@@ -592,9 +591,9 @@ QVector<ASTNode> normalizeTextNodes(QVector<ASTNode> nodes)
 QString stringifyNode(ASTNode node)
 {
     return std::visit(
-        variant::Overloaded{[](BoldASTNode node) -> QString {
+        variant::Overloaded{[](const BoldASTNode &node) -> QString {
                                 QString out = "BoldASTNode([";
-                                for (auto node : node.data)
+                                for (const auto &node : node.data)
                                 {
                                     out.append(stringifyNode(node));
                                     out.append(", ");
@@ -602,9 +601,9 @@ QString stringifyNode(ASTNode node)
                                 out.append("])");
                                 return out;
                             },
-                            [](ItalicASTNode node) -> QString {
+                            [](const ItalicASTNode &node) -> QString {
                                 QString out = "ItalicASTNode([";
-                                for (auto node : node.data)
+                                for (const auto &node : node.data)
                                 {
                                     out.append(stringifyNode(node));
                                     out.append(", ");
@@ -612,9 +611,9 @@ QString stringifyNode(ASTNode node)
                                 out.append("])");
                                 return out;
                             },
-                            [](StrikethroughASTNode node) -> QString {
+                            [](const StrikethroughASTNode &node) -> QString {
                                 QString out = "StrikethroughASTNode([";
-                                for (auto node : node.data)
+                                for (const auto &node : node.data)
                                 {
                                     out.append(stringifyNode(node));
                                     out.append(", ");
@@ -622,9 +621,9 @@ QString stringifyNode(ASTNode node)
                                 out.append("])");
                                 return out;
                             },
-                            [](CodeASTNode node) -> QString {
+                            [](const CodeASTNode &node) -> QString {
                                 QString out = "CodeASTNode([";
-                                for (auto node : node.data)
+                                for (const auto &node : node.data)
                                 {
                                     out.append(stringifyNode(node));
                                     out.append(", ");
@@ -632,15 +631,15 @@ QString stringifyNode(ASTNode node)
                                 out.append("])");
                                 return out;
                             },
-                            [](LinkASTNode node) -> QString {
+                            [](const LinkASTNode &node) -> QString {
                                 QString out = "LinkASTNode(text=[";
-                                for (auto node : node.text)
+                                for (const auto &node : node.text)
                                 {
                                     out.append(stringifyNode(node));
                                     out.append(", ");
                                 }
                                 out.append("], url=[");
-                                for (auto node : node.url)
+                                for (const auto &node : node.url)
                                 {
                                     out.append(stringifyNode(node));
                                     out.append(", ");
@@ -648,7 +647,7 @@ QString stringifyNode(ASTNode node)
                                 out.append("])");
                                 return out;
                             },
-                            [](TextASTNode node) -> QString {
+                            [](const TextASTNode &node) -> QString {
                                 // i have no idea why spaces are null characters, but they are...
                                 if (node.data == QChar(0))
                                 {

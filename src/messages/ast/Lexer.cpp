@@ -5,7 +5,7 @@
 
 namespace chatterino::ast {
 
-QVector<Token> lex(QString input)
+QVector<Token> lex(const QString &input)
 {
     QVector<Token> out;
 
@@ -75,7 +75,7 @@ QString stringifyToken(Token token)
                           [](TickToken) -> QString {
                               return "TickToken";
                           },
-                          [](CharToken token) -> QString {
+                          [](const CharToken &token) -> QString {
                               // i have no idea why spaces are null characters, but they are...
                               if (token.data == QChar(0))
                               {

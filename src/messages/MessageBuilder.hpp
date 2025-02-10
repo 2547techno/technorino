@@ -339,7 +339,7 @@ private:
     void appendUsername(const QVariantMap &tags, const MessageParseArgs &args);
 
     void addWordsFromAstNodes(
-        QVector<ast::ASTNode> nodes,
+        const QVector<ast::ASTNode> &nodes,
         const std::vector<TwitchEmoteOccurrence> &twitchEmotes,
         TextState &state, FontStyle style = FontStyle::ChatMedium);
     void addWords(const QStringList &words,

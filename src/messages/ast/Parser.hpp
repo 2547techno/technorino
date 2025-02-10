@@ -47,34 +47,34 @@ struct MatchResponse {
     int endCursor;
 };
 
-QVector<ASTNode> createTextNodes(QString str, bool normalize = false);
+QVector<ASTNode> createTextNodes(const QString &str, bool normalize = false);
 
 MatchResponse matchAny(int i, QVector<Token> tokens);
 MatchResponse matchChar(int i, QVector<Token> tokens);
 const QRegExp BOUNDRY_CHAR_REGEX("[^\\s]");
-MatchResponse matchBoundryChar(int i, QVector<Token> tokens);
+MatchResponse matchBoundryChar(int i, QVector<Token> *tokens);
 
 QVector<ASTNode> getBoundryStyleAstNode(BoundryStyleToken tokenType,
                                         int numTokens,
                                         QVector<ASTNode> innerNodes);
 bool boundryStyleTypeEq(Token token, BoundryStyleToken boundryToken);
 MatchResponse matchBoundryStyle(BoundryStyleToken tokenType, int numToken,
-                                int i, QVector<Token> tokens);
-MatchResponse matchBoldAsterix(int i, QVector<Token> tokens);
-MatchResponse matchBoldUnderline(int i, QVector<Token> tokens);
-MatchResponse matchBold(int i, QVector<Token> tokens);
-MatchResponse matchItalicAsterix(int i, QVector<Token> tokens);
-MatchResponse matchItalicUnderline(int i, QVector<Token> tokens);
-MatchResponse matchItalic(int i, QVector<Token> tokens);
-MatchResponse matchStrikethrough(int i, QVector<Token> tokens);
-MatchResponse matchCode(int i, QVector<Token> tokens);
-MatchResponse matchLink(int i, QVector<Token> tokens);
-MatchResponse matchStyle(int i, QVector<Token> tokens);
+                                int i, QVector<Token> *tokens);
+MatchResponse matchBoldAsterix(int i, QVector<Token> *tokens);
+MatchResponse matchBoldUnderline(int i, QVector<Token> *tokens);
+MatchResponse matchBold(int i, QVector<Token> *tokens);
+MatchResponse matchItalicAsterix(int i, QVector<Token> *tokens);
+MatchResponse matchItalicUnderline(int i, QVector<Token> *tokens);
+MatchResponse matchItalic(int i, QVector<Token> *tokens);
+MatchResponse matchStrikethrough(int i, QVector<Token> *tokens);
+MatchResponse matchCode(int i, QVector<Token> *tokens);
+MatchResponse matchLink(int i, QVector<Token> *tokens);
+MatchResponse matchStyle(int i, QVector<Token> *tokens);
 
-MatchResponse matchSegment(int i, QVector<Token> tokens);
-MatchResponse matchMarkdown(int i, QVector<Token> tokens);
+MatchResponse matchSegment(int i, QVector<Token> *tokens);
+MatchResponse matchMarkdown(int i, QVector<Token> *tokens);
 
-QVector<ASTNode> normalizeTextNodes(QVector<ASTNode> nodes);
+QVector<ASTNode> normalizeTextNodes(const QVector<ASTNode> &nodes);
 QString stringifyNode(ASTNode node);
 
 }  // namespace chatterino::ast

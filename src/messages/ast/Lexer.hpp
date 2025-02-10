@@ -40,7 +40,7 @@ typedef std::variant<struct AsterixToken, struct UnderlineToken,
                      struct TildeToken>
     BoundryStyleToken;
 
-QVector<Token> lex(QString input);
+QVector<Token> lex(const QString &input);
 QString stringifyToken(Token token);
 
 }  // namespace chatterino::ast
