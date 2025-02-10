@@ -2302,16 +2302,17 @@ std::pair<MessagePtrMut, HighlightAlert> MessageBuilder::makeIrcMessage(
         // parse
         QString message = content;
         auto tokens = ast::lex(message);
-        {
-            QDebug dbg = qDebug().nospace().noquote();
-            dbg << "[";
-            for (auto token : tokens)
-            {
-                dbg << ast::stringifyToken(token);
-                dbg << ", ";
-            }
-            dbg << "]";
-        }
+        // debug logs
+        // {
+        //     QDebug dbg = qDebug().nospace().noquote();
+        //     dbg << "[";
+        //     for (auto token : tokens)
+        //     {
+        //         dbg << ast::stringifyToken(token);
+        //         dbg << ", ";
+        //     }
+        //     dbg << "]";
+        // }
 
         QVector<ast::ASTNode> ast;
         try
@@ -2331,14 +2332,15 @@ std::pair<MessagePtrMut, HighlightAlert> MessageBuilder::makeIrcMessage(
 
         if (!traditionalParsing)
         {
-            QDebug dbg = qDebug().nospace().noquote();
-            dbg << "[";
-            for (auto node : ast)
-            {
-                dbg << ast::stringifyNode(node);
-                dbg << ", ";
-            }
-            dbg << "]";
+            // debug logs
+            // QDebug dbg = qDebug().nospace().noquote();
+            // dbg << "[";
+            // for (auto node : ast)
+            // {
+            //     dbg << ast::stringifyNode(node);
+            //     dbg << ", ";
+            // }
+            // dbg << "]";
 
             builder.addWordsFromAstNodes(ast, twitchEmotes, textState);
         }
