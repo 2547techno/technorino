@@ -49,7 +49,7 @@ struct MatchResponse {
 
 QVector<ASTNode> createTextNodes(const QString &str, bool normalize = false);
 
-MatchResponse matchAny(int i, QVector<Token> tokens);
+MatchResponse matchAny(int i, QVector<Token> tokens, bool ignoreTick = false);
 MatchResponse matchChar(int i, QVector<Token> tokens);
 const QRegExp BOUNDRY_CHAR_REGEX("[^\\s]");
 MatchResponse matchBoundryChar(int i, QVector<Token> *tokens);

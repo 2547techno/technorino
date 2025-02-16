@@ -1,5 +1,6 @@
 #include "messages/ast/Parser.hpp"
 
+#include "messages/ast/Lexer.hpp"
 #include "util/Variant.hpp"
 
 #include <variant>
@@ -24,13 +25,13 @@ QVector<ASTNode> createTextNodes(const QString &str, bool normalize)
     return out;
 }
 
-MatchResponse matchAny(int i, QVector<Token> *tokens)
+MatchResponse matchAny(int i, QVector<Token> *tokens, bool ignoreTick = false)
 {
     Token token = tokens->at(i);
 
     MatchResponse response = std::visit(
         variant::Overloaded{
-            [&i](AsterixToken) -> MatchResponse {
+            [&](AsterixToken) -> MatchResponse {
                 return MatchResponse({true, createTextNodes("*"), i + 1});
             },
             [&i](UnderlineToken) -> MatchResponse {
@@ -39,7 +40,12 @@ MatchResponse matchAny(int i, QVector<Token> *tokens)
             [&i](TildeToken) -> MatchResponse {
                 return MatchResponse({true, createTextNodes("~"), i + 1});
             },
-            [&i](TickToken) -> MatchResponse {
+            [&](TickToken) -> MatchResponse {
+                if (ignoreTick)
+                {
+                    return MatchResponse{false};
+                }
+
                 return MatchResponse({true, createTextNodes("`"), i + 1});
             },
             [&i](LeftBracketToken) -> MatchResponse {
@@ -286,11 +292,11 @@ MatchResponse matchBold(int i, QVector<Token> *tokens)
         return boldAsterix;
     }
 
-    MatchResponse boldUnderline = matchBoldUnderline(i, tokens);
-    if (boldUnderline.accepted)
-    {
-        return boldUnderline;
-    }
+    // MatchResponse boldUnderline = matchBoldUnderline(i, tokens);
+    // if (boldUnderline.accepted)
+    // {
+    //     return boldUnderline;
+    // }
 
     return MatchResponse{false};
 }
@@ -313,11 +319,11 @@ MatchResponse matchItalic(int i, QVector<Token> *tokens)
         return italicAsterix;
     }
 
-    MatchResponse italicUnderline = matchItalicUnderline(i, tokens);
-    if (italicUnderline.accepted)
-    {
-        return italicUnderline;
-    }
+    // MatchResponse italicUnderline = matchItalicUnderline(i, tokens);
+    // if (italicUnderline.accepted)
+    // {
+    //     return italicUnderline;
+    // }
 
     return MatchResponse{false};
 }
@@ -342,13 +348,13 @@ MatchResponse matchCode(int i, QVector<Token> *tokens)
 
         while (true)
         {
-            MatchResponse character = matchChar(i, tokens);
-            if (!character.accepted)
+            MatchResponse any = matchAny(i, tokens, true);
+            if (!any.accepted)
             {
                 break;
             }
 
-            innerNodes.append(character.nodes);
+            innerNodes.append(any.nodes);
             i++;
         }
 
