@@ -290,7 +290,7 @@ void Channel::replaceMessage(size_t hint, const MessagePtr &message,
     }
 }
 
-void Channel::deleteMessage(QString messageID)
+void Channel::disableMessage(QString messageID)
 {
     auto msg = this->findMessage(messageID);
     if (msg != nullptr)
