@@ -22,6 +22,7 @@ option(USE_SYSTEM_MINIAUDIO "Build Chatterino with your system miniaudio" OFF)
 option(BUILD_WITH_CRASHPAD "Build chatterino with crashpad" OFF)
 option(USE_PRECOMPILED_HEADERS "Use precompiled headers" ON)
 option(BUILD_WITH_QT6 "Build with Qt6" On)
+option(BUILD_WITH_LIBNOTIFY "Build with libnotify" ON)
 option(CHATTERINO_GENERATE_COVERAGE "Generate coverage files" OFF)
 # We don't use translations, and we don't want qtkeychain to build translations
 option(BUILD_TRANSLATIONS "" OFF)
@@ -58,6 +59,7 @@ endif()
 if (BUILD_WITH_QT6)
     set(MAJOR_QT_VERSION "6")
 else()
+    message(WARNING "Qt5 is not supported, continue building at your own risk")
     set(MAJOR_QT_VERSION "5")
 endif()
 
@@ -211,6 +213,7 @@ find_package(PajladaSignals REQUIRED)
 find_package(LRUCache REQUIRED)
 find_package(MagicEnum REQUIRED)
 find_package(Doxygen)
+find_package(BoostCertify REQUIRED)
 
 if (USE_SYSTEM_PAJLADA_SETTINGS)
     find_package(PajladaSettings REQUIRED)
@@ -241,6 +244,8 @@ if (libavif_FOUND AND NOT CHATTERINO_NO_AVIF_PLUGIN)
     message(STATUS "Adding AVIF plugin")
     set(CHATTERINO_WITH_AVIF_PLUGIN ON)
 endif()
+
+add_subdirectory(lib/twitch-eventsub-ws)
 
 # Used to provide a date of build in the About page (for nightly builds). Getting the actual time of
 # compilation in CMake is a more involved, as documented in https://stackoverflow.com/q/24292898.

@@ -8,6 +8,7 @@
 #include "common/UniqueAccess.hpp"
 #include "providers/ffz/FfzBadges.hpp"
 #include "providers/ffz/FfzEmotes.hpp"
+#include "providers/twitch/eventsub/SubscriptionHandle.hpp"
 #include "providers/twitch/TwitchEmotes.hpp"
 #include "util/QStringHash.hpp"
 #include "util/ThreadGuard.hpp"
@@ -58,6 +59,7 @@ struct HelixGlobalBadges;
 using HelixChannelBadges = HelixGlobalBadges;
 
 class TwitchIrcServer;
+class TwitchAccount;
 
 const int MAX_QUEUED_REDEMPTIONS = 16;
 
@@ -162,6 +164,12 @@ public:
     void reconnect() override;
     QString getCurrentStreamID() const override;
     void createClip();
+
+    /// Delete the message with the specified ID as a moderator.
+    ///
+    /// If the ID is empty, all messages will be deleted, effectively clearing
+    /// the chat.
+    void deleteMessagesAs(const QString &messageID, TwitchAccount *moderator);
 
     // Data
     const QString &subscriptionUrl();
@@ -503,6 +511,8 @@ private:
 
     pajlada::Signals::SignalHolder signalHolder_;
     std::vector<boost::signals2::scoped_connection> bSignals_;
+
+    eventsub::SubscriptionHandle eventSubChannelModerateHandle;
 
     friend class TwitchIrcServer;
     friend class MessageBuilder;
