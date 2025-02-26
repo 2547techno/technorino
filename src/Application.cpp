@@ -549,8 +549,6 @@ Updates &Application::getUpdates()
 
 ITwitchIrcServer *Application::getTwitch()
 {
-    assertInGuiThread();
-
     return this->twitch.get();
 }
 

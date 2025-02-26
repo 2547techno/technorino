@@ -9,7 +9,7 @@
 - Minor: When (re-)connecting, visible channels are now joined first. (#5850)
 - Minor: Added the ability to filter on messages by the author's user ID (example: `author.user_id == "22484632"`). (#5862)
 - Minor: Improved error messaging of the `/clip` command. (#5879)
-- Minor: Added Linux support for Live Notifications toasts. (#5881)
+- Minor: Added Linux support for Live Notifications toasts. (#5881, #5971)
 - Minor: Messages can now be deleted from the context menu in a channel. (#5956)
 - Bugfix: Fixed a potential way to escape the Lua Plugin sandbox. (#5846)
 - Bugfix: Fixed a crash relating to Lua HTTP. (#5800)
@@ -22,12 +22,15 @@
 - Bugfix: Fixed announcements not showing up in mentions tab. (#5857)
 - Bugfix: Fixed the reply button showing for inline whispers and announcements. (#5863)
 - Bugfix: Fixed suspicious user treatment update messages not being searchable. (#5865)
+- Bugfix: Ensure settings save after reauthenticating with a Twitch account. (#5901)
+- Bugfix: Fixed user info popup's opened from `/live` making some network requests that always failed. (#5959)
 - Bugfix: Ensure miniaudio backend exits even if it doesn't exit cleanly. (#5896)
 - Bugfix: Fixed search in emote popup not always working correctly. (#5946)
 - Bugfix: Fixed channel point redemptions with messages not showing up if PubSub is disconnected. (#5948)
 - Bugfix: Fixed the input font not immediately updating when zooming in/out. (#5960)
+- Bugfix: Fixed color input thinking blue is also red. (#5982)
 - Dev: Subscriptions to PubSub channel points redemption topics now use no auth token, making it continue to work during PubSub shutdown. (#5947)
-- Dev: Add initial experimental EventSub support. (#5837, #5895, #5897, #5904, #5910, #5903, #5915, #5916, #5930, #5935, #5932, #5943, #5952, #5953)
+- Dev: Add initial experimental EventSub support. (#5837, #5895, #5897, #5904, #5910, #5903, #5915, #5916, #5930, #5935, #5932, #5943, #5952, #5953, #5968, #5973, #5974, #5980, #5981)
 - Dev: Remove unneeded platform specifier for toasts. (#5914)
 - Dev: Highlight checks now use non-capturing groups for the boundaries. (#5784)
 - Dev: Removed unused PubSub whisper code. (#5898)
@@ -44,6 +47,7 @@
 - Dev: Updated `googletest` to 1.16.0. (#5942)
 - Dev: Fixed duplicate CMake configure in clean builds. (#5940)
 - Dev: BTTV emotes are now loaded as WEBP. (#5957)
+- Dev: Added snapshot tests for EventSub. (#5965)
 
 ## 2.5.2
 

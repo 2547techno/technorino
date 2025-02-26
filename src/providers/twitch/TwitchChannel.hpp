@@ -27,6 +27,7 @@
 #include <unordered_map>
 
 class TestIrcMessageHandlerP;
+class TestEventSubMessagesP;
 
 namespace chatterino {
 
@@ -519,6 +520,7 @@ private:
     friend class IrcMessageHandler;
     friend class Commands_E2E_Test;
     friend class ::TestIrcMessageHandlerP;
+    friend class ::TestEventSubMessagesP;
 };
 
 }  // namespace chatterino
