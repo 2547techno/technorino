@@ -93,21 +93,6 @@
                         "type": "None",
                         "value": ""
                     },
-                    "text": {
-                        "color": "Text",
-                        "flags": "Misc",
-                        "link": {
-                            "type": "None",
-                            "value": ""
-                        },
-                        "style": "ChatMedium",
-                        "tooltip": "",
-                        "trailingSpace": true,
-                        "type": "TextElement",
-                        "words": [
-                            "fo"
-                        ]
-                    },
                     "tooltip": "fo<br>Twitch Emote",
                     "trailingSpace": false,
                     "type": "EmoteElement"
@@ -143,6 +128,7 @@
                 }
             ],
             "flags": "Collapsed",
+            "frozen": false,
             "id": "",
             "localizedName": "",
             "loginName": "test",

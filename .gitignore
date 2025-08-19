@@ -125,3 +125,7 @@ aqtinstall.log
 
 # sccache (CI)
 .sccache
+
+# nix files
+result
+*-source/

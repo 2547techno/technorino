@@ -170,21 +170,6 @@
                         "type": "None",
                         "value": ""
                     },
-                    "text": {
-                        "color": "Text",
-                        "flags": "Misc",
-                        "link": {
-                            "type": "None",
-                            "value": ""
-                        },
-                        "style": "ChatMedium",
-                        "tooltip": "",
-                        "trailingSpace": true,
-                        "type": "TextElement",
-                        "words": [
-                            "Keepo"
-                        ]
-                    },
                     "tooltip": "Keepo<br>Twitch Emote",
                     "trailingSpace": true,
                     "type": "EmoteElement"
@@ -204,21 +189,6 @@
                         "type": "None",
                         "value": ""
                     },
-                    "text": {
-                        "color": "Text",
-                        "flags": "Misc",
-                        "link": {
-                            "type": "None",
-                            "value": ""
-                        },
-                        "style": "ChatMedium",
-                        "tooltip": "",
-                        "trailingSpace": true,
-                        "type": "TextElement",
-                        "words": [
-                            "FFZEmote"
-                        ]
-                    },
                     "tooltip": "FFZEmote Tooltip",
                     "trailingSpace": true,
                     "type": "EmoteElement"
@@ -235,21 +205,6 @@
                     "link": {
                         "type": "None",
                         "value": ""
-                    },
-                    "text": {
-                        "color": "Text",
-                        "flags": "Misc",
-                        "link": {
-                            "type": "None",
-                            "value": ""
-                        },
-                        "style": "ChatMedium",
-                        "tooltip": "",
-                        "trailingSpace": true,
-                        "type": "TextElement",
-                        "words": [
-                            "😭"
-                        ]
                     },
                     "tooltip": ":sob:<br/>Emoji",
                     "trailingSpace": true,
@@ -285,6 +240,7 @@
                 }
             ],
             "flags": "Collapsed|ReplyMessage",
+            "frozen": false,
             "id": "5e5f526a-5d60-4d81-800b-3b81b8a34c2c",
             "localizedName": "",
             "loginName": "nerixyz",

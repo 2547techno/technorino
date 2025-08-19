@@ -64,6 +64,23 @@ namespace chatterino {
 
 using namespace literals;
 
+namespace detail {
+
+bool isUnknownCommand(const QString &text)
+{
+    static QRegularExpression isUnknownCommand(
+        R"(^(?:\.(?!\.|$)|\/)(?!me(?:\s|$)|\s))",
+        QRegularExpression::CaseInsensitiveOption);
+
+    auto match = isUnknownCommand.match(text);
+
+    return match.hasMatch();
+}
+
+}  // namespace detail
+
+using detail::isUnknownCommand;
+
 namespace {
 #if QT_VERSION < QT_VERSION_CHECK(6, 1, 0)
 const QString MAGIC_MESSAGE_SUFFIX = QString((const char *)u8" \U000E0000");
@@ -94,6 +111,7 @@ constexpr auto MAX_CHATTERS_TO_FETCH = 5000;
 
 // From Twitch docs - expected size for a badge (1x)
 constexpr QSize BASE_BADGE_SIZE(18, 18);
+
 }  // namespace
 
 TwitchChannel::TwitchChannel(const QString &name, bool isWatching)
@@ -109,6 +127,18 @@ TwitchChannel::TwitchChannel(const QString &name, bool isWatching)
     , seventvEmotes_(std::make_shared<EmoteMap>())
 {
     qCDebug(chatterinoTwitch) << "[TwitchChannel" << name << "] Opened";
+
+    this->signalHolder_.managedConnect(
+        getApp()->getAccounts()->twitch.currentUserAboutToChange,
+        [this](const auto & /*oldAccount*/, const auto & /*newAccount*/) {
+            this->eventSubChannelChatUserMessageHoldHandle.reset();
+            this->eventSubChannelChatUserMessageUpdateHandle.reset();
+            this->eventSubChannelModerateHandle.reset();
+            this->eventSubAutomodMessageHoldHandle.reset();
+            this->eventSubAutomodMessageUpdateHandle.reset();
+            this->eventSubSuspiciousUserMessageHandle.reset();
+            this->eventSubSuspiciousUserUpdateHandle.reset();
+        });
 
     this->bSignals_.emplace_back(
         getApp()->getAccounts()->twitch.currentUserChanged.connect([this] {
@@ -194,6 +224,11 @@ TwitchChannel::TwitchChannel(const QString &name, bool isWatching)
 
 TwitchChannel::~TwitchChannel()
 {
+    if (isAppAboutToQuit())
+    {
+        return;
+    }
+
     getApp()->getTwitch()->dropSeventvChannel(this->seventvUserID_,
                                               this->seventvEmoteSetID_);
 
@@ -793,6 +828,13 @@ void TwitchChannel::sendMessage(const QString &message)
         return;
     }
 
+    if (getSettings()->shouldSendHelixChat() && isUnknownCommand(parsedMessage))
+    {
+        this->addSystemMessage(QString("%1 is not a known command.")
+                                   .arg(parsedMessage.split(' ').first()));
+        return;
+    }
+
     bool messageSent = false;
     this->sendMessageSignal.invoke(this->getName(), parsedMessage, messageSent);
     this->updateSevenTVActivity();
@@ -824,6 +866,13 @@ void TwitchChannel::sendReply(const QString &message, const QString &replyId)
     QString parsedMessage = this->prepareMessage(message);
     if (parsedMessage.isEmpty())
     {
+        return;
+    }
+
+    if (getSettings()->shouldSendHelixChat() && isUnknownCommand(parsedMessage))
+    {
+        this->addSystemMessage(QString("%1 is not a known command.")
+                                   .arg(parsedMessage.split(' ').first()));
         return;
     }
 
@@ -1451,7 +1500,7 @@ void TwitchChannel::loadRecentMessagesReconnect()
     int limit = getSettings()->twitchMessageHistoryLimit.getValue();
     if (this->lastConnectedAt_.has_value())
     {
-        // calculate how many messages could have occured
+        // calculate how many messages could have occurred
         // while we were not connected to the channel
         // assuming a maximum of 10 messages per second
         const auto secondsSinceDisconnect =
@@ -1514,12 +1563,15 @@ void TwitchChannel::refreshPubSub()
 
     auto currentAccount = getApp()->getAccounts()->twitch.getCurrent();
 
+    const auto &currentTwitchUserID = currentAccount->getUserId();
+
     if (this->hasModRights())
     {
         this->eventSubChannelModerateHandle =
             getApp()->getEventSub()->subscribe(eventsub::SubscriptionRequest{
                 .subscriptionType = "channel.moderate",
                 .subscriptionVersion = "2",
+                .ownerTwitchUserID = currentTwitchUserID,
                 .conditions =
                     {
                         {
@@ -1528,7 +1580,7 @@ void TwitchChannel::refreshPubSub()
                         },
                         {
                             "moderator_user_id",
-                            currentAccount->getUserId(),
+                            currentTwitchUserID,
                         },
                     },
             });
@@ -1536,6 +1588,7 @@ void TwitchChannel::refreshPubSub()
             getApp()->getEventSub()->subscribe(eventsub::SubscriptionRequest{
                 .subscriptionType = "automod.message.hold",
                 .subscriptionVersion = "2",
+                .ownerTwitchUserID = currentTwitchUserID,
                 .conditions =
                     {
                         {
@@ -1544,7 +1597,7 @@ void TwitchChannel::refreshPubSub()
                         },
                         {
                             "moderator_user_id",
-                            currentAccount->getUserId(),
+                            currentTwitchUserID,
                         },
                     },
             });
@@ -1552,6 +1605,7 @@ void TwitchChannel::refreshPubSub()
             getApp()->getEventSub()->subscribe(eventsub::SubscriptionRequest{
                 .subscriptionType = "automod.message.update",
                 .subscriptionVersion = "2",
+                .ownerTwitchUserID = currentTwitchUserID,
                 .conditions =
                     {
                         {
@@ -1560,7 +1614,7 @@ void TwitchChannel::refreshPubSub()
                         },
                         {
                             "moderator_user_id",
-                            currentAccount->getUserId(),
+                            currentTwitchUserID,
                         },
                     },
             });
@@ -1568,6 +1622,7 @@ void TwitchChannel::refreshPubSub()
             getApp()->getEventSub()->subscribe(eventsub::SubscriptionRequest{
                 .subscriptionType = "channel.suspicious_user.message",
                 .subscriptionVersion = "1",
+                .ownerTwitchUserID = currentTwitchUserID,
                 .conditions =
                     {
                         {
@@ -1576,7 +1631,7 @@ void TwitchChannel::refreshPubSub()
                         },
                         {
                             "moderator_user_id",
-                            currentAccount->getUserId(),
+                            currentTwitchUserID,
                         },
                     },
             });
@@ -1584,6 +1639,7 @@ void TwitchChannel::refreshPubSub()
             getApp()->getEventSub()->subscribe(eventsub::SubscriptionRequest{
                 .subscriptionType = "channel.suspicious_user.update",
                 .subscriptionVersion = "1",
+                .ownerTwitchUserID = currentTwitchUserID,
                 .conditions =
                     {
                         {
@@ -1592,7 +1648,7 @@ void TwitchChannel::refreshPubSub()
                         },
                         {
                             "moderator_user_id",
-                            currentAccount->getUserId(),
+                            currentTwitchUserID,
                         },
                     },
             });
@@ -1612,6 +1668,7 @@ void TwitchChannel::refreshPubSub()
             getApp()->getEventSub()->subscribe(eventsub::SubscriptionRequest{
                 .subscriptionType = "channel.chat.user_message_hold",
                 .subscriptionVersion = "1",
+                .ownerTwitchUserID = currentTwitchUserID,
                 .conditions =
                     {
                         {
@@ -1620,7 +1677,7 @@ void TwitchChannel::refreshPubSub()
                         },
                         {
                             "user_id",
-                            currentAccount->getUserId(),
+                            currentTwitchUserID,
                         },
                     },
             });
@@ -1629,6 +1686,7 @@ void TwitchChannel::refreshPubSub()
             getApp()->getEventSub()->subscribe(eventsub::SubscriptionRequest{
                 .subscriptionType = "channel.chat.user_message_update",
                 .subscriptionVersion = "1",
+                .ownerTwitchUserID = currentTwitchUserID,
                 .conditions =
                     {
                         {
@@ -1637,7 +1695,7 @@ void TwitchChannel::refreshPubSub()
                         },
                         {
                             "user_id",
-                            currentAccount->getUserId(),
+                            currentTwitchUserID,
                         },
                     },
             });
@@ -2331,8 +2389,8 @@ void TwitchChannel::upsertPersonalSeventvEmotes(
                 elements.pop_back();
 
                 std::vector<LayeredEmoteElement::Emote> layers{
-                    {baseEmote, baseEmoteElement->getFlags()},
-                    {emote, MessageElementFlag::SevenTVEmote},
+                    {.ptr = baseEmote, .flags = baseEmoteElement->getFlags()},
+                    {.ptr = emote, .flags = MessageElementFlag::SevenTVEmote},
                 };
                 elements.emplace_back(std::make_unique<LayeredEmoteElement>(
                     std::move(layers),
@@ -2347,7 +2405,7 @@ void TwitchChannel::upsertPersonalSeventvEmotes(
             if (asLayered)
             {
                 asLayered->addEmoteLayer(
-                    {emote, MessageElementFlag::SevenTVEmote});
+                    {.ptr = emote, .flags = MessageElementFlag::SevenTVEmote});
                 asLayered->addFlags(MessageElementFlag::SevenTVEmote);
                 return true;
             }
@@ -2389,38 +2447,34 @@ void TwitchChannel::upsertPersonalSeventvEmotes(
         }
     };
 
-    auto cloned = message.value()->cloneWith([&](Message &message) {
-        // We create a new vector of elements,
-        // if we encounter a `TextElement` that contains any emote,
-        // we insert an `EmoteElement` (or `LayeredEmoteElement`) at the position.
-        MessageElementVec elements;
-        elements.reserve(message.elements.size());
+    auto cloned = message.value()->clone();
+    // We create a new vector of elements,
+    // if we encounter a `TextElement` that contains any emote,
+    // we insert an `EmoteElement` (or `LayeredEmoteElement`) at the position.
+    MessageElementVec elements;
+    elements.reserve(cloned->elements.size());
 
-        std::for_each(
-            std::make_move_iterator(message.elements.begin()),
-            std::make_move_iterator(message.elements.end()),
-            [&](auto &&element) {
-                auto *elementPtr = element.get();
-                auto *textElement = dynamic_cast<TextElement *>(elementPtr);
-                auto *linkElement = dynamic_cast<LinkElement *>(elementPtr);
-                auto *mentionElement =
-                    dynamic_cast<MentionElement *>(elementPtr);
+    std::for_each(
+        std::make_move_iterator(cloned->elements.begin()),
+        std::make_move_iterator(cloned->elements.end()), [&](auto &&element) {
+            MessageElement *elementPtr = element.get();
+            auto *textElement = dynamic_cast<TextElement *>(elementPtr);
+            auto *linkElement = dynamic_cast<LinkElement *>(elementPtr);
+            auto *mentionElement = dynamic_cast<MentionElement *>(elementPtr);
 
-                // Check if this contains the message text
-                if (textElement && !linkElement && !mentionElement &&
-                    textElement->getFlags().has(MessageElementFlag::Text))
-                {
-                    upsertWords(elements, textElement);
-                }
-                else
-                {
-                    elements.emplace_back(
-                        std::forward<decltype(element)>(element));
-                }
-            });
+            // Check if this contains the message text
+            if (textElement && !linkElement && !mentionElement &&
+                textElement->getFlags().has(MessageElementFlag::Text))
+            {
+                upsertWords(elements, textElement);
+            }
+            else
+            {
+                elements.emplace_back(std::forward<decltype(element)>(element));
+            }
+        });
 
-        message.elements = std::move(elements);
-    });
+    cloned->elements = std::move(elements);
 
     this->replaceMessage(message.value(), cloned);
 }

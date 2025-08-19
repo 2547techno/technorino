@@ -20,14 +20,14 @@ jobs:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     strategy:
       matrix:
-        qt-version: ["6.7.3"]
+        qt-version: ["6.9.1"]
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # allows for tags access
 
       - name: Download artifact
-        uses: dawidd6/action-download-artifact@v10
+        uses: dawidd6/action-download-artifact@v11
         with:
           workflow: build.yml
           name: chatterino-windows-x86-64-Qt-${{ matrix.qt-version }}.zip
@@ -112,17 +112,17 @@ jobs:
         with:
           fetch-depth: 0 # allows for tags access
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: Chatterino7${{ needs.check-release.outputs.IS_TAGGED != '0' && '.Nightly' || '' }}.Installer.exe
           path: build/
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: Chatterino7${{ needs.check-release.outputs.IS_TAGGED != '0' && '.Nightly' || '' }}.Portable.zip
           path: build/
 
       - name: Download artifact
-        uses: dawidd6/action-download-artifact@v10
+        uses: dawidd6/action-download-artifact@v11
         with:
           workflow: build.yml
           name_is_regexp: true
@@ -148,9 +148,9 @@ jobs:
 
           mv Chatterino-x86_64-Qt-6.7.2.AppImage Chatterino-x86_64-Qt6.AppImage
 
-          mv chatterino-windows-x86-64-Qt-6.7.3-symbols.pdb.7z Chatterino-Windows-debug-symbols.pdb.7z
+          mv chatterino-windows-x86-64-Qt-6.9.1-symbols.pdb.7z Chatterino-Windows-debug-symbols.pdb.7z
 
-          mv chatterino-macos-Qt-6.7.1-universal.dmg Chatterino.dmg
+          mv chatterino-macos-Qt-6.9.1-universal.dmg Chatterino.dmg
 
       - name: Hash files
         working-directory: build

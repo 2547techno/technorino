@@ -137,14 +137,20 @@ void TechnorinoPage::initLayout(GeneralPageView &layout)
                             s.abnormalNonceDetection)
         ->setTooltip("Abnormal nonce detection")
         ->addTo(layout);
-    SettingWidget::checkbox("Webchat detection. Highlights messages sent from "
-                            "webchat in color specified below.",
+
+    layout.addTitle("Client detection");
+    SettingWidget::checkbox("Client detection highlights. ",
                             s.normalNonceDetection)
-        ->setTooltip("Webchat detection. Highlights messages sent from webchat "
-                     "in color specified below.")
+        ->setTooltip("Highlights messages sent from specified clients "
+                     "using the specified color below.")
         ->addTo(layout);
-    SettingWidget::colorButton("Webchat detected color", s.webchatColor)
+    SettingWidget::colorButton("Webchat color", getSettings()->webchatColor)
         ->addTo(layout);
+    SettingWidget::colorButton("Android color", getSettings()->androidColor)
+        ->addTo(layout);
+    SettingWidget::colorButton("iOS color", getSettings()->iosColor)
+        ->addTo(layout);
+
     SettingWidget::checkbox("Watching tab live sound", s.watchingTabLiveSound)
         ->setTooltip("Watching tab live sound")
         ->addTo(layout);

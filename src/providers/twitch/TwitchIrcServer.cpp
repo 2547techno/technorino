@@ -130,22 +130,6 @@ void sendHelixMessage(const std::shared_ptr<TwitchChannel> &channel,
         });
 }
 
-/// Returns true if chat messages should be sent over Helix
-bool shouldSendHelixChat()
-{
-    switch (getSettings()->chatSendProtocol)
-    {
-        case ChatSendProtocol::Helix:
-            return true;
-        case ChatSendProtocol::Default:
-        case ChatSendProtocol::IRC:
-            return false;
-        default:
-            assert(false && "Invalid chat protocol value");
-            return false;
-    }
-}
-
 }  // namespace
 
 namespace chatterino {
@@ -480,6 +464,11 @@ void TwitchIrcServer::onReadConnected(IrcConnection *connection)
     // join channels
     for (const auto &channel : activeChannels)
     {
+        // HACK(mm2pl): This prevents custom invalid twitch channels used by plugins from being joined
+        if (channel->getName().startsWith("/"))
+        {
+            continue;
+        }
         this->joinBucket_->send(channel->getName());
     }
 
@@ -767,7 +756,7 @@ void TwitchIrcServer::onMessageSendRequested(
         return;
     }
 
-    if (shouldSendHelixChat())
+    if (getSettings()->shouldSendHelixChat())
     {
         sendHelixMessage(channel, message);
     }
@@ -791,7 +780,7 @@ void TwitchIrcServer::onReplySendRequested(
         return;
     }
 
-    if (shouldSendHelixChat())
+    if (getSettings()->shouldSendHelixChat())
     {
         sendHelixMessage(channel, message, replyId);
     }
@@ -1245,7 +1234,11 @@ ChannelPtr TwitchIrcServer::getOrAddChannel(const QString &dirtyChannelName)
 
         if (this->readConnection_)
         {
-            this->readConnection_->sendRaw("PART #" + channelName);
+            // HACK(mm2pl): This prevents custom invalid twitch channels used by plugins from being joined
+            if (!channelName.startsWith("/"))
+            {
+                this->readConnection_->sendRaw("PART #" + channelName);
+            }
         }
     });
 
@@ -1253,9 +1246,10 @@ ChannelPtr TwitchIrcServer::getOrAddChannel(const QString &dirtyChannelName)
     {
         std::lock_guard<std::mutex> lock2(this->connectionMutex_);
 
-        if (this->readConnection_)
+        if (this->readConnection_ && this->readConnection_->isConnected())
         {
-            if (this->readConnection_->isConnected())
+            // HACK(mm2pl): This prevents custom invalid twitch channels used by plugins from being joined
+            if (!channelName.startsWith("/"))
             {
                 this->joinBucket_->send(channelName);
             }

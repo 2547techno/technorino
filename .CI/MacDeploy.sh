@@ -16,7 +16,7 @@ if [ -n "$Qt5_DIR" ]; then
 elif [ -n "$Qt6_DIR" ]; then
     echo "Using Qt DIR from Qt6_DIR: $Qt6_DIR"
     _QT_DIR="$Qt6_DIR"
-    _img_version="6.7.1"
+    _img_version="6.9.1"
 fi
 
 if [ -n "$_QT_DIR" ]; then
@@ -37,16 +37,16 @@ echo "Extracting kimageformats plugins"
 7z e -okimg kimg.zip
 
 if [ -n "$MACOS_CODESIGN_CERTIFICATE" ]; then
-    echo "Codesigning libKF5Archive"
-    codesign -s "$MACOS_CODESIGN_CERTIFICATE" --force kimg/libKF5Archive.5.dylib
+    echo "Codesigning libKF6Archive"
+    codesign -s "$MACOS_CODESIGN_CERTIFICATE" --force kimg/libKF6Archive.6.dylib
     echo "Codesigning kimg_avif"
-    codesign -s "$MACOS_CODESIGN_CERTIFICATE" --force kimg/kimg_avif.so
+    codesign -s "$MACOS_CODESIGN_CERTIFICATE" --force kimg/kimg_avif.dylib
 fi
 
 mkdir -p chatterino.app/Contents/Frameworks
 mkdir -p chatterino.app/Contents/PlugIns/imageformats
-cp kimg/libKF5Archive.5.dylib chatterino.app/Contents/Frameworks/
-cp kimg/kimg_avif.so chatterino.app/Contents/PlugIns/imageformats/
+cp kimg/libKF6Archive.6.dylib chatterino.app/Contents/Frameworks/
+cp kimg/kimg_avif.dylib chatterino.app/Contents/PlugIns/imageformats/
 
 macdeployqt chatterino.app "${_macdeployqt_args[@]}" -verbose=1
 

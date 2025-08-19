@@ -15,8 +15,8 @@ RadialGradientPaint::RadialGradientPaint(
 
 QBrush RadialGradientPaint::asBrush(QColor userColor, QRectF drawingRect) const
 {
-    double x = drawingRect.x() + drawingRect.width() / 2;
-    double y = drawingRect.y() + drawingRect.height() / 2;
+    double x = drawingRect.x() + (drawingRect.width() / 2);
+    double y = drawingRect.y() + (drawingRect.height() / 2);
 
     double radius = std::max(drawingRect.width(), drawingRect.height()) / 2;
     radius = this->repeat_ ? radius * this->stops_.back().first : radius;

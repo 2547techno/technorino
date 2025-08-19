@@ -2,6 +2,8 @@
 
 ## Unversioned
 
+- Dev: Bumped Qt to 6.9.1 on Windows and macOS (f1c50e43b60dcb0d6af44ddc16f23d1c54e4b639).
+
 ## 7.5.3
 
 - Dev: Downgrades are no longer treated as updates and the `v3` endpoint is now used to check for updates (9a05dc994ae6bba41ccc541156313eac558a15d7)

@@ -86,6 +86,8 @@ LimitedQueueSnapshot<MessagePtr> Channel::getMessageSnapshot()
 void Channel::addMessage(MessagePtr message, MessageContext context,
                          std::optional<MessageFlags> overridingFlags)
 {
+    message->freeze();
+
     MessagePtr deleted;
 
     if (context == MessageContext::Original && this->getType() != Type::None)
@@ -164,6 +166,11 @@ void Channel::disableAllMessages()
 
 void Channel::addMessagesAtStart(const std::vector<MessagePtr> &_messages)
 {
+    for (const auto &msg : _messages)
+    {
+        msg->freeze();
+    }
+
     std::vector<MessagePtr> addedMessages =
         this->messages_.pushFront(_messages);
 
@@ -178,6 +185,10 @@ void Channel::fillInMissingMessages(const std::vector<MessagePtr> &messages)
     if (messages.empty())
     {
         return;
+    }
+    for (const auto &msg : messages)
+    {
+        msg->freeze();
     }
 
     auto snapshot = this->getMessageSnapshot();
@@ -263,6 +274,7 @@ void Channel::fillInMissingMessages(const std::vector<MessagePtr> &messages)
 void Channel::replaceMessage(const MessagePtr &message,
                              const MessagePtr &replacement)
 {
+    replacement->freeze();
     int index = this->messages_.replaceItem(message, replacement);
 
     if (index >= 0)
@@ -273,6 +285,8 @@ void Channel::replaceMessage(const MessagePtr &message,
 
 void Channel::replaceMessage(size_t index, const MessagePtr &replacement)
 {
+    replacement->freeze();
+
     MessagePtr prev;
     if (this->messages_.replaceItem(index, replacement, &prev))
     {
@@ -283,6 +297,8 @@ void Channel::replaceMessage(size_t index, const MessagePtr &replacement)
 void Channel::replaceMessage(size_t hint, const MessagePtr &message,
                              const MessagePtr &replacement)
 {
+    replacement->freeze();
+
     auto index = this->messages_.replaceItem(hint, message, replacement);
     if (index >= 0)
     {

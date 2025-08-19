@@ -7,6 +7,7 @@
 #include "providers/twitch/TwitchBadge.hpp"
 #include "providers/twitch/TwitchChannel.hpp"
 #include "providers/twitch/TwitchIrcServer.hpp"
+#include "util/QMagicEnum.hpp"
 
 namespace chatterino::filters {
 
@@ -44,6 +45,7 @@ const QMap<QString, Type> MESSAGE_TYPING_CONTEXT{
     {"reward.cost", Type::Int},
     {"reward.id", Type::String},
     {"flags.webchat_detected", Type::Bool},
+    {"technorino.client_detection", Type::String},
 };
 
 ContextMap buildContextMap(const MessagePtr &m, chatterino::Channel *channel)
@@ -144,7 +146,6 @@ ContextMap buildContextMap(const MessagePtr &m, chatterino::Channel *channel)
         {"flags.points_redeemed", m->flags.has(MessageFlag::RedeemedHighlight)},
         {"flags.sub_message", m->flags.has(MessageFlag::Subscription)},
         {"flags.system_message", m->flags.has(MessageFlag::System)},
-        {"flags.webchat_detected", m->flags.has(MessageFlag::WebchatDetected)},
         {"flags.reward_message",
          m->flags.has(MessageFlag::RedeemedChannelPointReward)},
         {"flags.first_message", m->flags.has(MessageFlag::FirstMessage)},
@@ -161,6 +162,10 @@ ContextMap buildContextMap(const MessagePtr &m, chatterino::Channel *channel)
 
         {"message.content", m->messageText},
         {"message.length", m->messageText.length()},
+        {"flags.webchat_detected",
+         m->clientDetection == Message::ClientDetectionStatus::Webchat},
+        {"technorino.client_detection",
+         qmagicenum::enumName(m->clientDetection).toString()},
     };
     {
         auto *tc = dynamic_cast<TwitchChannel *>(channel);

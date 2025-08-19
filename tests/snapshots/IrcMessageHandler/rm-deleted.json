@@ -95,21 +95,6 @@
                         "type": "None",
                         "value": ""
                     },
-                    "text": {
-                        "color": "Text",
-                        "flags": "Misc",
-                        "link": {
-                            "type": "None",
-                            "value": ""
-                        },
-                        "style": "ChatMedium",
-                        "tooltip": "",
-                        "trailingSpace": true,
-                        "type": "TextElement",
-                        "words": [
-                            "7TVEmote"
-                        ]
-                    },
                     "tooltip": "7TVEmote Tooltip",
                     "trailingSpace": true,
                     "type": "EmoteElement"
@@ -129,21 +114,6 @@
                     "link": {
                         "type": "None",
                         "value": ""
-                    },
-                    "text": {
-                        "color": "Text",
-                        "flags": "Misc",
-                        "link": {
-                            "type": "None",
-                            "value": ""
-                        },
-                        "style": "ChatMedium",
-                        "tooltip": "",
-                        "trailingSpace": true,
-                        "type": "TextElement",
-                        "words": [
-                            "Kappa"
-                        ]
                     },
                     "tooltip": "Kappa<br>Twitch Emote",
                     "trailingSpace": true,
@@ -181,21 +151,6 @@
                         "type": "None",
                         "value": ""
                     },
-                    "text": {
-                        "color": "Text",
-                        "flags": "Misc",
-                        "link": {
-                            "type": "None",
-                            "value": ""
-                        },
-                        "style": "ChatMedium",
-                        "tooltip": "",
-                        "trailingSpace": true,
-                        "type": "TextElement",
-                        "words": [
-                            "7TVEmote"
-                        ]
-                    },
                     "tooltip": "7TVEmote Tooltip",
                     "trailingSpace": true,
                     "type": "EmoteElement"
@@ -212,21 +167,6 @@
                     "link": {
                         "type": "None",
                         "value": ""
-                    },
-                    "text": {
-                        "color": "Text",
-                        "flags": "Misc",
-                        "link": {
-                            "type": "None",
-                            "value": ""
-                        },
-                        "style": "ChatMedium",
-                        "tooltip": "",
-                        "trailingSpace": true,
-                        "type": "TextElement",
-                        "words": [
-                            "❤️"
-                        ]
                     },
                     "tooltip": ":heart:<br/>Emoji",
                     "trailingSpace": true,
@@ -247,6 +187,7 @@
                 }
             ],
             "flags": "Disabled|Collapsed",
+            "frozen": false,
             "id": "3dc39240-0798-4103-8c3c-51e1a9a567a3",
             "localizedName": "",
             "loginName": "nerixyz",

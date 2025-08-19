@@ -1,7 +1,6 @@
 #include "providers/seventv/paints/Paint.hpp"
 
 #include "Application.hpp"
-#include "common/Literals.hpp"
 #include "singletons/Settings.hpp"
 #include "singletons/Theme.hpp"
 
@@ -11,7 +10,7 @@
 
 namespace chatterino {
 
-using namespace literals;
+using namespace Qt::Literals;
 
 QPixmap Paint::getPixmap(const QString &text, const QFont &font,
                          QColor userColor, QSizeF size, float scale,

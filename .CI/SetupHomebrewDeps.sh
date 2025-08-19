@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -e
+set -ex
 
 # Prefix for where to find the ARM64 library
 arm64_homebrew_dir="/opt/homebrew"
@@ -8,6 +8,8 @@ arm64_homebrew_dir="/opt/homebrew"
 x86_64_homebrew_dir="/opt/homebrew-x86_64"
  # Directory where we place the finished universal library
 universal_lib_dir="/opt/universal-lib"
+
+export HOMEBREW_DEVELOPER=1
 
 # args: path-to-library (in homebrew dir)
 c2-make-universal-dylib() {

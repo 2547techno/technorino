@@ -24,18 +24,15 @@ QBrush UrlPaint::asBrush(const QColor userColor, const QRectF drawingRect) const
 {
     if (auto paintPixmap = this->image_->pixmapOrLoad())
     {
-        auto rect = drawingRect.toRect();
-        paintPixmap = paintPixmap->scaledToWidth(rect.width());
+        QPixmap target(drawingRect.size().toSize());
+        target.fill(userColor);
+        {
+            QPainter painter(&target);
+            painter.drawPixmap(target.rect(), *paintPixmap,
+                               paintPixmap->rect());
+        }
 
-        QPixmap userColorPixmap = QPixmap(paintPixmap->size());
-        userColorPixmap.fill(userColor);
-
-        QPainter painter(&userColorPixmap);
-        painter.drawPixmap(0, 0, *paintPixmap);
-
-        const QPixmap combinedPixmap =
-            userColorPixmap.copy(QRect(0, 0, rect.width(), rect.height()));
-        return {combinedPixmap};
+        return {target};
     }
 
     return {userColor};

@@ -10,10 +10,12 @@
 #include "messages/Message.hpp"
 #include "messages/MessageBuilder.hpp"
 #include "messages/MessageElement.hpp"
+#include "providers/twitch/eventsub/Controller.hpp"
 #include "providers/twitch/TwitchChannel.hpp"
 #include "providers/twitch/TwitchIrcServer.hpp"
 #include "singletons/Theme.hpp"
 #include "singletons/Toasts.hpp"
+#include "singletons/WindowManager.hpp"
 #include "util/PostToThread.hpp"
 
 #include <QApplication>
@@ -137,6 +139,30 @@ QString forceImageUnload(const CommandContext &ctx)
         iep.freeAll();
     });
     return "";
+}
+
+QString forceLayoutChannelViews(const CommandContext & /*ctx*/)
+{
+    getApp()->getWindows()->forceLayoutChannelViews();
+    return {};
+}
+
+QString incrementImageGeneration(const CommandContext & /*ctx*/)
+{
+    getApp()->getWindows()->incGeneration();
+    return {};
+}
+
+QString invalidateBuffers(const CommandContext & /*ctx*/)
+{
+    getApp()->getWindows()->invalidateChannelViewBuffers();
+    return {};
+}
+
+QString eventsub(const CommandContext & /*ctx*/)
+{
+    getApp()->getEventSub()->debug();
+    return {};
 }
 
 QString debugTest(const CommandContext &ctx)

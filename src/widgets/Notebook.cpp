@@ -10,9 +10,10 @@
 #include "singletons/StreamerMode.hpp"
 #include "singletons/Theme.hpp"
 #include "singletons/WindowManager.hpp"
+#include "widgets/buttons/DrawnButton.hpp"
 #include "widgets/buttons/InitUpdateButton.hpp"
-#include "widgets/buttons/NotebookButton.hpp"
 #include "widgets/buttons/PixmapButton.hpp"
+#include "widgets/buttons/SvgButton.hpp"
 #include "widgets/dialogs/SettingsDialog.hpp"
 #include "widgets/helper/ChannelView.hpp"
 #include "widgets/helper/NotebookTab.hpp"
@@ -37,11 +38,35 @@ namespace chatterino {
 
 Notebook::Notebook(QWidget *parent)
     : BaseWidget(parent)
-    , addButton_(new NotebookButton(this))
+    , addButton_(new DrawnButton(DrawnButton::Symbol::Plus,
+                                 {
+                                     .padding = 6,
+                                     .thickness = 1,
+                                 },
+                                 this))
 {
-    this->addButton_->setIcon(NotebookButton::Icon::Plus);
-
     this->addButton_->setHidden(true);
+    this->addButton_->enableDrops({"chatterino/split"});
+
+    QObject::connect(
+        this->addButton_, &Button::dropEvent, this, [this](QDropEvent *event) {
+            auto *draggedSplit = dynamic_cast<Split *>(event->source());
+            if (!draggedSplit)
+            {
+                qCDebug(chatterinoWidget) << "Dropped something that wasn't a "
+                                             "split onto a notebook button";
+                return;
+            }
+
+            event->acceptProposedAction();
+
+            auto *page = new SplitContainer(this);
+            auto *tab = this->addPage(page);
+            page->setTab(tab);
+
+            draggedSplit->setParent(page);
+            page->insertSplit(draggedSplit);
+        });
 
     this->lockNotebookLayoutAction_ = new QAction("Lock Tab Layout", this);
 
@@ -674,6 +699,8 @@ void Notebook::setShowAddButton(bool value)
     this->showAddButton_ = value;
 
     this->addButton_->setHidden(!value);
+
+    this->refresh();
 }
 
 void Notebook::resizeAddButton()
@@ -1158,11 +1185,6 @@ void Notebook::addNotebookActionsToMenu(QMenu *menu)
     menu->addAction(this->toggleTopMostAction_);
 }
 
-NotebookButton *Notebook::getAddButton()
-{
-    return this->addButton_;
-}
-
 NotebookTab *Notebook::getTabFromPage(QWidget *page)
 {
     for (auto &it : this->items_)
@@ -1223,7 +1245,7 @@ bool Notebook::shouldShowTab(const NotebookTab *tab) const
 SplitNotebook::SplitNotebook(Window *parent)
     : Notebook(parent)
 {
-    this->connect(this->getAddButton(), &NotebookButton::leftClicked, [this]() {
+    QObject::connect(this->addButton_, &Button::leftClicked, [this]() {
         QTimer::singleShot(80, this, [this] {
             this->addPage(true);
         });
@@ -1297,7 +1319,7 @@ SplitNotebook::SplitNotebook(Window *parent)
     getSettings()->tabVisibility.connect(
         [this](int val, auto) {
             auto visibility = NotebookTabVisibility(val);
-            // Set the correct TabVisibilityFilter for the given visiblity setting.
+            // Set the correct TabVisibilityFilter for the given visibility setting.
             // Note that selected tabs are always shown regardless of what the tab
             // filter returns, so no need to include `tab->isSelected()` in the
             // predicate. See Notebook::setTabVisibilityFilter.
@@ -1407,7 +1429,12 @@ void SplitNotebook::showEvent(QShowEvent * /*event*/)
 void SplitNotebook::addCustomButtons()
 {
     // settings
-    auto *settingsBtn = this->addCustomButton<NotebookButton>();
+    auto *settingsBtn = this->addCustomButton<SvgButton>(SvgButton::Src{
+        .dark = ":/buttons/settings-darkMode.svg",
+        .light = ":/buttons/settings-lightMode.svg",
+    });
+
+    settingsBtn->setPadding({0, 0});
 
     // This is to ensure you can't lock yourself out of the settings
     if (getApp()->getArgs().safeMode)
@@ -1420,29 +1447,44 @@ void SplitNotebook::addCustomButtons()
             !getSettings()->hidePreferencesButton.getValue());
 
         getSettings()->hidePreferencesButton.connect(
-            [settingsBtn](bool hide, auto) {
-                settingsBtn->setVisible(!hide);
+            [this, settingsBtn](bool hide) {
+                auto oldVisibility = settingsBtn->isVisible();
+                auto newVisibility = !hide;
+                settingsBtn->setVisible(newVisibility);
+                if (oldVisibility != newVisibility)
+                {
+                    this->performLayout();
+                }
             },
-            this->signalHolder_);
+            this->signalHolder_, false);
     }
 
-    settingsBtn->setIcon(NotebookButton::Settings);
-
-    QObject::connect(settingsBtn, &NotebookButton::leftClicked, [this] {
+    QObject::connect(settingsBtn, &Button::leftClicked, [this] {
         getApp()->getWindows()->showSettingsDialog(this);
     });
 
     // account
-    auto *userBtn = this->addCustomButton<NotebookButton>();
+    auto *userBtn = this->addCustomButton<SvgButton>(SvgButton::Src{
+        .dark = ":/buttons/account-darkMode.svg",
+        .light = ":/buttons/account-lightMode.svg",
+    });
+
+    userBtn->setPadding({0, 0});
+
     userBtn->setVisible(!getSettings()->hideUserButton.getValue());
     getSettings()->hideUserButton.connect(
-        [userBtn](bool hide, auto) {
-            userBtn->setVisible(!hide);
+        [this, userBtn](bool hide) {
+            auto oldVisibility = userBtn->isVisible();
+            auto newVisibility = !hide;
+            userBtn->setVisible(newVisibility);
+            if (oldVisibility != newVisibility)
+            {
+                this->performLayout();
+            }
         },
-        this->signalHolder_);
+        this->signalHolder_, false);
 
-    userBtn->setIcon(NotebookButton::User);
-    QObject::connect(userBtn, &NotebookButton::leftClicked, [this, userBtn] {
+    QObject::connect(userBtn, &Button::leftClicked, [this, userBtn] {
         getApp()->getWindows()->showAccountSelectPopup(
             this->mapToGlobal(userBtn->rect().bottomRight()));
     });
@@ -1482,8 +1524,16 @@ void SplitNotebook::updateStreamerModeIcon()
         this->streamerModeIcon_->setPixmap(
             getResources().buttons.streamerModeEnabledDark);
     }
-    this->streamerModeIcon_->setVisible(
-        getApp()->getStreamerMode()->isEnabled());
+
+    auto oldVisibility = this->streamerModeIcon_->isVisible();
+    auto newVisibility = getApp()->getStreamerMode()->isEnabled();
+
+    this->streamerModeIcon_->setVisible(newVisibility);
+
+    if (oldVisibility != newVisibility)
+    {
+        this->performLayout();
+    }
 }
 
 void SplitNotebook::themeChangedEvent()

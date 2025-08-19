@@ -34,6 +34,7 @@
 #include "providers/twitch/TwitchIrc.hpp"
 #include "providers/twitch/TwitchIrcServer.hpp"
 #include "providers/twitch/TwitchUsers.hpp"
+#include "providers/twitch/UserColor.hpp"
 #include "singletons/Emotes.hpp"
 #include "singletons/Fonts.hpp"
 #include "singletons/Resources.hpp"
@@ -87,21 +88,64 @@ const QSet<QString> zeroWidthEmotes{
     "ReinDeer", "CandyCane", "cvMask",   "cvHazmat",
 };
 
-bool isAbnormalNonce(const QString &nonce)
+Message::ClientDetectionStatus performClientDetection(const QString &nonce)
 {
-    // matches /[0-9a-f]{32}/
-    if (nonce.size() != 32)
+    using enum Message::ClientDetectionStatus;
+    if (nonce.size() == 32)
     {
-        return true;
+        // matches /[0-9a-f]{32}/
+        bool webchat = std::ranges::all_of(nonce, [](const QChar &c) {
+            return ('0' <= c && c <= '9') || ('a' <= c && c <= 'f');
+        });
+        return webchat ? Webchat : Unknown;
     }
-    for (const auto letter : nonce)
+    // UUID
+    if (nonce.size() == 36)
     {
-        if (('0' > letter || letter > '9') && ('a' > letter || letter > 'f'))
+        if (nonce.at(8) != '-' || nonce.at(13) != '-' || nonce.at(18) != '-' ||
+            nonce.at(23) != '-' || nonce.at(14) != '4')
         {
-            return true;
+            return Abnormal;
         }
+        bool upper = false;
+        bool lowerSpotted = false;
+
+        for (const QChar &c : nonce)
+        {
+            if ('A' <= c && c <= 'F')
+            {
+                upper = true;
+                // no case mixing
+                if (lowerSpotted)
+                {
+                    return Abnormal;
+                }
+            }
+            else if ('a' <= c && c <= 'f')
+            {
+                if (upper)
+                {
+                    return Abnormal;
+                }
+                lowerSpotted = true;
+            }
+            else if (!('0' <= c && c <= '9') && c != '-')
+            {
+                return Abnormal;
+            }
+        }
+        if (upper)
+        {
+            return IOS;
+        }
+        if (lowerSpotted)
+        {
+            return Android;
+        }
+        // numbers only?
+        return Abnormal;
     }
-    return false;
+    return Abnormal;
 }
 
 struct HypeChatPaidLevel {
@@ -620,8 +664,12 @@ MessagePtrMut MessageBuilder::makeSystemMessageWithUser(
 
 MessagePtrMut MessageBuilder::makeSubgiftMessage(const QString &text,
                                                  const QVariantMap &tags,
-                                                 const QTime &time)
+                                                 const QTime &time,
+                                                 TwitchChannel *channel)
 {
+    const auto *userDataController = getApp()->getUserData();
+    assert(userDataController != nullptr);
+
     MessageBuilder builder;
     builder.emplace<TimestampElement>(time);
 
@@ -631,11 +679,16 @@ MessagePtrMut MessageBuilder::makeSubgiftMessage(const QString &text,
     {
         gifterDisplayName = gifterLogin;
     }
-    MessageColor gifterColor = MessageColor::System;
-    if (auto colorTag = tags.value("color").value<QColor>(); colorTag.isValid())
-    {
-        gifterColor = MessageColor(colorTag);
-    }
+
+    auto gifterColor =
+        twitch::getUserColor({
+                                 .userLogin = gifterLogin,
+                                 .userID = tags.value("user-id").toString(),
+                                 .userDataController = userDataController,
+                                 .channelChatters = channel,
+                                 .color = tags.value("color").value<QColor>(),
+                             })
+            .value_or(MessageColor::System);
 
     auto recipientLogin =
         tags.value("msg-param-recipient-user-name").toString();
@@ -649,6 +702,17 @@ MessagePtrMut MessageBuilder::makeSubgiftMessage(const QString &text,
     {
         recipientDisplayName = recipientLogin;
     }
+
+    auto recipientColor =
+        twitch::getUserColor(
+            {
+                .userLogin = recipientLogin,
+                .userID = tags.value("msg-param-recipient-id").toString(),
+
+                .userDataController = userDataController,
+                .channelChatters = channel,
+            })
+            .value_or(MessageColor::System);
 
     const auto textFragments = text.split(SPACE_REGEX, Qt::SkipEmptyParts);
     for (const auto &word : textFragments)
@@ -665,8 +729,7 @@ MessagePtrMut MessageBuilder::makeSubgiftMessage(const QString &text,
         {
             builder
                 .emplace<MentionElement>(recipientDisplayName, recipientLogin,
-                                         MessageColor::System,
-                                         MessageColor::System)
+                                         MessageColor::System, recipientColor)
                 ->setTrailingSpace(false);
             builder.emplace<TextElement>(u"!"_s, MessageElementFlag::Text,
                                          MessageColor::System);
@@ -1616,8 +1679,9 @@ std::pair<MessagePtrMut, HighlightAlert> MessageBuilder::makeIrcMessage(
     if (tags.contains("client-nonce") && getSettings()->nonceFuckeryEnabled)
     {
         QString nonceString = tags["client-nonce"].toString();
-        auto isAbnormal = isAbnormalNonce(nonceString);
-        if (isAbnormal && getSettings()->abnormalNonceDetection)
+        auto status = performClientDetection(tags["client-nonce"].toString());
+        if (status == Message::ClientDetectionStatus::Abnormal &&
+            getSettings()->abnormalNonceDetection)
         {
             auto link = linkparser::parse(nonceString);
 
@@ -1639,10 +1703,7 @@ std::pair<MessagePtrMut, HighlightAlert> MessageBuilder::makeIrcMessage(
             builder.emplace<LinebreakElement>(
                 MessageElementFlag::ChannelPointReward);
         }
-        else if (!isAbnormal)
-        {
-            builder->flags.set(MessageFlag::WebchatDetected);
-        }
+        builder.message().clientDetection = status;
     }
 
     if (tags.contains("rm-deleted"))

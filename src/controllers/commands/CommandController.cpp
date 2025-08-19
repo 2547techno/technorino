@@ -438,6 +438,11 @@ CommandController::CommandController(const Paths &paths)
     this->registerCommand("/followers", &commands::followers);
     this->registerCommand("/followersoff", &commands::followersOff);
 
+    this->registerCommand("/uniquechat", &commands::uniqueChat);
+    this->registerCommand("/r9kbeta", &commands::uniqueChat);
+    this->registerCommand("/uniquechatoff", &commands::uniqueChatOff);
+    this->registerCommand("/r9kbetaoff", &commands::uniqueChatOff);
+
     this->registerCommand(
         "/founders", [](const QStringList &words, auto channel) -> QString {
             auto twitchChannel = dynamic_cast<TwitchChannel *>(channel.get());
@@ -515,6 +520,17 @@ CommandController::CommandController(const Paths &paths)
 
     this->registerCommand("/debug-force-image-unload",
                           &commands::forceImageUnload);
+
+    this->registerCommand("/debug-force-layout-channel-views",
+                          &commands::forceLayoutChannelViews);
+
+    this->registerCommand("/debug-increment-image-generation",
+                          &commands::incrementImageGeneration);
+
+    this->registerCommand("/debug-invalidate-buffers",
+                          &commands::invalidateBuffers);
+
+    this->registerCommand("/debug-eventsub", &commands::eventsub);
 
     this->registerCommand("/debug-test", &commands::debugTest);
 
