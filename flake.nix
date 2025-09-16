@@ -16,7 +16,7 @@
         "x86_64-linux"
         "aarch64-linux"
       ];
-      default =
+      mkDefault =
         path:
         nixpkgs.lib.genAttrs supportedSystems (system: {
           default = import path { inherit (nixpkgs.legacyPackages.${system}) pkgs; };
@@ -24,7 +24,7 @@
     in
 
     {
-      packages = default ./.;
-      devShells = default ./shell.nix;
+      packages = mkDefault ./.;
+      devShells = mkDefault ./shell.nix;
     };
 }
