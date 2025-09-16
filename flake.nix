@@ -6,14 +6,25 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
   };
 
-  outputs = {
-    self,
-    nixpkgs,
-  }: let
-    system = "x86_64-linux";
-    pkgs = nixpkgs.legacyPackages.${system};
-  in {
-    packages.${system}.default = import ./. {inherit pkgs;};
-    devShells.${system}.default = import ./shell.nix {inherit pkgs;};
-  };
+  outputs =
+    {
+      self,
+      nixpkgs,
+    }:
+    let
+      supportedSystems = [
+        "x86_64-linux"
+        "aarch64-linux"
+      ];
+      default =
+        path:
+        nixpkgs.lib.genAttrs supportedSystems (system: {
+          default = import path { inherit (nixpkgs.legacyPackages.${system}) pkgs; };
+        });
+    in
+
+    {
+      packages = default ./.;
+      devShells = default ./shell.nix;
+    };
 }
