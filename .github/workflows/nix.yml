@@ -1,0 +1,48 @@
+name: "nix"
+
+on:
+  push:
+    branches:
+      - technorino
+
+concurrency:
+  group: nix-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NIX_PKGS_COMMIT: 88cef159e47c0dc56f151593e044453a39a6e547
+  ATTIC_CACHE: ${{ vars.ATTIC_CACHE }}
+  ATTIC_ENDPOINT: ${{ vars.ATTIC_ENDPOINT }}
+  ATTIC_TOKEN: ${{ secrets.ATTIC_TOKEN }}
+  CACHIX_CACHE: ${{ vars.CACHIX_CACHE }}
+  CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+jobs:
+  nix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Init Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          nix_path: nixpkgs=https://github.com/NixOS/nixpkgs/archive/${{ env.NIX_PKGS_COMMIT }}.tar.gz
+
+      - name: Build
+        run: nix build
+
+      - name: Install Attic Client
+        run: nix profile install --inputs-from https://github.com/NixOS/nixpkgs/archive/$NIX_PKGS_COMMIT.tar.gz nixpkgs#attic-client
+
+      - name: Attic Login
+        run: attic login $ATTIC_CACHE $ATTIC_ENDPOINT $ATTIC_TOKEN
+
+      - name: Attic Push
+        run: attic push $ATTIC_CACHE ./result
+
+      - name: Install Cachix Client
+        run: nix profile install --inputs-from https://github.com/NixOS/nixpkgs/archive/$NIX_PKGS_COMMIT.tar.gz nixpkgs#cachix
+
+      - name: Cachix Push
+        run: cachix push $CACHIX_CACHE ./result
