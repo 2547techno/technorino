@@ -2748,6 +2748,25 @@ void ChannelView::addMessageContextMenuItems(QMenu *menu,
             }
         });
     }
+
+    const auto msg = layout->getMessage();
+    if (!msg->channelName.isEmpty())
+    {
+        menu->addAction(
+            "Open in &logs",
+            [messageID = msg->id, channelName = msg->channelName,
+             dateTime = QDateTime(msg->serverReceivedTime).toUTC()] {
+                QString logsDate = dateTime.toString("yyyy-MM-dd");
+                QString logsJumpHash =
+                    messageID.isEmpty()
+                        ? dateTime.toString("yyyy-MM-ddTHH:mm:ssZ")
+                        : messageID;
+
+                QDesktopServices::openUrl(QUrl(u"https://tv.supa.sh/logs?c=" %
+                                               channelName % u"&d=" % logsDate %
+                                               u"#" % logsJumpHash));
+            });
+    }
 }
 
 void ChannelView::addTwitchLinkContextMenuItems(
