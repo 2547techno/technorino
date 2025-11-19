@@ -17,9 +17,12 @@
         "aarch64-linux"
       ];
 
-      mkPackages = nixpkgs.lib.genAttrs supportedSystems (system: {
-        default = import ./. { inherit (nixpkgs.legacyPackages.${system}) pkgs; };
-        package = import ./package.nix { inherit (nixpkgs.legacyPackages.${system}) pkgs; };
+      mkPackages = nixpkgs.lib.genAttrs supportedSystems (system: rec {
+        default = import ./. {
+          inherit (nixpkgs.legacyPackages.${system}) pkgs;
+          gitHash = self.rev or self.dirtyRev or "";
+        };
+        package = default;
       });
 
       mkShells = nixpkgs.lib.genAttrs supportedSystems (system: {
