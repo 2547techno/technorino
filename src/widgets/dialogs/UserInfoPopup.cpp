@@ -372,9 +372,9 @@ UserInfoPopup::UserInfoPopup(bool closeAutomatically, Split *split)
                         menu->addAction(
                             "Open logs site in browser", [loginName, this] {
                                 QDesktopServices::openUrl(
-                                    QUrl("https://logs.zonian.dev/rdr/" +
-                                         this->underlyingChannel_->getName() +
-                                         "/" + loginName));
+                                    QUrl(u"https://tv.supa.sh/logs?c=" %
+                                         this->underlyingChannel_->getName() %
+                                         u"&u=" % loginName));
                             });
                     }
                     break;
