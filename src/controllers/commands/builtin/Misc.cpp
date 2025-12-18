@@ -744,7 +744,7 @@ QString openLogs(const CommandContext &ctx)
     }
 
     QString urlStr =
-        "https://logs.zonian.dev/rdr/" + channelName + "/" + userName;
+        "https://tv.supa.sh/logs?c=" + channelName + "&u=" + userName;
     QUrl url = QUrl::fromUserInput(urlStr);
 
     bool res = false;
