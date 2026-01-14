@@ -370,15 +370,6 @@ UserInfoPopup::UserInfoPopup(bool closeAutomatically, Split *split)
                             });
                         menu->popup(QCursor::pos());
                         menu->raise();
-
-                        // Logs site
-                        menu->addAction(
-                            "Open logs site in browser", [loginName, this] {
-                                QDesktopServices::openUrl(
-                                    QUrl(u"https://tv.supa.sh/logs?c=" %
-                                         this->underlyingChannel_->getName() %
-                                         u"&u=" % loginName));
-                            });
                     }
                     break;
 
