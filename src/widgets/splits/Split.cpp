@@ -13,6 +13,7 @@
 #include "controllers/hotkeys/HotkeyController.hpp"
 #include "controllers/notifications/NotificationController.hpp"
 #include "providers/twitch/TwitchAccount.hpp"
+#include "providers/twitch/TwitchBadges.hpp"
 #include "providers/twitch/TwitchChannel.hpp"
 #include "providers/twitch/TwitchIrcServer.hpp"
 #include "singletons/Fonts.hpp"
@@ -515,6 +516,8 @@ void Split::addShortcuts()
              {
                  this->header_->reloadSubscriberEmotes();
              }
+             getApp()->getTwitchBadges()->loadTwitchBadges();
+
              return "";
          }},
         {"setModerationMode",
