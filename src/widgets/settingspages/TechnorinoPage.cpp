@@ -140,6 +140,17 @@ void TechnorinoPage::initLayout(GeneralPageView &layout)
     SettingWidget::checkbox("\"7TV User\" usercard button", s.stvUsercardButton)
         ->setTooltip("Add \"7TV User\" button to usercard directly")
         ->addTo(layout);
+    SettingWidget::checkbox("Watching tab live sound", s.watchingTabLiveSound)
+        ->setTooltip("Watching tab live sound")
+        ->addTo(layout);
+    SettingWidget::checkbox("Auto detach watching tab (~10s timeout)",
+                            s.autoDetachLiveTab)
+        ->setTooltip("Auto detach watching tab (~10s timeout)")
+        ->addTo(layout);
+    SettingWidget::checkbox("Markdown parsing (Experimental)",
+                            s.markdownParsing)
+        ->setTooltip("Markdown parsing (Experimental)")
+        ->addTo(layout);
 
     layout.addTitle("Client detection");
     SettingWidget::checkbox("Client detection highlights. ",
@@ -154,17 +165,6 @@ void TechnorinoPage::initLayout(GeneralPageView &layout)
     SettingWidget::colorButton("iOS color", getSettings()->iosColor)
         ->addTo(layout);
 
-    SettingWidget::checkbox("Watching tab live sound", s.watchingTabLiveSound)
-        ->setTooltip("Watching tab live sound")
-        ->addTo(layout);
-    SettingWidget::checkbox("Auto detach watching tab (~10s timeout)",
-                            s.autoDetachLiveTab)
-        ->setTooltip("Auto detach watching tab (~10s timeout)")
-        ->addTo(layout);
-    SettingWidget::checkbox("Markdown parsing (Experimental)",
-                            s.markdownParsing)
-        ->setTooltip("Markdown parsing (Experimental)")
-        ->addTo(layout);
     layout.addStretch();
 
     // invisible element for width
