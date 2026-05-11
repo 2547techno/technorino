@@ -257,6 +257,11 @@ std::shared_ptr<TwitchAccount> TwitchAccountManager::getCurrent()
     return this->currentUser_;
 }
 
+std::shared_ptr<TwitchAccount> TwitchAccountManager::getAnon()
+{
+    return this->anonymousUser_;
+}
+
 std::vector<QString> TwitchAccountManager::getUsernames() const
 {
     std::vector<QString> userNames;

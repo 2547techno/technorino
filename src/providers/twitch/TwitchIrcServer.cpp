@@ -264,10 +264,18 @@ void TwitchIrcServer::aboutToQuit()
 }
 
 void TwitchIrcServer::initializeConnection(IrcConnection *connection,
-                                           ConnectionType type)
+                                           ConnectionType type, bool forceAnon)
 {
-    std::shared_ptr<TwitchAccount> account =
-        getApp()->getAccounts()->twitch.getCurrent();
+    std::shared_ptr<TwitchAccount> account;
+
+    if (forceAnon)
+    {
+        account = getApp()->getAccounts()->twitch.getAnon();
+    }
+    else
+    {
+        account = getApp()->getAccounts()->twitch.getCurrent();
+    }
 
     qCDebug(chatterinoTwitch) << "logging in as" << account->getUserName();
 
@@ -1181,7 +1189,8 @@ void TwitchIrcServer::connect()
     this->initializeConnection(this->writeConnection_.get(),
                                ConnectionType::Write);
     this->initializeConnection(this->readConnection_.get(),
-                               ConnectionType::Read);
+                               ConnectionType::Read,
+                               getSettings()->anonRead.getValue());
 }
 
 void TwitchIrcServer::disconnect()

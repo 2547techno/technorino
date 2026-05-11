@@ -1084,8 +1084,11 @@ void IrcMessageHandler::handleJoinMessage(Communi::IrcMessage *message)
         return;
     }
 
-    if (message->nick() ==
-        getApp()->getAccounts()->twitch.getCurrent()->getUserName())
+    if ((getSettings()->anonRead.getValue() &&
+         message->nick() ==
+             getApp()->getAccounts()->twitch.getAnon()->getUserName()) ||
+        message->nick() ==
+            getApp()->getAccounts()->twitch.getCurrent()->getUserName())
     {
         twitchChannel->addSystemMessage("joined channel");
         twitchChannel->joined.invoke();
@@ -1117,7 +1120,8 @@ void IrcMessageHandler::handlePartMessage(Communi::IrcMessage *message)
                                      twitchChannel->isBroadcaster());
     }
 
-    if (message->nick() == selfAccountName)
+    if (message->nick() == selfAccountName &&
+        !getSettings()->anonRead.getValue())
     {
         channel->addMessage(generateBannedMessage(false),
                             MessageContext::Original);

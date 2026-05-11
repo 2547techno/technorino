@@ -140,7 +140,11 @@ void TechnorinoPage::initLayout(GeneralPageView &layout)
     SettingWidget::checkbox("Markdown parsing (Experimental)",
                             s.markdownParsing)
         ->addTo(layout);
-
+    SettingWidget::checkbox(
+        "Anon read connection (requires restart) (Experimental)", s.anonRead)
+        ->setTooltip("Use an anon connection for the read connection. NOTE: "
+                     "This will NOT guarantee exclusion from viewerlists.")
+        ->addTo(layout);
     layout.addTitle("Client detection");
     SettingWidget::checkbox("Client detection highlights. ",
                             s.normalNonceDetection)

@@ -45,6 +45,7 @@ public:
     // Returns the current twitchUsers, or the anonymous user if we're not
     // currently logged in
     std::shared_ptr<TwitchAccount> getCurrent();
+    std::shared_ptr<TwitchAccount> getAnon();
 
     std::vector<QString> getUsernames() const;
 
