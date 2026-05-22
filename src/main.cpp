@@ -34,6 +34,7 @@
 #    include <shobjidl_core.h>
 #endif
 
+#include <iostream>
 #include <memory>
 
 #ifdef CHATTERINO_WITH_AVIF_PLUGIN

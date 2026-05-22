@@ -55,7 +55,6 @@
 #include "util/Variant.hpp"
 #include "widgets/Window.hpp"
 
-#include <boost/variant.hpp>
 #include <boost/variant/detail/apply_visitor_binary.hpp>
 #include <QApplication>
 #include <QColor>
