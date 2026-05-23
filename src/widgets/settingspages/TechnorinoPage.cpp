@@ -151,11 +151,11 @@ void TechnorinoPage::initLayout(GeneralPageView &layout)
         ->setTooltip("Highlights messages sent from specified clients "
                      "using the specified color below.")
         ->addTo(layout);
-    SettingWidget::colorButton("Webchat color", getSettings()->webchatColor)
-        ->addTo(layout);
-    SettingWidget::colorButton("Android color", getSettings()->androidColor)
-        ->addTo(layout);
-    SettingWidget::colorButton("iOS color", getSettings()->iosColor)
+    SettingWidget::colorButton("Webchat color", s.webchatColor)->addTo(layout);
+    SettingWidget::colorButton("Android color", s.androidColor)->addTo(layout);
+    SettingWidget::colorButton("iOS color", s.iosColor)->addTo(layout);
+    SettingWidget::checkbox("Client detection icons. ", s.clientDetectionIcon)
+        ->setTooltip("Display client icon beside message")
         ->addTo(layout);
 
     layout.addStretch();

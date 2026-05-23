@@ -86,6 +86,7 @@ constexpr size_t TOOLTIP_EMOTE_ENTRIES_LIMIT = 7;
 using namespace chatterino;
 
 constexpr int SCROLLBAR_PADDING = 8;
+constexpr int PLATFORM_ICON_PADDING = 24;
 
 void addEmoteContextMenuItems(QMenu *menu, const Emote &emote, QStringView kind)
 {
@@ -3438,12 +3439,14 @@ bool ChannelView::tryGetMessageAt(QPointF p,
 
 int ChannelView::getLayoutWidth() const
 {
+    float base = this->width() - (PLATFORM_ICON_PADDING * this->scale());
+
     if (this->scrollBar_->isVisible())
     {
-        return int(this->width() - SCROLLBAR_PADDING * this->scale());
+        return int(base - (SCROLLBAR_PADDING * this->scale()));
     }
 
-    return this->width();
+    return int(base);
 }
 
 void ChannelView::selectWholeMessage(MessageLayout *layout, int &messageIndex)
