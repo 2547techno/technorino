@@ -114,6 +114,19 @@ void TechnorinoPage::initLayout(GeneralPageView &layout)
     SettingWidget::checkbox("Convert #text to channel links", s.channelLinks)
         ->addTo(layout);
 
+    layout.addTitle("Client detection");
+    SettingWidget::checkbox("Client detection highlights. ",
+                            s.normalNonceDetection)
+        ->setTooltip("Highlights messages sent from specified clients "
+                     "using the specified color below.")
+        ->addTo(layout);
+    SettingWidget::colorButton("Webchat color", s.webchatColor)->addTo(layout);
+    SettingWidget::colorButton("Android color", s.androidColor)->addTo(layout);
+    SettingWidget::colorButton("iOS color", s.iosColor)->addTo(layout);
+    SettingWidget::checkbox("Client detection icons. ", s.clientDetectionIcon)
+        ->setTooltip("Displays client icons beside messages")
+        ->addTo(layout);
+
     layout.addTitle("Miscellaneous");
     SettingWidget::checkbox("Fake messages as webchat", s.fakeWebChat)
         ->addTo(layout);
@@ -144,18 +157,6 @@ void TechnorinoPage::initLayout(GeneralPageView &layout)
         "Anon read connection (requires restart) (Experimental)", s.anonRead)
         ->setTooltip("Use an anon connection for the read connection. NOTE: "
                      "This will NOT guarantee exclusion from viewerlists.")
-        ->addTo(layout);
-    layout.addTitle("Client detection");
-    SettingWidget::checkbox("Client detection highlights. ",
-                            s.normalNonceDetection)
-        ->setTooltip("Highlights messages sent from specified clients "
-                     "using the specified color below.")
-        ->addTo(layout);
-    SettingWidget::colorButton("Webchat color", s.webchatColor)->addTo(layout);
-    SettingWidget::colorButton("Android color", s.androidColor)->addTo(layout);
-    SettingWidget::colorButton("iOS color", s.iosColor)->addTo(layout);
-    SettingWidget::checkbox("Client detection icons. ", s.clientDetectionIcon)
-        ->setTooltip("Display client icon beside message")
         ->addTo(layout);
 
     layout.addStretch();
