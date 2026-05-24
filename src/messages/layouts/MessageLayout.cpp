@@ -476,26 +476,45 @@ void MessageLayout::updateBuffer(QPixmap *buffer,
     }
     else if (getSettings()->normalNonceDetection)
     {
+        switch (this->message_->clientDetection)
+        {
+            using enum Message::ClientDetectionStatus;
+            case Webchat:
+                backgroundColor = blendColors(
+                    backgroundColor, QColor(getSettings()->webchatColor));
+                break;
+
+            case Android:
+                backgroundColor = blendColors(
+                    backgroundColor, QColor(getSettings()->androidColor));
+                break;
+
+            case IOS:
+                backgroundColor = blendColors(backgroundColor,
+                                              QColor(getSettings()->iosColor));
+                break;
+            case Unknown:
+            case Abnormal:
+                break;
+        }
+    }
+
+    if (getSettings()->clientDetectionIcon)
+    {
         auto resources = getResources();
 
         switch (this->message_->clientDetection)
         {
             using enum Message::ClientDetectionStatus;
             case Webchat: {
-                backgroundColor = blendColors(
-                    backgroundColor, QColor(getSettings()->webchatColor));
                 clientDetectionIcon = resources.chat.twitch;
                 break;
             }
             case Android: {
-                backgroundColor = blendColors(
-                    backgroundColor, QColor(getSettings()->androidColor));
                 clientDetectionIcon = resources.chat.android;
                 break;
             }
             case IOS: {
-                backgroundColor = blendColors(backgroundColor,
-                                              QColor(getSettings()->iosColor));
                 clientDetectionIcon = resources.chat.ios;
                 break;
             }
