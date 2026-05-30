@@ -114,13 +114,18 @@ Split::Split(QWidget *parent)
 
     if (getSettings()->showTextInputPlaceholder)
     {
-        this->bSignals_.emplace_back(
-            getApp()->getAccounts()->twitch.currentUserChanged.connect([this] {
+        // update placeholder text on Twitch account change and channel change
+        this->signalHolder_.managedConnect(
+            getApp()->getAccounts()->twitch.currentUserChanged, [this] {
                 this->updateInputPlaceholder();
-            }));
-        this->signalHolder_.managedConnect(channelChanged, [this] {
+            });
+        this->signalHolder_.managedConnect(this->channelChanged, [this] {
             this->updateInputPlaceholder();
         });
+        this->signalHolder_.managedConnect(
+            getApp()->getAccounts()->kick.currentUserChanged, [this] {
+                this->updateInputPlaceholder();
+            });
         this->signalHolder_.managedConnect(
             getApp()->getAccounts()->kick.currentUserChanged, [this] {
                 this->updateInputPlaceholder();
