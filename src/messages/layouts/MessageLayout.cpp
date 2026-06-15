@@ -474,6 +474,12 @@ void MessageLayout::updateBuffer(QPixmap *buffer,
     {
         backgroundColor = QColor("#4A273D");
     }
+    else if (this->message_->flags.has(MessageFlag::UncategorizedNotification))
+    {
+        // TODO: Give this a better/its own color :-)
+        backgroundColor = blendColors(
+            backgroundColor, *ctx.colorProvider.color(ColorType::Subscription));
+    }
     else if (getSettings()->normalNonceDetection)
     {
         switch (this->message_->clientDetection)
