@@ -30,7 +30,7 @@ jobs:
       # FIXME: this only needed for the nightly upload step (should split to another job)
       contents: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0 # allows for tags access
 
