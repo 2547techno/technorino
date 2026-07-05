@@ -118,57 +118,53 @@ IndirectChannel SplitDescriptor::decodeChannel() const
 {
     assertInGuiThread();
 
-    if (this->type_ == "twitch")
+    auto type = qmagicenum::enumCast<Channel::Type>(this->type_);
+    if (!type)
     {
-        return getApp()->getTwitch()->getOrAddChannel(this->channelName_);
+        return Channel::getEmpty();
     }
-    else if (this->type_ == "mentions")
+
+    switch (*type)
     {
-        return getApp()->getTwitch()->getMentionsChannel();
-    }
-    else if (this->type_ == "watching")
-    {
-        return getApp()->getTwitch()->getWatchingChannel();
-    }
-    else if (this->type_ == "whispers")
-    {
-        return getApp()->getTwitch()->getWhispersChannel();
-    }
-    else if (this->type_ == "live")
-    {
-        return getApp()->getTwitch()->getLiveChannel();
-    }
-    else if (this->type_ == "automod")
-    {
-        return getApp()->getTwitch()->getAutomodChannel();
-    }
-    else if (this->type_ == "misc")
-    {
-        return getApp()->getTwitch()->getChannelOrEmpty(this->channelName_);
-    }
-    else if (this->type_ == "kick")
-    {
-        return getApp()->getKickChatServer()->getOrCreate(
-            this->channelName_, KickChannel::UserInit{
-                                    .roomID = this->kickRoomID,
-                                    .userID = this->kickUserID,
-                                    .channelID = this->kickChannelID,
-                                });
-    }
-    else if (this->type_ == u"multi")
-    {
-        QVarLengthArray<MultiChannel::Spec, 4> specs;
-        for (const auto &child : this->children)
-        {
-            auto spec = MultiChannel::Spec::fromDescriptor(child);
-            if (spec)
+        case Channel::Type::Twitch:
+            return getApp()->getTwitch()->getOrAddChannel(this->channelName_);
+        case Channel::Type::TwitchMentions:
+            return getApp()->getTwitch()->getMentionsChannel();
+        case Channel::Type::TwitchWatching:
+            return getApp()->getTwitch()->getWatchingChannel();
+        case Channel::Type::TwitchWhispers:
+            return getApp()->getTwitch()->getWhispersChannel();
+        case Channel::Type::TwitchLive:
+            return getApp()->getTwitch()->getLiveChannel();
+        case Channel::Type::TwitchAutomod:
+            return getApp()->getTwitch()->getAutomodChannel();
+        case Channel::Type::Misc:
+            return getApp()->getTwitch()->getChannelOrEmpty(this->channelName_);
+        case Channel::Type::Kick:
+            return getApp()->getKickChatServer()->getOrCreate(
+                this->channelName_, KickChannel::UserInit{
+                                        .roomID = this->kickRoomID,
+                                        .userID = this->kickUserID,
+                                        .channelID = this->kickChannelID,
+                                    });
+        case Channel::Type::Multi: {
+            QVarLengthArray<MultiChannel::Spec, 4> specs;
+            for (const auto &child : this->children)
             {
-                specs.emplace_back(*std::move(spec));
+                auto spec = MultiChannel::Spec::fromDescriptor(child);
+                if (spec)
+                {
+                    specs.emplace_back(*std::move(spec));
+                }
             }
+            auto ptr = std::make_shared<MultiChannel>(specs, this->mcIndicator);
+            ptr->setActiveChannelIndex(this->mcIndex);
+            return {std::move(ptr)};
         }
-        auto ptr = std::make_shared<MultiChannel>(specs, this->mcIndicator);
-        ptr->setActiveChannelIndex(this->mcIndex);
-        return {std::move(ptr)};
+        case Channel::Type::None:
+        case Channel::Type::Direct:
+        case Channel::Type::TwitchEnd:
+            break;  // FIXME: Remove these (#5703)
     }
 
     return Channel::getEmpty();

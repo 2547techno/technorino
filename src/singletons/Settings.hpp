@@ -7,7 +7,6 @@
 #include "common/ChatterinoSetting.hpp"
 #include "common/enums/MessageOverflow.hpp"
 #include "common/LastMessageLineStyle.hpp"
-#include "common/Modes.hpp"
 #include "common/SignalVector.hpp"
 #include "common/StreamerModeSetting.hpp"
 #include "common/ThumbnailPreviewMode.hpp"
@@ -41,6 +40,7 @@ using TimeoutButton = std::pair<QString, int>;
 namespace chatterino {
 
 class Args;
+class Modes;
 
 #ifdef Q_OS_WIN32
 #    define DEFAULT_FONT_FAMILY "Segoe UI"
@@ -133,7 +133,8 @@ class Settings
     bool disableSaving;
 
 public:
-    Settings(const Args &args, const QString &settingsDirectory,
+    Settings(const Modes &modes, const Args &args,
+             const QString &settingsDirectory,
              const SettingsArgs &settingsArgs = {});
     ~Settings();
 
@@ -466,6 +467,15 @@ public:
 
     BoolSetting allowAvifImages = {"/emotes/allowAvif", true};
 
+    ChatterinoSetting<QStringList> favouriteEmotes = {
+        "/emotes/favouriteEmotes",
+        {},
+    };
+    ChatterinoSetting<QStringList> favouriteEmojis = {
+        "/emotes/favouriteEmojis",
+        {},
+    };
+
     /// Links
     BoolSetting linksDoubleClickOnly = {"/links/doubleClickToOpen", false};
     BoolSetting linkInfoTooltip = {"/links/linkInfoTooltip", false};
@@ -709,12 +719,7 @@ public:
         "/notifications/suppressInitialLive", false};
 
     BoolSetting notificationToast = {"/notifications/enableToast", false};
-    BoolSetting createShortcutForToasts = {
-        "/notifications/createShortcutForToasts",
-        (Modes::instance().isPortable || Modes::instance().isExternallyPackaged)
-            ? false
-            : true,
-    };
+    BoolSetting createShortcutForToasts;  // initialized in ctor
     IntSetting openFromToast = {"/notifications/openFromToast",
                                 static_cast<int>(ToastReaction::OpenInBrowser)};
 
@@ -762,9 +767,6 @@ public:
     QStringSetting iosColor = {"/misc/iosColor", "#3FFF69B4"};
     BoolSetting clientDetectionIcon = {"/misc/clientDetectionIcon", false};
     BoolSetting fakeWebChat = {"/misc/fakeWebChat", false};
-#ifdef Q_OS_LINUX
-    BoolSetting useKeyring = {"/misc/useKeyring", true};
-#endif
 
     IntSetting startUpNotification = {"/misc/startUpNotification", 0};
     QStringSetting currentVersion = {"/misc/currentVersion", ""};

@@ -1317,6 +1317,21 @@ bool ChannelView::hasSourceChannel() const
     return this->sourceChannel_ != nullptr;
 }
 
+ChannelPtr ChannelView::effectiveSourceChannel() const
+{
+    ChannelPtr base = this->underlyingChannel_;
+    if (this->sourceChannel_)
+    {
+        base = this->sourceChannel_;
+    }
+    auto *mc = dynamic_cast<MultiChannel *>(base.get());
+    if (mc && mc->activeChannel())
+    {
+        base = mc->activeChannel()->channel;
+    }
+    return base;
+}
+
 void ChannelView::messageAppended(MessagePtr &message,
                                   std::optional<MessageFlags> overridingFlags)
 {
@@ -2546,9 +2561,7 @@ void ChannelView::mouseReleaseEvent(QMouseEvent *event)
                     MessageElementFlag::Username))
             {
                 const auto userName = hoverLayoutElement->getLink().value;
-                const auto type = this->hasSourceChannel()
-                                      ? this->sourceChannel_->getType()
-                                      : this->channel_->getType();
+                const auto type = this->effectiveSourceChannel()->getType();
                 switch (type)
                 {
                     case Channel::Type::TwitchWhispers:
@@ -2617,6 +2630,8 @@ void ChannelView::handleMouseClick(QMouseEvent *event,
                 return;
             }
 
+            this->elementClicked.invoke(hoveredElement, event->modifiers());
+
             const auto &link = hoveredElement->getLink();
             if (!getSettings()->linksDoubleClickOnly)
             {
@@ -2626,7 +2641,7 @@ void ChannelView::handleMouseClick(QMouseEvent *event,
             // Invoke to signal from EmotePopup.
             if (link.type == Link::InsertText)
             {
-                this->linkClicked.invoke(link);
+                this->linkClicked.invoke(link, event->modifiers());
 
                 if (this->context_ == Context::None)
                 {
@@ -2789,6 +2804,8 @@ void ChannelView::addContextMenuItems(
 
     // Add executable command options
     this->addCommandExecutionContextMenuItems(menu, layout);
+
+    this->messageMenuCreated.invoke(menu, hoveredElement);
 
     menu->popup(QCursor::pos());
     menu->raise();
@@ -3147,11 +3164,9 @@ void ChannelView::addCommandExecutionContextMenuItems(
         inputText.push_front(cmd.name + " ");
 
         cmdMenu->addAction(cmd.name, [this, layout, cmd, inputText] {
-            ChannelPtr channel;
-
             /* Search popups and user message history's underlyingChannels aren't of type TwitchChannel, but
              * we would still like to execute commands from them. Use their source channel instead if applicable. */
-            channel = this->inferChannel(*layout->getMessage());
+            ChannelPtr channel = this->inferChannel(*layout->getMessage());
             auto *split = dynamic_cast<Split *>(this->parentWidget());
             QString userText;
             if (split)
@@ -3250,8 +3265,7 @@ void ChannelView::showUserInfoPopup(const QString &userName,
     auto *userPopup =
         new UserInfoPopup(getSettings()->autoCloseUserPopup, this->split_);
 
-    auto openingChannel = this->hasSourceChannel() ? this->sourceChannel_
-                                                   : this->selectedChannel();
+    auto openingChannel = this->effectiveSourceChannel();
     ChannelPtr contextChannel;
     if (openingChannel && platform == MessagePlatform::Kick)
     {
@@ -3336,8 +3350,7 @@ void ChannelView::handleLinkClick(QMouseEvent *event, const Link &link,
         case Link::UserAction: {
             QString value = link.value;
 
-            ChannelPtr channel = this->inferChannel(
-                *layout->getMessage(), InferChannel::SearchParentIfAvailable);
+            ChannelPtr channel = this->effectiveSourceChannel();
 
             // Execute command clicking a moderator button
             value = getApp()->getCommands()->execCustomCommand(
