@@ -560,7 +560,8 @@ std::unique_ptr<QMenu> SplitHeader::createMainMenu()
         menu->addSeparator();
     }
 
-    if (this->split_->getChannel()->getType() == Channel::Type::TwitchWhispers)
+    if (this->split_->getSelectedChannel()->getType() ==
+        Channel::Type::TwitchWhispers)
     {
         menu->addAction(
             OPEN_WHISPERS_IN_BROWSER,
@@ -756,8 +757,8 @@ std::unique_ptr<QMenu> SplitHeader::createChatModeMenu()
 
     auto execCommand = [this](const QString &command) {
         auto text = getApp()->getCommands()->execCommand(
-            command, this->split_->getChannel(), false);
-        this->split_->getChannel()->sendMessage(text);
+            command, this->split_->getSelectedChannel(), false);
+        this->split_->getSelectedChannel()->sendMessage(text);
     };
     auto toggle = [execCommand](const QString &command,
                                 QAction *action) mutable {
@@ -1268,7 +1269,7 @@ void SplitHeader::reloadChannelEmotes()
     }
     this->lastReloadedChannelEmotes_ = now;
 
-    auto channel = this->split_->getChannel();
+    auto channel = this->split_->getSelectedChannel();
 
     if (auto *twitchChannel = dynamic_cast<TwitchChannel *>(channel.get()))
     {
@@ -1293,7 +1294,7 @@ void SplitHeader::reloadSubscriberEmotes()
     }
     this->lastReloadedSubEmotes_ = now;
 
-    auto channel = this->split_->getChannel();
+    auto channel = this->split_->getSelectedChannel();
     if (auto *twitchChannel = dynamic_cast<TwitchChannel *>(channel.get()))
     {
         twitchChannel->refreshTwitchChannelEmotes(true);
