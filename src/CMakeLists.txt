@@ -551,6 +551,8 @@ set(SOURCE_FILES
         providers/twitch/pubsubmessages/Listen.cpp
         providers/twitch/pubsubmessages/Listen.hpp
         providers/twitch/pubsubmessages/Message.hpp
+        providers/twitch/pubsubmessages/PinnedChatUpdates.cpp
+        providers/twitch/pubsubmessages/PinnedChatUpdates.hpp
         providers/twitch/pubsubmessages/Unlisten.cpp
         providers/twitch/pubsubmessages/Unlisten.hpp
 
@@ -927,6 +929,8 @@ set(SOURCE_FILES
         widgets/splits/SplitInput.hpp
         widgets/splits/SplitOverlay.cpp
         widgets/splits/SplitOverlay.hpp
+        widgets/splits/PinnedMessageWidget.cpp
+        widgets/splits/PinnedMessageWidget.hpp
         )
 
 if (APPLE)

@@ -39,6 +39,7 @@
 #include "widgets/OverlayWindow.hpp"
 #include "widgets/Scrollbar.hpp"
 #include "widgets/splits/DraggedSplit.hpp"
+#include "widgets/splits/PinnedMessageWidget.hpp"
 #include "widgets/splits/SplitContainer.hpp"
 #include "widgets/splits/SplitHeader.hpp"
 #include "widgets/splits/SplitInput.hpp"
@@ -93,6 +94,7 @@ Split::Split(QWidget *parent)
     , channel_(Channel::getEmpty())
     , vbox_(new QVBoxLayout(this))
     , header_(new SplitHeader(this))
+    , pinnedBanner_(new PinnedMessageWidget(this))
     , view_(new ChannelView(this, this, ChannelView::Context::None,
                             getSettings()->scrollbackSplitLimit))
     , input_(new SplitInput(this))
@@ -107,6 +109,7 @@ Split::Split(QWidget *parent)
     this->vbox_->setContentsMargins(1, 1, 1, 1);
 
     this->vbox_->addWidget(this->header_);
+    this->vbox_->addWidget(this->pinnedBanner_);
     this->vbox_->addWidget(this->view_, 1);
     this->vbox_->addWidget(this->input_);
 
@@ -796,6 +799,11 @@ SplitInput &Split::getInput()
     return *this->input_;
 }
 
+PinnedMessageWidget *Split::getPinnedBanner() const
+{
+    return this->pinnedBanner_;
+}
+
 void Split::updateInputPlaceholder()
 {
     auto channel = this->getChannel();
@@ -1008,6 +1016,7 @@ void Split::updateChannelConnections()
     this->usermodeChangedConnection_.disconnect();
     this->roomModeChangedConnection_.disconnect();
     this->sendWaitConnection_ = pajlada::Signals::ScopedConnection{};
+    this->sharedChatConnection_ = pajlada::Signals::ScopedConnection{};
     this->getInput().setSendWaitStatus({});
 
     auto *channel = this->channel_.get().get();
@@ -1034,6 +1043,12 @@ void Split::updateChannelConnections()
             tc->sendWaitUpdate.connect([this](const QString &text) {
                 this->getInput().setSendWaitStatus(text);
             });
+
+        this->sharedChatConnection_ = tc->sharedChatStatusChanged.connect(
+            [this](const std::vector<HelixMinimalUser> &) {
+                this->header_->updateChannelText();
+            });
+        this->pinnedBanner_->setChannel(tc);
     }
     else if (kc != nullptr)
     {
@@ -1050,6 +1065,11 @@ void Split::updateChannelConnections()
             kc->sendWaitUpdate.connect([this](const QString &text) {
                 this->getInput().setSendWaitStatus(text);
             });
+        this->pinnedBanner_->setChannel(nullptr);
+    }
+    else
+    {
+        this->pinnedBanner_->setChannel(nullptr);
     }
 }
 
@@ -1450,6 +1470,11 @@ void Split::showSearch(bool singleChannel)
 void Split::reconnect()
 {
     this->getChannel()->reconnect();
+}
+
+void Split::togglePinnedBanner()
+{
+    this->pinnedBanner_->toggleUserPinned();
 }
 
 void Split::dragEnterEvent(QDragEnterEvent *event)

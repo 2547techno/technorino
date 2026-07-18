@@ -974,6 +974,10 @@ void UserInfoPopup::setData(const QString &name,
     if (this->isKick_)
     {
         this->updateKickUserData();
+        if (this->ui_.pronounsLabel)
+        {
+            this->ui_.pronounsLabel->hide();
+        }
     }
     else
     {
