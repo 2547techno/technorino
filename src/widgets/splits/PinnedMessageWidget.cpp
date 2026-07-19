@@ -80,6 +80,7 @@ PinnedMessageWidget::PinnedMessageWidget(QWidget *parent)
     this->messageLabel_->setStyleSheet("background: transparent;");
     this->messageLabel_->setSizePolicy(QSizePolicy::Expanding,
                                        QSizePolicy::Preferred);
+    this->messageLabel_->setTextInteractionFlags(Qt::TextSelectableByMouse);
 
     this->messageScrollArea_->setWidgetResizable(true);
     this->messageScrollArea_->setHorizontalScrollBarPolicy(
@@ -317,6 +318,7 @@ void PinnedMessageWidget::refresh()
     if (this->userToggled_.value_or(true))
     {
         this->show();
+        this->updateMessageHeightIfNeeded();
     }
 
     this->autoHideTimer_->stop();
@@ -340,6 +342,7 @@ void PinnedMessageWidget::toggleUserPinned()
         this->userToggled_ = true;
         this->autoHideTimer_->stop();
         this->show();
+        this->updateMessageHeightIfNeeded();
     }
 }
 
@@ -351,8 +354,9 @@ void PinnedMessageWidget::updateMessageHeight()
     }
 
     // Wrapped height of the label at the current viewport width.
-    const int width = this->messageScrollArea_->viewport()->width();
-    int contentH = this->messageLabel_->heightForWidth(width);
+    this->lastViewportWidth_ = this->messageScrollArea_->viewport()->width();
+    int contentH =
+        this->messageLabel_->heightForWidth(this->lastViewportWidth_);
     if (contentH <= 0)
     {
         contentH = this->messageLabel_->sizeHint().height();
@@ -361,6 +365,15 @@ void PinnedMessageWidget::updateMessageHeight()
     // Size to content, but never taller than the cap.
     this->messageScrollArea_->setFixedHeight(
         qBound(1, contentH, this->messageMaxHeight_));
+}
+
+void PinnedMessageWidget::updateMessageHeightIfNeeded()
+{
+    if (this->lastViewportWidth_ !=
+        this->messageScrollArea_->viewport()->width())
+    {
+        this->updateMessageHeight();
+    }
 }
 
 void PinnedMessageWidget::resizeEvent(QResizeEvent *event)
@@ -384,19 +397,24 @@ void PinnedMessageWidget::hideEvent(QHideEvent *event)
 void PinnedMessageWidget::scaleChangedEvent(float newScale)
 {
     QFont headerFont = this->pinnedByLabel_->font();
-    headerFont.setPointSizeF(11.0F * newScale);
+    headerFont.setPointSizeF(9.5F * newScale);
     this->pinnedByLabel_->setFont(headerFont);
     this->countdownLabel_->setFont(headerFont);
 
     QFont bodyFont = this->messageLabel_->font();
-    bodyFont.setPointSizeF(13.0F * newScale);
+    bodyFont.setPointSizeF(11.0F * newScale);
     this->messageLabel_->setFont(bodyFont);
     this->messageMaxHeight_ = int(110 * newScale);
     this->updateMessageHeight();
 
     QFont footerFont = this->footerLabel_->font();
-    footerFont.setPointSizeF(10.0F * newScale);
+    footerFont.setPointSizeF(9.0F * newScale);
     this->footerLabel_->setFont(footerFont);
+}
+
+void PinnedMessageWidget::mousePressEvent(QMouseEvent *event)
+{
+    // ignore to disable the parent's right click menu
 }
 
 }  // namespace chatterino
