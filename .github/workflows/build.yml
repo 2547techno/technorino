@@ -243,7 +243,7 @@ jobs:
       # WINDOWS
       - name: Enable Developer Command Prompt (Windows)
         if: startsWith(matrix.os, 'windows')
-        uses: Chatterino/msvc-dev-cmd@v2.0.5
+        uses: Chatterino/msvc-dev-cmd@v2.0.7
         with:
           arch: ${{env.C2_ARCH == 'arm' && 'arm64' || 'x64' }}
 
@@ -485,7 +485,7 @@ jobs:
         shell: bash
 
       - name: Setup Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
