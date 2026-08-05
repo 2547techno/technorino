@@ -174,8 +174,7 @@ void ImageUploader::sendImageUploadRequest(RawImageData imageData,
     QHttpMultiPart *payload = new QHttpMultiPart(QHttpMultiPart::FormDataType);
     QHttpPart part = QHttpPart();
     part.setBody(imageData.data);
-    part.setHeader(QNetworkRequest::ContentTypeHeader,
-                   QString("image/%1").arg(imageData.format));
+    part.setHeader(QNetworkRequest::ContentTypeHeader, imageData.mimeType);
     part.setHeader(QNetworkRequest::ContentLengthHeader,
                    QVariant(imageData.data.length()));
     part.setHeader(QNetworkRequest::ContentDispositionHeader,
@@ -324,7 +323,7 @@ std::pair<std::queue<RawImageData>, QString> ImageUploader::getImages(
                             .arg(localPath),
                     };
                 }
-                images.push({*imageData, "png", localPath});
+                images.push({*imageData, "png", localPath, "image/png"});
             }
             else if (mime.inherits("image/gif"))
             {
@@ -335,7 +334,7 @@ std::pair<std::queue<RawImageData>, QString> ImageUploader::getImages(
                     return {{}, "Failed to open file :("};
                 }
                 // file.readAll() => might be a bit big but it /should/ work
-                images.push({file.readAll(), "gif", localPath});
+                images.push({file.readAll(), "gif", localPath, "image/gif"});
                 file.close();
             }
             else
@@ -347,8 +346,8 @@ std::pair<std::queue<RawImageData>, QString> ImageUploader::getImages(
                     return {{}, "Failed to open file :("};
                 }
                 // file.readAll() => might be a bit big but it /should/ work
-                images.push(
-                    {file.readAll(), mime.preferredSuffix(), localPath});
+                images.push({file.readAll(), mime.preferredSuffix(), localPath,
+                             mime.name()});
                 file.close();
             }
         }
@@ -363,19 +362,19 @@ std::pair<std::queue<RawImageData>, QString> ImageUploader::getImages(
         if (source->hasFormat("image/png"))
         {
             // the path to file is not present every time, thus the filePath is empty
-            images.push({source->data("image/png"), "png", ""});
+            images.push({source->data("image/png"), "png", "", "image/png"});
             return {images, {}};
         }
 
         if (source->hasFormat("image/jpeg"))
         {
-            images.push({source->data("image/jpeg"), "jpeg", ""});
+            images.push({source->data("image/jpeg"), "jpeg", "", "image/jpeg"});
             return {images, {}};
         }
 
         if (source->hasFormat("image/gif"))
         {
-            images.push({source->data("image/gif"), "gif", ""});
+            images.push({source->data("image/gif"), "gif", "", "image/gif"});
             return {images, {}};
         }
 
@@ -384,7 +383,7 @@ std::pair<std::queue<RawImageData>, QString> ImageUploader::getImages(
         auto imageData = convertToPng(image);
         if (imageData)
         {
-            images.push({*imageData, "png", ""});
+            images.push({*imageData, "png", "", "image/png"});
             return {images, {}};
         }
 
