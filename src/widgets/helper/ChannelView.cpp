@@ -469,6 +469,23 @@ Scrollbar *ChannelView::scrollbar()
     return this->scrollBar_;
 }
 
+Split *ChannelView::findParentSplit() const
+{
+    auto *split = dynamic_cast<Split *>(this->parentWidget());
+
+    if (split)
+    {
+        return split;
+    }
+
+    auto *searchPopup = dynamic_cast<SearchPopup *>(this->parentWidget());
+    if (!searchPopup)
+    {
+        return nullptr;
+    }
+    return dynamic_cast<Split *>(searchPopup->parentWidget());
+}
+
 bool ChannelView::pausable() const
 {
     return this->pausable_;
@@ -1576,16 +1593,7 @@ MessageElementFlags ChannelView::getFlags() const
 
     MessageElementFlags flags = app->getWindows()->getWordFlags();
 
-    auto *split = dynamic_cast<Split *>(this->parentWidget());
-
-    if (split == nullptr)
-    {
-        auto *searchPopup = dynamic_cast<SearchPopup *>(this->parentWidget());
-        if (searchPopup != nullptr)
-        {
-            split = dynamic_cast<Split *>(searchPopup->parentWidget());
-        }
-    }
+    auto *split = this->findParentSplit();
 
     if (split != nullptr)
     {
@@ -2806,6 +2814,11 @@ void ChannelView::addContextMenuItems(
     this->addCommandExecutionContextMenuItems(menu, layout);
 
     this->messageMenuCreated.invoke(menu, hoveredElement);
+
+    menu->addSeparator();
+
+    getApp()->getWindows()->channelViewContextMenuRequested.invoke(
+        *this, *layout, hoveredElement, *menu);
 
     menu->popup(QCursor::pos());
     menu->raise();

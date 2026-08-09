@@ -346,8 +346,8 @@ QString streamlink(const CommandContext &ctx)
         else
         {
             ctx.channel->addSystemMessage(
-                "/streamlink [channel]. Open specified Twitch channel in "
-                "streamlink. If no channel argument is specified, open the "
+                "/streamlink [channel/URL]. Open specified Twitch channel or "
+                "URL in streamlink. If no argument is specified, open the "
                 "current Twitch channel instead.");
             return "";
         }
@@ -356,11 +356,11 @@ QString streamlink(const CommandContext &ctx)
     stripChannelName(target);
     if (ctx.kickChannel)
     {
-        openStreamlinkForChannel(target, u"kick.com/");
+        openStreamlinkForChannelOrUrl(target, u"kick.com/");
     }
     else
     {
-        openStreamlinkForChannel(target);
+        openStreamlinkForChannelOrUrl(target);
     }
 
     return "";
