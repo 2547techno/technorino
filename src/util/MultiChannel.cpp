@@ -149,7 +149,14 @@ MultiChannel::MultiChannel(std::span<const Spec> channels,
             }));
         connections.emplace_back(
             channel->messagesAddedAtStart.connect([this](const auto &msgs) {
-                this->addMessagesAtStart(msgs);
+                if (this->hasMessages())
+                {
+                    this->fillInMissingMessages(msgs);
+                }
+                else
+                {
+                    this->addMessagesAtStart(msgs);
+                }
             }));
         connections.emplace_back(channel->messageReplaced.connect(
             [this](size_t idx, const MessagePtr &prev,

@@ -23,7 +23,8 @@ const QString API_URL_PRESENCES = u"https://7tv.io/v3/users/%1/presences"_s;
 namespace chatterino {
 
 void SeventvAPI::getUserByTwitchID(
-    const QString &twitchID, SuccessCallback<const QJsonObject &> &&onSuccess,
+    const QString &twitchID,
+    SuccessCallback<const QJsonObject &, const QByteArray &> &&onSuccess,
     ErrorCallback &&onError)
 {
     NetworkRequest(API_URL_USER.arg(twitchID), NetworkRequestType::Get)
@@ -31,7 +32,7 @@ void SeventvAPI::getUserByTwitchID(
         .onSuccess(
             [callback = std::move(onSuccess)](const NetworkResult &result) {
                 auto json = result.parseJson();
-                callback(json);
+                callback(json, result.getData());
             })
         .onError([callback = std::move(onError)](const NetworkResult &result) {
             callback(result);
@@ -40,7 +41,8 @@ void SeventvAPI::getUserByTwitchID(
 }
 
 void SeventvAPI::getUserByKickID(
-    uint64_t userID, SuccessCallback<const QJsonObject &> &&onSuccess,
+    uint64_t userID,
+    SuccessCallback<const QJsonObject &, const QByteArray &> &&onSuccess,
     ErrorCallback &&onError)
 {
     NetworkRequest(API_URL_KICK_USER.arg(userID), NetworkRequestType::Get)
@@ -48,7 +50,7 @@ void SeventvAPI::getUserByKickID(
         .onSuccess(
             [callback = std::move(onSuccess)](const NetworkResult &result) {
                 auto json = result.parseJson();
-                callback(json);
+                callback(json, result.getData());
             })
         .onError([callback = std::move(onError)](const NetworkResult &result) {
             callback(result);
@@ -56,16 +58,17 @@ void SeventvAPI::getUserByKickID(
         .execute();
 }
 
-void SeventvAPI::getEmoteSet(const QString &emoteSet,
-                             SuccessCallback<const QJsonObject &> &&onSuccess,
-                             ErrorCallback &&onError)
+void SeventvAPI::getEmoteSet(
+    const QString &emoteSet,
+    SuccessCallback<const QJsonObject &, const QByteArray &> &&onSuccess,
+    ErrorCallback &&onError)
 {
     NetworkRequest(API_URL_EMOTE_SET.arg(emoteSet), NetworkRequestType::Get)
         .timeout(25000)
         .onSuccess(
             [callback = std::move(onSuccess)](const NetworkResult &result) {
                 auto json = result.parseJson();
-                callback(json);
+                callback(json, result.getData());
             })
         .onError([callback = std::move(onError)](const NetworkResult &result) {
             callback(result);

@@ -495,7 +495,7 @@ jobs:
           delimiter=$(openssl rand -hex 32)
           {
             echo "changelog<<$delimiter"
-            python3 ./.CI/format-recent-changes.py
+            python3 ./.CI/format-recent-changes.py --artifacts release-artifacts --include-installer
             echo $delimiter
           } >> "$GITHUB_OUTPUT"
         shell: bash

@@ -394,16 +394,8 @@ void MessageLayout::updateBuffer(QPixmap *buffer,
 
     std::optional<QPixmap> clientDetectionIcon = {};
 
-    if (this->message_->flags.has(MessageFlag::ElevatedMessage) &&
-        ctx.preferences.enableElevatedMessageHighlight)
-    {
-        backgroundColor = blendColors(
-            backgroundColor,
-            *ctx.colorProvider.color(ColorType::ElevatedMessageHighlight));
-    }
-
-    else if (this->message_->flags.has(MessageFlag::FirstMessage) &&
-             ctx.preferences.enableFirstMessageHighlight)
+    if (this->message_->flags.has(MessageFlag::FirstMessage) &&
+        ctx.preferences.enableFirstMessageHighlight)
     {
         backgroundColor = blendColors(
             backgroundColor,

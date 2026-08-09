@@ -290,9 +290,8 @@ void SeventvEmotes::loadGlobalEmotes()
 
     getApp()->getSeventvAPI()->getEmoteSet(
         u"global"_s,
-        [this](const auto &json) {
-            writeProviderEmotesCache("global", "seventv",
-                                     QJsonDocument(json).toJson());
+        [this](const auto &json, const auto &raw) {
+            writeProviderEmotesCache("global", "seventv", raw);
             QJsonArray parsedEmotes = json["emotes"].toArray();
 
             auto emoteMap =
@@ -323,10 +322,9 @@ void SeventvEmotes::loadChannelEmotes(
 
     getApp()->getSeventvAPI()->getUserByTwitchID(
         channelId,
-        [callback = std::move(callback), channel, channelId,
-         manualRefresh](const auto &json) {
-            writeProviderEmotesCache(channelId, "seventv",
-                                     QJsonDocument(json).toJson());
+        [callback = std::move(callback), channel, channelId, manualRefresh](
+            const auto &json, const auto &raw) {
+            writeProviderEmotesCache(channelId, "seventv", raw);
             const auto emoteSet = json["emote_set"].toObject();
             const auto parsedEmotes = emoteSet["emotes"].toArray();
 
@@ -423,10 +421,10 @@ void SeventvEmotes::loadKickChannelEmotes(
 
     getApp()->getSeventvAPI()->getUserByKickID(
         userID,
-        [callback = std::move(callback), channel, manualRefresh,
-         userID](const auto &json) {
+        [callback = std::move(callback), channel, manualRefresh, userID](
+            const auto &json, const auto &raw) {
             writeProviderEmotesCache(u"kick." % QString::number(userID),
-                                     "seventv", QJsonDocument(json).toJson());
+                                     "seventv", raw);
             const auto emoteSet = json["emote_set"].toObject();
             const auto parsedEmotes = emoteSet["emotes"].toArray();
 
@@ -590,7 +588,8 @@ void SeventvEmotes::getEmoteSet(
 
     getApp()->getSeventvAPI()->getEmoteSet(
         emoteSetId,
-        [callback = std::move(successCallback), emoteSetId](const auto &json) {
+        [callback = std::move(successCallback), emoteSetId](
+            const auto &json, const auto & /*raw*/) {
             assert(!isAppAboutToQuit());
 
             auto parsedEmotes = json["emotes"].toArray();
