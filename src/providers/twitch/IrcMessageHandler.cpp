@@ -20,6 +20,7 @@
 #include "providers/twitch/TwitchAccount.hpp"
 #include "providers/twitch/TwitchAccountManager.hpp"
 #include "providers/twitch/TwitchChannel.hpp"
+#include "providers/twitch/TwitchCommon.hpp"
 #include "providers/twitch/TwitchHelpers.hpp"
 #include "providers/twitch/TwitchIrcServer.hpp"
 #include "providers/twitch/UserColor.hpp"
@@ -1034,8 +1035,16 @@ void IrcMessageHandler::handleJoinMessage(Communi::IrcMessage *message)
         return;
     }
 
-    if (message->nick() ==
-        getApp()->getAccounts()->twitch.getCurrent()->getUserName())
+    bool ownUser = [&] {
+        if (getSettings()->twitchReadConnectionMode ==
+            TwitchReadConnectionMode::Authenticated)
+        {
+            return message->nick() ==
+                   getApp()->getAccounts()->twitch.getCurrent()->getUserName();
+        }
+        return message->nick() == ANONYMOUS_USERNAME;
+    }();
+    if (ownUser)
     {
         twitchChannel->addSystemMessage("joined channel");
         twitchChannel->joined.invoke();
@@ -1058,16 +1067,22 @@ void IrcMessageHandler::handlePartMessage(Communi::IrcMessage *message)
         return;
     }
 
-    const auto selfAccountName =
-        getApp()->getAccounts()->twitch.getCurrent()->getUserName();
-    if (message->nick() != selfAccountName &&
-        getSettings()->showParts.getValue())
+    bool ownUser = [&] {
+        if (getSettings()->twitchReadConnectionMode ==
+            TwitchReadConnectionMode::Authenticated)
+        {
+            return message->nick() ==
+                   getApp()->getAccounts()->twitch.getCurrent()->getUserName();
+        }
+        return message->nick() == ANONYMOUS_USERNAME;
+    }();
+    if (ownUser && getSettings()->showParts.getValue())
     {
         twitchChannel->addPartedUser(message->nick(), twitchChannel->isMod(),
                                      twitchChannel->isBroadcaster());
     }
 
-    if (message->nick() == selfAccountName)
+    if (ownUser)
     {
         channel->addMessage(generateBannedMessage(false),
                             MessageContext::Original);
