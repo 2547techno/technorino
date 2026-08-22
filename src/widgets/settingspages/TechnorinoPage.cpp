@@ -153,10 +153,18 @@ void TechnorinoPage::initLayout(GeneralPageView &layout)
     SettingWidget::checkbox("Markdown parsing (Experimental)",
                             s.markdownParsing)
         ->addTo(layout);
-    SettingWidget::checkbox(
-        "Anon read connection (requires restart) (Experimental)", s.anonRead)
-        ->setTooltip("Use an anon connection for the read connection. NOTE: "
-                     "This will NOT guarantee exclusion from viewerlists.")
+
+    layout.addTitle("Client detection");
+    SettingWidget::checkbox("Client detection highlights. ",
+                            s.normalNonceDetection)
+        ->setTooltip("Highlights messages sent from specified clients "
+                     "using the specified color below.")
+        ->addTo(layout);
+    SettingWidget::colorButton("Webchat color", getSettings()->webchatColor)
+        ->addTo(layout);
+    SettingWidget::colorButton("Android color", getSettings()->androidColor)
+        ->addTo(layout);
+    SettingWidget::colorButton("iOS color", getSettings()->iosColor)
         ->addTo(layout);
 
     layout.addStretch();

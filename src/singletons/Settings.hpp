@@ -756,7 +756,6 @@ public:
         "/external/imageUploader/deletionLink", ""};
 
     /// Misc
-    BoolSetting anonRead = {"/misc/anonRead", false};
     BoolSetting markdownParsing = {"/misc/markdownParsing", false};
     BoolSetting autoDetachLiveTab = {"/misc/autoDetachLiveTab", false};
     BoolSetting watchingTabLiveSound = {"/misc/watchingTabLiveSound", false};

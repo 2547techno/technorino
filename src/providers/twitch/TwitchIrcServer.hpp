@@ -170,8 +170,7 @@ public:
                        SeventvEventAPI *seventvEventAPI) override;
 
 protected:
-    void initializeConnection(IrcConnection *connection, ConnectionType type,
-                              bool forceAnon = false);
+    void initializeConnection(IrcConnection *connection, ConnectionType type);
     std::shared_ptr<Channel> createChannel(const QString &channelName,
                                            bool isWatching = false);
 
