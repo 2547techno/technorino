@@ -13,6 +13,9 @@ env:
   C2_PORTABLE_INSTALLER_SHA256_X64: "77bcbe8c0fb0e2e7c40c89a250816b3def14cb5d0144b98293d3224fe2b1a59b"
   C2_PORTABLE_INSTALLER_SHA256_ARM64: "525491265bc879bb5e80a87bda39c850f91fb96b691a1aa72d34553ead7d7cd2"
   RELEASE_NIGHTLY_INSTALLER: "ON"
+permissions:
+  contents: read
+  actions: read
 
 jobs:
   create-installer:
@@ -30,16 +33,50 @@ jobs:
       # FIXME: this only needed for the nightly upload step (should split to another job)
       contents: write
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0 # allows for tags access
+          persist-credentials: true # release action
+
+      - name: Resolve Build workflow run
+        id: resolve-build-run
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          result-encoding: string
+          script: |
+            if (context.eventName === "workflow_run") {
+              return String(context.payload.workflow_run.id);
+            }
+
+            const { owner, repo } = context.repo;
+
+            // Manual runs do not have a triggering workflow_run payload.
+            // Match the previous commit-based artifact lookup behavior.
+            const response = await github.rest.actions.listWorkflowRuns({
+              owner,
+              repo,
+              workflow_id: "build.yml",
+              head_sha: context.sha,
+              status: "success",
+              per_page: 1,
+            });
+
+            const run = response.data.workflow_runs[0];
+
+            if (!run) {
+              core.setFailed(`No successful Build workflow run found for commit ${context.sha}.`);
+              return "";
+            }
+
+            return String(run.id);
 
       - name: Download artifact
-        uses: dawidd6/action-download-artifact@v20
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          workflow: build.yml
           name: chatterino-windows-${{ env.C2_ARCH }}-Qt-${{ matrix.qt-version }}.zip
-          commit: ${{ github.sha }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.resolve-build-run.outputs.result }}
           path: build/
 
       - name: Unzip
@@ -53,7 +90,7 @@ jobs:
         run: echo "C:\Program Files (x86)\Inno Setup 6\" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Enable Developer Command Prompt
-        uses: Chatterino/msvc-dev-cmd@v2.0.7
+        uses: Chatterino/msvc-dev-cmd@24444121cb2805a7adbd23d0f4455d0916af896b # v2.0.7
 
       - name: Build installer
         id: build-installer
@@ -68,20 +105,20 @@ jobs:
         shell: powershell
 
       - name: Upload installer
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           path: build/${{ steps.build-installer.outputs.C2_INSTALLER_BASE_NAME }}.exe
           name: ${{ steps.build-installer.outputs.C2_INSTALLER_BASE_NAME }}.exe
 
       - name: Upload portable
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           path: build/${{ steps.bundle-portable.outputs.C2_PORTABLE_BASE_NAME }}.zip
           name: ${{ steps.bundle-portable.outputs.C2_PORTABLE_BASE_NAME }}.zip
 
       - name: Create nightly release
         if: ${{ contains(steps.build-installer.outputs.C2_INSTALLER_BASE_NAME, 'Nightly') && env.RELEASE_NIGHTLY_INSTALLER == 'ON' }}
-        uses: ncipollo/release-action@v1.14.0
+        uses: ncipollo/release-action@339a81892b84b4eeb0f6e744e4574d79d0d9b8dd # v1.21.0
         with:
           replacesArtifacts: true
           allowUpdates: true
@@ -101,9 +138,10 @@ jobs:
     outputs:
       IS_TAGGED: ${{ steps.is-rel.outputs.IS_TAGGED }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0 # allows for tags access
+          persist-credentials: false
       - name: Check Release
         id: is-rel
         run: |
@@ -119,40 +157,73 @@ jobs:
       # FIXME: this only needed for the last step (should split to another job)
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0 # allows for tags access
+          persist-credentials: true # release action
 
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           path: build/
           merge-multiple: true
 
-      - name: Download artifact
-        uses: dawidd6/action-download-artifact@v19
+      - name: Resolve Build workflow run
+        id: resolve-build-run
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
-          workflow: build.yml
-          name_is_regexp: true
-          name: '((^[Cc]hatterino)-[^wW].+$)|(^.+\.7z$)'
-          path: build/
+          result-encoding: string
+          script: |
+            if (context.eventName === "workflow_run") {
+              return String(context.payload.workflow_run.id);
+            }
 
-      - name: Fix Directories
-        working-directory: build
-        run: |
-          for file in */ ; do 
-            mv "$file$(find "$file" -type f -printf '%f')" ".tmp.${file%/}";
-            rm -rf "$file";
-            mv ".tmp.${file%/}" "${file%/}";
-          done
-        shell: bash
+            const { owner, repo } = context.repo;
+
+            // Manual runs do not have a triggering workflow_run payload.
+            // Match the previous commit-based artifact lookup behavior.
+            const response = await github.rest.actions.listWorkflowRuns({
+              owner,
+              repo,
+              workflow_id: "build.yml",
+              head_sha: context.sha,
+              status: "success",
+              per_page: 1,
+            });
+
+            const run = response.data.workflow_runs[0];
+
+            if (!run) {
+              core.setFailed(`No successful Build workflow run found for commit ${context.sha}.`);
+              return "";
+            }
+
+            return String(run.id);
+
+      - name: Download artifact (non-Windows)
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: "[Cc]hatterino-[^wW]*"
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.resolve-build-run.outputs.result }}
+          path: build/
+          merge-multiple: true
+
+      - name: Download artifact (Windows PDBs)
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: "*.pdb*"
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.resolve-build-run.outputs.result }}
+          path: build/
+          merge-multiple: true
 
       - name: Fix paths
         working-directory: build
         run: |
           ls -l
-          mv Chatterino-x86_64-Qt-6.7.2.AppImage Chatterino-x86_64-Qt6.AppImage
-
-          mv chatterino-macos-Qt-6.9.3-universal.dmg Chatterino.dmg
+          mv chatterino-macos-Qt-*-universal.dmg Chatterino.dmg
 
       - name: Hash files
         working-directory: build
@@ -176,7 +247,7 @@ jobs:
         run: echo "VALUE=$(git describe --exact-match --match 'v*')" >> "$GITHUB_OUTPUT"
 
       - name: Create release
-        uses: ncipollo/release-action@v1.14.0
+        uses: ncipollo/release-action@339a81892b84b4eeb0f6e744e4574d79d0d9b8dd # v1.21.0
         if: ${{ needs.check-release.outputs.IS_TAGGED == '0' }}
         with:
           replacesArtifacts: true

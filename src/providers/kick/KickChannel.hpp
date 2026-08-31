@@ -89,7 +89,7 @@ public:
     void reloadSeventvEmotes(bool manualRefresh);
 
     std::shared_ptr<const EmoteMap> seventvEmotes() const;
-    EmotePtr seventvEmote(const EmoteName &name) const;
+    EmotePtr seventvEmote(EmoteNameView name) const;
 
     void addSeventvEmote(const seventv::eventapi::EmoteAddDispatch &dispatch);
 

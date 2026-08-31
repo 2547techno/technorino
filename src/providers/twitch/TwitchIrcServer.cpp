@@ -157,13 +157,7 @@ TwitchIrcServer::TwitchIrcServer()
 
     QObject::connect(this->writeConnection_.get(),
                      &Communi::IrcConnection::messageReceived, this,
-                     [this](auto msg) {
-                         this->writeConnectionMessageReceived(msg);
-                     });
-    QObject::connect(this->writeConnection_.get(),
-                     &Communi::IrcConnection::connected, this, [this] {
-                         this->onWriteConnected(this->writeConnection_.get());
-                     });
+                     &TwitchIrcServer::writeConnectionMessageReceived);
     this->signalHolder.managedConnect(
         this->writeConnection_->connectionLost, [this](bool timeout) {
             qCDebug(chatterinoIrc)
@@ -455,11 +449,6 @@ void TwitchIrcServer::writeConnectionMessageReceived(
     {
         handler.handleWhisperMessage(message);
     }
-}
-
-void TwitchIrcServer::onWriteConnected(IrcConnection *connection)
-{
-    (void)connection;
 }
 
 std::shared_ptr<Channel> TwitchIrcServer::getCustomChannel(

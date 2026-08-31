@@ -153,7 +153,6 @@ find_package(Qt${MAJOR_QT_VERSION} REQUIRED
     Gui
     Network
     Svg
-    SvgWidgets
     Concurrent
 )
 

@@ -150,7 +150,7 @@ std::shared_ptr<const EmoteMap> KickChannel::seventvEmotes() const
     return this->seventvEmotes_.get();
 }
 
-EmotePtr KickChannel::seventvEmote(const EmoteName &name) const
+EmotePtr KickChannel::seventvEmote(EmoteNameView name) const
 {
     auto emotes = this->seventvEmotes_.get();
 

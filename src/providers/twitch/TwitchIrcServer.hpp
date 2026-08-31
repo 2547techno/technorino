@@ -184,8 +184,6 @@ protected:
     void readConnectionMessageReceived(Communi::IrcMessage *message);
     void writeConnectionMessageReceived(Communi::IrcMessage *message);
 
-    void onWriteConnected(IrcConnection *connection);
-
     std::shared_ptr<Channel> getCustomChannel(const QString &channelname);
 
 private:
