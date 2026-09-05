@@ -166,6 +166,9 @@ enum class MessageElementFlag : int64_t {
     /// Applied to all elements of subscription and resubscription headers
     SubscriptionHeader = (1LL << 40),
 
+    /// Applied to all elements of watch streak headers
+    WatchStreakHeader = (1LL << 41),
+
     /// `Username` but the username comes from Kick
     KickUsername = (1LL << 50),
 

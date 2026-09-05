@@ -1975,11 +1975,15 @@ std::pair<MessagePtrMut, HighlightAlert> MessageBuilder::makeIrcMessage(
 
         if (traditionalParsing)
         {
-            // words
-            QStringList splits = content.split(' ');
-
-            builder.addWords(splits, twitchEmotes, textState);
+            // FIXME(c7TV): This is temporary until upstream merges the support.
+            if (!builder.tryAddGif(tags, content))
+            {
+                // words
+                QStringList splits = content.split(' ');
+                builder.addWords(splits, twitchEmotes, textState);
+            }
         }
+
         if (getSettings()->wrapAsciiArt && isAsciiArt(content))
         {
             builder->flags.set(MessageFlag::AsciiArt);
@@ -2063,6 +2067,77 @@ void MessageBuilder::addTextOrEmote(TextState &state, QString string,
         return;
     }
     this->addWordFromUserMessage(string, state.twitchChannel, style);
+}
+
+// FIXME(c7TV): This is temporary until upstream merges the support.
+bool MessageBuilder::tryAddGif(Communi::TagsRef tags, QStringView content)
+{
+    if (!getSettings()->showTwitchGifs)
+    {
+        return false;
+    }
+
+    auto gifsTag = tags.getOrEmpty("gifs");
+    if (gifsTag.isEmpty())
+    {
+        return false;
+    }
+    auto [gifTag, rest] = splitOnce(gifsTag, ',');
+    if (!rest.empty())
+    {
+        return false;  // More than one gif.
+    }
+    auto [range, idAndLink] = splitOnce(gifTag, '|');
+    auto [id, link] = splitOnce(idAndLink, '|');
+    if (link.empty())
+    {
+        return false;  // Invalid format.
+    }
+
+    auto [startStr, endStr] = splitOnce(range, '-');
+    bool startOk = false;
+    bool endOk = false;
+    auto start = startStr.toULongLong(&startOk);
+    auto end = endStr.toULongLong(&endOk);
+    if (!startOk || !endOk || end <= start || start != 0)
+    {
+        return false;
+    }
+
+    quint64 nUnicodeChars = 0;
+    for (auto c : content)
+    {
+        if (!c.isLowSurrogate())
+        {
+            ++nUnicodeChars;
+        }
+    }
+    if (end + 1 != nUnicodeChars)
+    {
+        return false;  // Doesn't cover the whole range.
+    }
+
+    if (content.startsWith(u'['))
+    {
+        content.slice(1);
+    }
+    if (content.endsWith(u']'))
+    {
+        content.slice(0, content.size() - 1);
+    }
+    QString baseLink = link.toString();
+    QString link100 = baseLink.replace("giphy.gif"_L1, "100.webp"_L1);
+    QString link200 = baseLink.replace("giphy.gif"_L1, "200.webp"_L1);
+    ImageSet set{
+        Image::fromUrl(Url{link100}, 1.0, {100, 100}),
+        Image::fromUrl(Url{link200}, 0.5, {200, 200}),
+    };
+    this->emplace<LinebreakElement>(MessageElementFlag::Emote);
+    this->emplace<ScalingImageElement>(set, MessageElementFlag::Emote)
+        ->setLink(Link{Link::Url, baseLink})
+        ->setTooltip(content.toString().toHtmlEscaped());
+
+    return true;
 }
 
 void MessageBuilder::addWordFromUserMessage(QStringView string,
@@ -2263,6 +2338,43 @@ void MessageBuilder::parseMessageID(Communi::TagsRef tags)
     }
 }
 
+void MessageBuilder::appendOrEmplaceTextWithUser(
+    TwitchChannel *channel, const QString &userID, const QString &userLoginName,
+    const QString &userDisplayName, const QString &userColorString,
+    const QString &messageText, MessageElementFlags mentionFlags,
+    MessageElementFlags textFlags)
+{
+    const auto *userDataController = getApp()->getUserData();
+    assert(userDataController != nullptr);
+
+    auto userColor =
+        twitch::getUserColor({
+                                 .userLogin = userLoginName,
+                                 .userID = userID,
+                                 .userDataController = userDataController,
+                                 .channelChatters = channel,
+                                 .color = QColor::fromString(userColorString),
+                             })
+            .value_or(MessageColor::System);
+
+    const auto textFragments =
+        messageText.split(SPACE_REGEX, Qt::SkipEmptyParts);
+
+    for (const auto &word : textFragments)
+    {
+        if (word == userDisplayName)
+        {
+            this->emplace<MentionElement>(userDisplayName, userLoginName,
+                                          MessageColor::System, userColor,
+                                          mentionFlags)
+                ->exhaustiveFlags = true;
+            continue;
+        }
+        this->appendOrEmplaceText(word, MessageColor::System, textFlags)
+            ->exhaustiveFlags = true;
+    }
+}
+
 void MessageBuilder::parseMessageTags(Communi::TagsRef tags,
                                       TwitchChannel *channel, bool hasContent)
 {
@@ -2357,38 +2469,10 @@ void MessageBuilder::parseMessageTags(Communi::TagsRef tags,
                         displayName = this->message_->loginName;
                     }
                     const auto userID = tags.getOrEmpty("user-id");
-                    const auto *userDataController = getApp()->getUserData();
-                    assert(userDataController != nullptr);
-                    auto userColor =
-                        twitch::getUserColor(
-                            {
-                                .userLogin = this->message_->loginName,
-                                .userID = userID,
-                                .userDataController = userDataController,
-                                .channelChatters = channel,
-                                .color = QColor::fromString(
-                                    tags.getOrEmpty("color")),
-                            })
-                            .value_or(MessageColor::System);
-
-                    const auto textFragments =
-                        messageText.split(SPACE_REGEX, Qt::SkipEmptyParts);
-
-                    for (const auto &word : textFragments)
-                    {
-                        if (word == displayName)
-                        {
-                            this->emplace<MentionElement>(
-                                    displayName, this->message_->loginName,
-                                    MessageColor::System, userColor,
-                                    mentionFlags)
-                                ->exhaustiveFlags = true;
-                            continue;
-                        }
-                        this->appendOrEmplaceText(word, MessageColor::System,
-                                                  textFlags)
-                            ->exhaustiveFlags = true;
-                    }
+                    this->appendOrEmplaceTextWithUser(
+                        channel, userID, this->message_->loginName, displayName,
+                        tags.getOrEmpty("color"), messageText, mentionFlags,
+                        textFlags);
 
                     if (hasContent)
                     {
@@ -2444,9 +2528,68 @@ void MessageBuilder::parseMessageTags(Communi::TagsRef tags,
                 })
                 ->exhaustiveFlags = true;
         }
-        else if (messageType == "viewermilestone" ||
-                 messageType == "modiversary")
+        else if (messageType == "viewermilestone")
         {
+            this->message().flags.set(MessageFlag::WatchStreak);
+
+            auto timestampFlags = hasContent ? MessageElementFlags{
+                            MessageElementFlag::HeaderTimestamp,
+                            MessageElementFlag::WatchStreakHeader,
+                        } : MessageElementFlags{};
+
+            auto textFlags = hasContent ? MessageElementFlags{
+                            MessageElementFlag::Text,
+                            MessageElementFlag::WatchStreakHeader,
+                        } : MessageElementFlags{
+                            MessageElementFlag::Text,
+                        };
+
+            auto mentionFlags = hasContent ? MessageElementFlags{
+                            MessageElementFlag::Text,
+                            MessageElementFlag::Mention,
+                            MessageElementFlag::WatchStreakHeader,
+                        } : MessageElementFlags{
+                            MessageElementFlag::Text,
+                            MessageElementFlag::Mention,
+                        };
+
+            this->emplace<TimestampElement>(
+                    this->message().serverReceivedTime.time(), timestampFlags)
+                ->exhaustiveFlags = true;
+
+            const auto messageText =
+                parseTagString(tags.getOrEmpty("system-msg"));
+
+            auto displayName = tags.getOrEmpty("display-name");
+            if (displayName.isEmpty())
+            {
+                displayName = this->message_->loginName;
+            }
+            const auto userID = tags.getOrEmpty("user-id");
+            this->appendOrEmplaceTextWithUser(
+                channel, userID, this->message_->loginName, displayName,
+                tags.getOrEmpty("color"), messageText, mentionFlags, textFlags);
+
+            if (hasContent)
+            {
+                this
+                    ->emplace<LinebreakElement>(MessageElementFlags{
+                        MessageElementFlag::WatchStreakHeader,
+                    })
+                    ->exhaustiveFlags = true;
+            }
+            else
+            {
+                this->message_->messageText = messageText;
+                this->message_->searchText = messageText;
+
+                // Message doesn't contain any user input, flag it as a system message
+                this->message().flags.set(MessageFlag::System);
+            }
+        }
+        else if (messageType == "modiversary")
+        {
+            // TODO: Don't label modiversary messages as watch streaks
             this->message().flags.set(MessageFlag::WatchStreak);
         }
         else

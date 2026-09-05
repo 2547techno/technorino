@@ -193,6 +193,10 @@ public:
         "/appearance/messages/subscriptions/showHeader",
         true,
     };
+    BoolSetting showWatchStreakHeader = {
+        "/appearance/messages/watchstreaks/showHeader",
+        true,
+    };
     BoolSetting animationsWhenFocused = {
         "/appearance/enableAnimationsWhenFocused", false};
     BoolSetting hideMessageTimestampsWhenLive = {
@@ -219,6 +223,10 @@ public:
     BoolSetting wrapAsciiArt = {
         "/appearance/messages/wrapAsciiArt",
         false,
+    };
+    BoolSetting showTwitchGifs = {
+        "/appearance/messages/showTwitchGifs",
+        true,
     };
     BoolSetting separateMessages = {"/appearance/messages/separateMessages",
                                     false};

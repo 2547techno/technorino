@@ -821,6 +821,8 @@ c2.FontStyle = {
     ChatSmall = {}, ---@type c2.FontStyle.ChatSmall
     ChatMediumSmall = {}, ---@type c2.FontStyle.ChatMediumSmall
     ChatMedium = {}, ---@type c2.FontStyle.ChatMedium
+    ChatMediumMono = {}, ---@type c2.FontStyle.ChatMediumMono
+    ChatMediumStrikethrough = {}, ---@type c2.FontStyle.ChatMediumStrikethrough
     ChatMediumBold = {}, ---@type c2.FontStyle.ChatMediumBold
     ChatMediumItalic = {}, ---@type c2.FontStyle.ChatMediumItalic
     ChatLarge = {}, ---@type c2.FontStyle.ChatLarge
@@ -875,12 +877,13 @@ c2.MessageElementFlag = {
     LowercaseLinks = 0,
     RepliedMessage = 0,
     ReplyButton = 0,
-    KickUsername = 0,
-    PlatformBadgeAlways = 0,
-    PlatformBadgeIfUnselected = 0,
     HeaderTimestamp = 0,
     AnnouncementHeader = 0,
     SubscriptionHeader = 0,
+    WatchStreakHeader = 0,
+    KickUsername = 0,
+    PlatformBadgeAlways = 0,
+    PlatformBadgeIfUnselected = 0,
     Default = 0,
 }
 
