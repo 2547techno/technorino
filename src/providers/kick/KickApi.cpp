@@ -236,7 +236,6 @@ KickPrivateChannelSubBadge::KickPrivateChannelSubBadge(BoostJsonObject obj)
 
 KickPrivateChannelInfo::KickPrivateChannelInfo(BoostJsonObject obj)
     : channelID(obj["id"].toUint64())
-    , followersCount(obj["followers_count"].toUint64())
     , slug(obj["slug"].toQString())
     , user(obj["user"].toObject())
     , chatroom(obj["chatroom"].toObject())
@@ -245,6 +244,21 @@ KickPrivateChannelInfo::KickPrivateChannelInfo(BoostJsonObject obj)
     {
         this->subBadges.emplace_back(badge.toObject());
     }
+    auto followers = obj["followers_count"];
+    if (followers.isInt64())
+    {
+        this->followersCount = followers.toUint64();
+    }
+    else if (followers.isString())
+    {
+        this->followersCount =
+            QLatin1StringView(followers.toStringView()).toULongLong();
+    }
+}
+
+KickPrivateChannelInfoSmall::KickPrivateChannelInfoSmall(BoostJsonObject obj)
+    : user(obj["user"].toObject())
+{
 }
 
 KickPrivateUserInChannelInfo::KickPrivateUserInChannelInfo(BoostJsonObject obj)
@@ -331,6 +345,13 @@ void KickApi::privateChannelInfo(const QString &username,
 {
     autoSlugify<KickPrivateChannelInfo>(u"https://kick.com/api/v2/channels"_s,
                                         std::move(cb), username);
+}
+
+void KickApi::privateChannelInfoSmall(const QString &slug,
+                                      Callback<KickPrivateChannelInfoSmall> cb)
+{
+    autoSlugify<KickPrivateChannelInfoSmall>(
+        u"https://kick.com/api/v2/channels"_s, std::move(cb), slug, "info");
 }
 
 void KickApi::privateUserInChannelInfo(

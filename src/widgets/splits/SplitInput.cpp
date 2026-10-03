@@ -120,6 +120,13 @@ SplitInput::SplitInput(QWidget *parent, Split *_chatWidget,
     this->installEventFilter(this);
     this->initLayout();
 
+    // The textEdit's signal will be destroyed before this SplitInput is
+    // destroyed, so we can safely ignore this signal's connection.
+    std::ignore = this->ui_.textEdit->imagePasted.connect(
+        [this](const QMimeData *source) {
+            this->handleImagePaste(source);
+        });
+
     // NOLINTNEXTLINE(cppcoreguidelines-prefer-member-initializer)
     auto *spellChecker = getApp()->getSpellChecker();
     this->inputHighlighter = new InputHighlighter(*spellChecker, this);

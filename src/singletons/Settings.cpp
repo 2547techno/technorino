@@ -210,6 +210,10 @@ Settings::Settings(const Modes &modes, const Args &args,
                         return makeUnexpected("Failed to seek in file");
                     case LoadError::JSONParseError:
                         return makeUnexpected("File contained malformed JSON");
+                    case LoadError::SavingFromTemporaryFileFailed:
+                        return makeUnexpected(
+                            u"Failed to save '" % settingsPath %
+                            u"' with settings from .tmp file");
                 }
                 assert(false);
                 return makeUnexpected("Unknown error");
@@ -268,7 +272,8 @@ Settings::Settings(const Modes &modes, const Args &args,
     {
         this->showUnlistedSevenTVEmotes.setValue(true);
         // reset to default, so it doesn't appear in the config
-        this->showUnlistedEmotesDontUse.remove();
+        settingsInstance->removeSetting(
+            this->showUnlistedEmotesDontUse.getPath());
     }
 }
 

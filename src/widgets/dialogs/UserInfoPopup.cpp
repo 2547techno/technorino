@@ -1115,15 +1115,7 @@ void UserInfoPopup::updateUserData()
         this->ui_.userIDLabel->setText(TEXT_USER_ID % user.id);
         this->ui_.userIDLabel->setProperty("copy-text", user.id);
 
-        if (getApp()->getStreamerMode()->isEnabled() &&
-            getSettings()->streamerModeHideUsercardAvatars)
-        {
-            this->ui_.avatarButton->setPixmap(getResources().streamerMode);
-        }
-        else
-        {
-            this->loadAvatar(user.id, user.profileImageUrl, false);
-        }
+        this->loadCurrentAvatar();
 
         getHelix()->getChannelFollowers(
             user.id, {},
@@ -1579,18 +1571,44 @@ void UserInfoPopup::updateKickUserData()
         self->ui_.userIDLabel->setProperty("copy-text",
                                            TEXT_UNAVAILABLE.toString());
     };
-    auto onChannelFetched = [](UserInfoPopup *self,
-                               const KickPrivateChannelInfo &channel) {
-        // Correct for when being opened with ID
-        if (self->userName_.isEmpty())
+    auto fetchDefaultAvatar = [](UserInfoPopup *self) {
+        // The "full" channel info doesn't include the profile picture.
+        KickApi::privateChannelInfoSmall(
+            self->userName_, [self = QPointer(self)](const auto &res) {
+                if (!self || !res)
+                {
+                    return;
+                }
+                const auto &url = res->user.profilePictureURL;
+                if (!url || *url == self->helixAvatarUrl_ ||
+                    !self->helixAvatarUrl_.startsWith(u"https://kick.com"))
+                {
+                    return;
+                }
+                self->helixAvatarUrl_ = *url;
+                self->updateAvatarUrl();
+                self->loadCurrentAvatar();
+            });
+    };
+    auto onChannelFetched = [fetchDefaultAvatar](
+                                UserInfoPopup *self,
+                                const KickPrivateChannelInfo &channel) {
+        // Correct for when being opened with ID or slug/username mismatch.
+        self->kickUserSlug_ = channel.slug;
+        self->userName_ = channel.user.username;
+        self->ui_.nameLabel->setText(channel.user.username);
+        if (self->userName_.compare(self->kickUserSlug_, Qt::CaseInsensitive) !=
+            0)
         {
-            self->userName_ = channel.user.username;
-            self->kickUserSlug_ = channel.slug;
-            self->ui_.nameLabel->setText(channel.user.username);
-
-            // Ensure recent messages are shown
-            self->updateLatestMessages();
+            self->ui_.localizedNameLabel->setText(self->kickUserSlug_);
+            self->ui_.localizedNameLabel->setProperty("copy-text",
+                                                      self->kickUserSlug_);
+            self->ui_.localizedNameLabel->setVisible(true);
+            self->ui_.localizedNameCopyButton->setVisible(true);
         }
+
+        // Ensure recent messages are shown
+        self->updateLatestMessages();
 
         self->kickUserID_ = channel.user.userID;
         auto userIDStr = QString::number(self->kickUserID_);
@@ -1598,7 +1616,13 @@ void UserInfoPopup::updateKickUserData()
         self->helixAvatarUrl_ = channel.user.profilePictureURL.value_or(
             u"https://kick.com/img/default-profile-pictures/default-avatar-2.webp"_s);
         self->updateAvatarUrl();
+        self->loadCurrentAvatar();
         self->updateNotes();
+
+        if (!channel.user.profilePictureURL.has_value())
+        {
+            fetchDefaultAvatar(self);
+        }
 
         self->ui_.nameLabel->setText(channel.user.username);
         self->ui_.nameLabel->setProperty("copy-text", channel.user.username);
@@ -1614,16 +1638,6 @@ void UserInfoPopup::updateKickUserData()
         self->ui_.createdDateLabel->setMouseTracking(true);
         self->ui_.userIDLabel->setText(TEXT_USER_ID % userIDStr);
         self->ui_.userIDLabel->setProperty("copy-text", userIDStr);
-
-        if (getApp()->getStreamerMode()->isEnabled() &&
-            getSettings()->streamerModeHideUsercardAvatars)
-        {
-            self->ui_.avatarButton->setPixmap(getResources().streamerMode);
-        }
-        else
-        {
-            self->loadAvatar(userIDStr, self->helixAvatarUrl_, true);
-        }
 
         self->ui_.followerCountLabel->setText(
             TEXT_FOLLOWERS.arg(localizeNumbers(channel.followersCount)));
@@ -1936,6 +1950,24 @@ void UserInfoPopup::updateAvatarUrl()
     else
     {
         this->avatarUrl_ = this->seventvAvatarUrl_;
+    }
+}
+
+void UserInfoPopup::loadCurrentAvatar()
+{
+    if (getApp()->getStreamerMode()->isEnabled() &&
+        getSettings()->streamerModeHideUsercardAvatars)
+    {
+        this->ui_.avatarButton->setPixmap(getResources().streamerMode);
+    }
+    else
+    {
+        auto uid = this->userId_;
+        if (uid.startsWith(u"kick:"))
+        {
+            uid.slice(5);
+        }
+        this->loadAvatar(uid, this->helixAvatarUrl_, this->isKick_);
     }
 }
 
