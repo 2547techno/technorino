@@ -344,6 +344,25 @@ QDateTime chronoToQDateTime(std::chrono::system_clock::time_point time)
     return dt;
 }
 
+qsizetype codepointLength(QStringView str)
+{
+    qsizetype length = 0;
+    const QChar *pos = str.begin();
+    const QChar *end = str.end();
+
+    while (pos < end)
+    {
+        QChar cur = *pos++;
+        if (cur.isHighSurrogate() && pos < end && pos->isLowSurrogate())
+        {
+            pos++;
+        }
+        length++;
+    }
+
+    return length;
+}
+
 QStringView codepointSlice(QStringView str, qsizetype begin, qsizetype end)
 {
     if (end <= begin || begin < 0)
@@ -441,8 +460,10 @@ bool readProviderEmotesCache(const QString &id, const QString &provider,
     return false;
 }
 
-std::pair<QStringView, QStringView> splitOnce(QStringView haystack,
-                                              QStringView needle) noexcept
+namespace {
+
+template <typename T>
+std::pair<T, T> splitOnceImpl(T haystack, T needle)
 {
     auto idx = haystack.indexOf(needle);
     if (idx < 0)
@@ -455,18 +476,30 @@ std::pair<QStringView, QStringView> splitOnce(QStringView haystack,
     };
 }
 
+}  // namespace
+
+std::pair<QStringView, QStringView> splitOnce(QStringView haystack,
+                                              QStringView needle) noexcept
+{
+    return splitOnceImpl(haystack, needle);
+}
+
 std::pair<QStringView, QStringView> splitOnce(QStringView haystack,
                                               QChar needle) noexcept
 {
-    auto idx = haystack.indexOf(needle);
-    if (idx < 0)
-    {
-        return {haystack, {}};
-    }
-    return {
-        haystack.sliced(0, idx),
-        haystack.sliced(idx + 1),
-    };
+    return splitOnceImpl(haystack, {&needle, 1});
+}
+
+std::pair<QByteArrayView, QByteArrayView> splitOnce(
+    QByteArrayView haystack, QByteArrayView needle) noexcept
+{
+    return splitOnceImpl(haystack, needle);
+}
+
+std::pair<QByteArrayView, QByteArrayView> splitOnce(QByteArrayView haystack,
+                                                    char needle) noexcept
+{
+    return splitOnceImpl(haystack, {&needle, 1});
 }
 
 }  // namespace chatterino

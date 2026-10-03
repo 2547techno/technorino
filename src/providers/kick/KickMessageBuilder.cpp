@@ -340,17 +340,34 @@ void appendReplyButtons(KickMessageBuilder &builder)
     }
 }
 
-void appendKickBadges(KickMessageBuilder &builder, BoostJsonArray badges)
+void appendKickBadges(KickMessageBuilder &builder, BoostJsonArray badgesArr)
 {
+    struct BadgeItem {
+        std::string_view type;
+        uint32_t count;
+        uint16_t order;
+    };
+    QVarLengthArray<BadgeItem, 8> badges;
+    badges.reserve(static_cast<qsizetype>(badgesArr.size()));
+    for (auto badgeObj : badgesArr)
+    {
+        badges.emplace_back(BadgeItem{
+            .type = badgeObj["type"].toStringView(),
+            .count = static_cast<uint32_t>(badgeObj["count"].toUint64(1)),
+            .order = static_cast<uint16_t>(badgeObj["sort_order"].toUint64(0)),
+        });
+    }
+    std::ranges::sort(badges, [](const auto &a, const auto &b) {
+        return a.order < b.order;
+    });
+
     bool hasMod = false;
     bool hasVip = false;
-    for (auto badgeObj : badges)
+    for (auto badgeItem : badges)
     {
-        auto ty = badgeObj["type"].toStringView();
-        if (ty == "subscriber")
+        if (badgeItem.type == "subscriber")
         {
-            auto badge =
-                builder.channel()->getSubBadge(badgeObj["count"].toUint64(1));
+            auto badge = builder.channel()->getSubBadge(badgeItem.count);
             if (badge)
             {
                 builder.emplace<BadgeElement>(
@@ -358,17 +375,27 @@ void appendKickBadges(KickMessageBuilder &builder, BoostJsonArray badges)
                 continue;
             }
         }
-        auto [emote, flag] = KickBadges::lookup(ty);
+        else if (badgeItem.type == "sub_gifter")
+        {
+            auto badge = KickBadges::lookupSubGifter(badgeItem.count);
+            if (badge)
+            {
+                builder.emplace<BadgeElement>(std::move(badge),
+                                              MessageElementFlag::BadgeVanity);
+                continue;
+            }
+        }
+        auto [emote, flag] = KickBadges::lookup(badgeItem.type);
         if (!emote)
         {
             continue;
         }
 
-        if (ty == "moderator")
+        if (badgeItem.type == "moderator")
         {
             hasMod = true;
         }
-        else if (ty == "vip")
+        else if (badgeItem.type == "vip")
         {
             hasVip = true;
         }
@@ -513,7 +540,6 @@ std::pair<MessagePtrMut, HighlightAlert> KickMessageBuilder::makeChatMessage(
     builder->id = id;
     builder->serverReceivedTime =
         QDateTime::fromString(createdAt, Qt::DateFormat::ISODate).toLocalTime();
-    builder->parseTime = QTime::currentTime();
     builder->displayName = sender["username"].toQString();
     builder->loginName = builder->displayName.toLower();
     builder.senderID = sender["id"].toUint64();

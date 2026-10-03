@@ -15,6 +15,7 @@
 #include "singletons/Paths.hpp"
 #include "singletons/Settings.hpp"
 #include "singletons/Theme.hpp"
+#include "util/Backup.hpp"
 #include "util/CombinePath.hpp"
 #include "util/FilesystemHelpers.hpp"
 #include "util/MultiChannel.hpp"
@@ -82,6 +83,8 @@ using SplitNode = SplitContainer::Node;
 void WindowManager::showSettingsDialog(QWidget *parent,
                                        SettingsDialogPreference preference)
 {
+    using namespace std::chrono_literals;
+
     if (this->appArgs.dontSaveSettings)
     {
         QMessageBox::critical(parent, "Chatterino - Editing Settings Forbidden",
@@ -90,8 +93,9 @@ void WindowManager::showSettingsDialog(QWidget *parent,
     }
     else
     {
-        QTimer::singleShot(80, [parent, preference] {
-            SettingsDialog::showDialog(parent, preference);
+        auto *mainWindow = &this->getMainWindow();
+        QTimer::singleShot(80ms, mainWindow, [mainWindow, preference] {
+            SettingsDialog::showDialog(mainWindow, preference);
         });
     }
 }
@@ -283,6 +287,7 @@ void WindowManager::updateWordTypeMask()
     flags.set(MEF::Collapsed);
     flags.set(MEF::LowercaseLinks, settings->lowercaseDomains);
     flags.set(MEF::ChannelPointReward);
+    flags.set(MEF::TwitchGif);
 
     // update flags
     MessageElementFlags newFlags = static_cast<MessageElementFlags>(flags);
@@ -477,7 +482,23 @@ void WindowManager::initialize()
         }
         else
         {
-            windowLayout = this->loadWindowLayoutFromFile();
+            backup::loadWithBackups(
+                backup::FileData{
+                    .fileName = WindowManager::WINDOW_LAYOUT_FILENAME,
+                    .directory = getApp()->getPaths().settingsDirectory,
+                    .fileKind = u"Window layout"_s,
+                    .fileDescription =
+                        u"This file contains the positions of open windows, their tabs and splits."_s,
+                },
+                [&]() -> ExpectedStr<void> {
+                    auto res = this->loadWindowLayoutFromFile();
+                    if (!res)
+                    {
+                        return makeUnexpected(std::move(res).error());
+                    }
+                    windowLayout = *std::move(res);
+                    return {};
+                });
         }
 
         auto desired = this->appArgs.activateChannel;
@@ -754,7 +775,7 @@ void WindowManager::incGeneration()
     this->generation_++;
 }
 
-WindowLayout WindowManager::loadWindowLayoutFromFile() const
+ExpectedStr<WindowLayout> WindowManager::loadWindowLayoutFromFile() const
 {
     return WindowLayout::loadFromFile(this->windowLayoutFilePath);
 }

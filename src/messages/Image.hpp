@@ -7,7 +7,6 @@
 #include "common/Aliases.hpp"
 #include "util/DebugCount.hpp"
 
-#include <pajlada/signals/signal.hpp>
 #include <QList>
 #include <QPixmap>
 #include <QString>
@@ -50,20 +49,20 @@ public:
     void clear();
     bool empty() const;
     bool animated() const;
-    void advance();
     std::optional<QPixmap> current() const;
-    std::optional<QPixmap> first() const;
+    /// Returns the size of the first frame, if one has been loaded.
+    std::optional<QSize> frameSize() const;
 
 private:
+    struct Storage;
+    struct CachedFrames;
+
     int64_t memoryUsage() const;
-    void processOffset();
-    QList<Frame> items_;
-    QList<Frame>::size_type index_{0};
-    int durationOffset_{0};
-    pajlada::Signals::Connection gifTimerConnection_;
+    std::unique_ptr<Storage> storage_;
 };
 
-QList<Frame> readFrames(QImageReader &reader, const Url &url);
+QList<Frame> readFrames(QImageReader &reader, const Url &url,
+                        std::optional<QSize> rescale = std::nullopt);
 void assignFrames(std::weak_ptr<Image> weak, QList<Frame> parsed);
 
 }  // namespace chatterino::detail

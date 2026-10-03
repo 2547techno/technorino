@@ -89,7 +89,7 @@ QString getVIPs(const CommandContext &ctx)
     if (ctx.twitchChannel->isBroadcaster())
     {
         getHelix()->getChannelVIPs(
-            ctx.twitchChannel->roomId(),
+            ctx.twitchChannel->roomId(), nullptr,
             [channel{ctx.channel}, twitchChannel{ctx.twitchChannel}](
                 const std::vector<HelixVip> &vipList) {
                 if (vipList.empty())

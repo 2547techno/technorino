@@ -204,6 +204,9 @@ QLocale getSystemLocale();
 /// Note: When running tests, this will always return a date-time in UTC.
 QDateTime chronoToQDateTime(std::chrono::system_clock::time_point time);
 
+/// Returns the number of Unicode codepoints in a string.
+qsizetype codepointLength(QStringView str);
+
 /// Slices a string based on codepoint indices.
 ///
 /// If the specified range is outside the string, an empty string view is
@@ -239,5 +242,15 @@ std::pair<QStringView, QStringView> splitOnce(QStringView haystack,
 /// `{haystack, {}}` is returned.
 std::pair<QStringView, QStringView> splitOnce(QStringView haystack,
                                               QChar needle) noexcept;
+
+/// Splits `haystack` by `needle`. If `needle` doesn't occur in `haystack`,
+/// `{haystack, {}}` is returned.
+std::pair<QByteArrayView, QByteArrayView> splitOnce(
+    QByteArrayView haystack, QByteArrayView needle) noexcept;
+
+/// Splits `haystack` by `needle`. If `needle` doesn't occur in `haystack`,
+/// `{haystack, {}}` is returned.
+std::pair<QByteArrayView, QByteArrayView> splitOnce(QByteArrayView haystack,
+                                                    char needle) noexcept;
 
 }  // namespace chatterino

@@ -72,7 +72,7 @@ QString getModerators(const CommandContext &ctx)
     if (ctx.twitchChannel->isBroadcaster())
     {
         getHelix()->getModerators(
-            ctx.twitchChannel->roomId(), 500,
+            ctx.twitchChannel->roomId(), 500, nullptr,
             [channel{ctx.channel},
              twitchChannel{ctx.twitchChannel}](auto result) {
                 if (result.empty())
