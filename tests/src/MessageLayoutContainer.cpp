@@ -130,14 +130,14 @@ TEST(MessageLayoutContainer, InlineGifCopyText)
 {
     MockApplication mockApplication;
     MessageLayoutContainer container;
-    Message message;
+    Message msg;
     MessageLayoutContext ctx{
         .messageColors = {},
         .flags = MessageElementFlag::TwitchGif,
         .width = 1000,
         .scale = 1.0F,
         .imageScale = 1.0F,
-        .message = message,
+        .message = msg,
     };
     container.beginLayout(ctx.width, ctx.scale, ctx.imageScale, {});
 

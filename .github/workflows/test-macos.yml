@@ -28,7 +28,7 @@ jobs:
           - os: macos-14
             qt-version: 6.8.3
           - os: macos-26
-            qt-version: 6.11.1
+            qt-version: 6.12.0
       fail-fast: false
     env:
       QT_MODULES: qtimageformats
@@ -41,7 +41,7 @@ jobs:
           persist-credentials: false
 
       - name: Install Qt
-        uses: jurplel/install-qt-action@bcb88e3bed2e992f5f9e24c0f9e364a231d278eb # v4.4.0
+        uses: jurplel/install-qt-action@a9c63c7c123f3069cff414e7e482d95dfa9d8125 # v4.4.1
         with:
           cache: true
           cache-key-prefix: ${{ runner.os }}-QtCache-${{ matrix.qt-version }}-v2
