@@ -827,6 +827,9 @@ public:
     QStringSetting webchatColor = {"/misc/webchatColor", "#3FFFA30B"};
     QStringSetting androidColor = {"/misc/androidColor", "#3F25D300"};
     QStringSetting iosColor = {"/misc/iosColor", "#3FFF69B4"};
+
+    QStringSetting mobileNewColor = {"/misc/mobileNewColor", "#3F25D300"};
+
     BoolSetting clientDetectionIcon = {"/misc/clientDetectionIcon", false};
     BoolSetting fakeWebChat = {"/misc/fakeWebChat", false};
 

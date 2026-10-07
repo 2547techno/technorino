@@ -491,6 +491,10 @@ void MessageLayout::updateBuffer(QPixmap *buffer,
                 backgroundColor = blendColors(backgroundColor,
                                               QColor(getSettings()->iosColor));
                 break;
+            case MobileNew:
+                backgroundColor = blendColors(
+                    backgroundColor, QColor(getSettings()->mobileNewColor));
+                break;
             case Unknown:
             case Abnormal:
                 break;
@@ -514,6 +518,10 @@ void MessageLayout::updateBuffer(QPixmap *buffer,
             }
             case IOS: {
                 clientDetectionIcon = resources.chat.ios;
+                break;
+            }
+            case MobileNew: {
+                clientDetectionIcon = resources.chat.mobile;
                 break;
             }
 
