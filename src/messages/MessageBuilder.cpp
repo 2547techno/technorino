@@ -96,9 +96,9 @@ Message::ClientDetectionStatus performClientDetection(const QString &nonce)
     using enum Message::ClientDetectionStatus;
 
     // MobileNew
-    if (nonce.size() >= 10 && nonce.size() <= 12)
+    if (nonce.size() >= 8 && nonce.size() <= 12)
     {
-        // matches /[a-z0-9]{10,12}/
+        // matches /[a-z0-9]{8,12}/
         bool charset = std::ranges::all_of(nonce, [](const QChar &c) {
             return ('0' <= c && c <= '9') || ('a' <= c && c <= 'z');
         });
