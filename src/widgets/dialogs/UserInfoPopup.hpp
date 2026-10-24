@@ -101,6 +101,7 @@ private:
     pajlada::Signals::NoArgSignal userStateChanged_;
 
     std::unique_ptr<pajlada::Signals::ScopedConnection> refreshConnection_;
+    std::unique_ptr<pajlada::Signals::ScopedConnection> replaceConnection_;
     std::unique_ptr<pajlada::Signals::ScopedConnection>
         userDataUpdatedConnection_;
 

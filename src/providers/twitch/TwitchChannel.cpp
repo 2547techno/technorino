@@ -529,9 +529,11 @@ void TwitchChannel::addChannelPointReward(const ChannelPointReward &reward)
 
     if (!reward.isUserInputRequired)
     {
-        this->addMessage(MessageBuilder::makeChannelPointRewardMessage(
-                             reward, this->isMod(), this->isBroadcaster()),
-                         MessageContext::Original);
+        const auto [msg, highlights] =
+            MessageBuilder::makeChannelPointRewardMessage(
+                reward, this->isMod(), this->isBroadcaster(), this);
+        this->addMessage(msg, MessageContext::Original);
+        MessageBuilder::triggerHighlights(this, highlights);
         return;
     }
 

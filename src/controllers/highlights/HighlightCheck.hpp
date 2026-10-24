@@ -5,6 +5,8 @@
 #pragma once
 
 #include "common/FlagsEnum.hpp"
+#include "controllers/filters/lang/expressions/Expression.hpp"
+#include "messages/Message.hpp"
 
 #include <cstdint>
 #include <functional>
@@ -22,13 +24,18 @@ class TwitchBadge;
 enum class MessageFlag : std::int64_t;
 using MessageFlags = FlagsEnum<MessageFlag>;
 
-struct HighlightCheck {
-    using Checker = std::function<std::optional<HighlightResult>(
-        const MessageParseArgs &args,
-        const std::vector<TwitchBadge> &twitchBadges, const QString &senderName,
-        const QString &originalMessage, const MessageFlags &messageFlags,
-        bool self)>;
-    Checker cb;
+struct HighlightCheckParams {
+    const MessageParseArgs &args;
+    const std::vector<TwitchBadge> &twitchBadges;
+    const QString &senderName;
+    const QString &originalMessage;
+    const MessageFlags &messageFlags;
+    bool self;
+    filters::RunContext runContext;
+    MessagePlatform platform = MessagePlatform::AnyOrTwitch;
 };
+
+using HighlightCheck = std::function<std::optional<HighlightResult>(
+    const HighlightCheckParams &params)>;
 
 }  // namespace chatterino
