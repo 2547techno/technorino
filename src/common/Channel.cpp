@@ -204,6 +204,14 @@ void Channel::addSystemMessage(const QString &contents)
     this->addMessage(msg, MessageContext::Original);
 }
 
+void Channel::addSystemMessage(const QString &contents,
+                               const QString &timeoutUser)
+{
+    MessageBuilder builder(systemMessage, contents);
+    builder->timeoutUser = timeoutUser;
+    this->addMessage(builder.release(), MessageContext::Original);
+}
+
 void Channel::addOrReplaceTimeout(MessagePtr message, const QDateTime &now)
 {
     addOrReplaceChannelTimeout(
@@ -333,12 +341,12 @@ void Channel::fillInMissingMessages(const std::vector<MessagePtr> &messages)
                 continue;
             }
 
-            if (msg->serverReceivedTime < snapshotMsg->serverReceivedTime)
+            if (msg->timestamp < snapshotMsg->timestamp)
             {
                 // We found the first message that comes after the current message.
                 // Therefore, we can put the current message directly before. We
                 // assume that the messages we are filling in are in ascending
-                // order by serverReceivedTime.
+                // order by timestamp.
                 this->messages_.insertBefore(snapshotMsg, msg);
                 insertedFlag = true;
                 break;
@@ -437,7 +445,7 @@ void Channel::mergeFrom(const std::span<std::span<const MessagePtr>> sources)
             auto src = sources[i];
             if (!src.empty())
             {
-                QDateTime cur = src.back()->serverReceivedTime;
+                QDateTime cur = src.back()->timestamp;
                 if (!dt.isValid() || cur > dt)
                 {
                     max = src.back();
